@@ -1,0 +1,100 @@
+@use '../../../style.scss' as *;
+
+.monitoringContainer {
+  padding: 20px;
+
+  .pageTitle {
+    @include themify($themes) {
+      color: themed('textColor');
+    }
+    margin-bottom: 24px;
+  }
+
+  .monitoringGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+
+    .activityCard, .sessionsCard {
+      @include themify($themes) {
+        background-color: themed('bg');
+        border: 1px solid themed('border');
+      }
+      border-radius: 12px;
+      overflow: hidden;
+
+      .cardHeader {
+        @include flex(row, flex-start, center);
+        gap: 8px;
+        margin-bottom: 16px;
+
+        svg {
+          @include themify($themes) {
+            color: themed('primary');
+          }
+        }
+      }
+
+      .chartContainer {
+        height: 300px;
+        margin-top: 20px;
+      }
+    }
+
+    .MuiTableContainer-root {
+      @include themify($themes) {
+        background-color: themed('bg');
+      }
+
+      .MuiTableHead-root {
+        .MuiTableCell-head {
+          @include themify($themes) {
+            background-color: themed('bgSoft');
+            color: themed('textColorSoft');
+            border-bottom-color: themed('border');
+          }
+          font-weight: 600;
+        }
+      }
+
+      .MuiTableBody-root {
+        .MuiTableRow-root {
+          &:hover {
+            @include themify($themes) {
+              background-color: themed('bgHover');
+            }
+          }
+        }
+
+        .MuiTableCell-body {
+          @include themify($themes) {
+            color: themed('textColor');
+            border-bottom-color: themed('border');
+          }
+        }
+      }
+    }
+
+    .actionButtons {
+      @include flex(row, flex-start, center);
+      gap: 8px;
+    }
+  }
+}
+
+// Mobile responsiveness
+@include tablet {
+  .monitoringContainer {
+    padding: 12px;
+
+    .monitoringGrid {
+      .MuiTableContainer-root {
+        overflow-x: auto;
+
+        .MuiTable-root {
+          min-width: 800px;
+        }
+      }
+    }
+  }
+}

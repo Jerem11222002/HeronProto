@@ -1,0 +1,191 @@
+@use '../../../style.scss' as *;
+
+.adminSidebar {
+  width: 250px;
+  min-height: 100vh;
+  @include themify($themes) {
+    background-color: themed('bg');
+    border-right: 1px solid themed('border');
+  }
+  display: flex;
+  flex-direction: column;
+  @include transition(all);
+
+  .logo {
+    padding: 20px;
+    @include themify($themes) {
+      border-bottom: 1px solid themed('border');
+    }
+    text-align: center;
+
+    h2 {
+      margin: 0;
+      font-size: 1.5rem;
+      @include themify($themes) {
+        color: themed('logo');
+      }
+      font-weight: 600;
+    }
+  }
+
+  .menuItems {
+    @include flex(column, flex-start, stretch, nowrap, 10px);
+    flex: 1;
+    padding: 20px 0;
+
+    .menuItem {
+      @include flex(row, flex-start, center);
+      padding: 12px 20px;
+      @include themify($themes) {
+        color: themed('textColorSoft');
+        border-left: 3px solid transparent;
+      }
+      text-decoration: none;
+      @include transition(all);
+
+      &:hover {
+        @include themify($themes) {
+          background-color: themed('bgHover');
+          color: themed('textColor');
+          border-left-color: themed('primary');
+        }
+      }
+
+      &.active {
+        @include themify($themes) {
+          background-color: themed('bgActive');
+          color: themed('primary');
+          border-left-color: themed('primary');
+        }
+        font-weight: 500;
+
+        .menuIcon {
+          @include themify($themes) {
+            color: themed('primary');
+          }
+        }
+      }
+
+      .menuIcon {
+        margin-right: 12px;
+        font-size: 1.5rem;
+        display: flex;
+        align-items: center;
+      }
+
+      .menuLabel {
+        font-size: 1rem;
+      }
+    }
+  }
+
+  .bottomMenu {
+    padding: 20px;
+    @include themify($themes) {
+      border-top: 1px solid themed('border');
+    }
+    @include flex(column, flex-start, stretch, nowrap, 10px);
+
+    .actionButton {
+      @include flex(row, center, center);
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      @include transition(all);
+      font-size: 1rem;
+      width: 100%;
+
+      svg {
+        margin-right: 8px;
+        font-size: 1.5rem;
+      }
+
+      &.switchButton {
+        @include themify($themes) {
+          background-color: themed('buttonSoft');
+          color: themed('textColorSoft');
+
+          &:hover {
+            background-color: themed('buttonSoftHover');
+            color: themed('primary');
+          }
+        }
+      }
+
+      &.logoutButton {
+        @include themify($themes) {
+          background-color: themed('error');
+          color: #fff;
+
+          &:hover {
+            filter: brightness(0.9);
+          }
+        }
+      }
+    }
+  }
+}
+
+// Responsive styles
+@include tablet {
+  .adminSidebar {
+    width: 100%;
+    min-height: auto;
+    @include flex(row, space-between, center);
+    padding: 10px;
+
+    .logo {
+      padding: 0;
+      border-bottom: none;
+
+      h2 {
+        font-size: 1.25rem;
+      }
+    }
+
+    .menuItems {
+      @include flex(row, flex-start, center);
+      overflow-x: auto;
+      padding: 0;
+
+      .menuItem {
+        padding: 8px;
+        border-left: none;
+        @include themify($themes) {
+          border-bottom: 3px solid transparent;
+        }
+
+        .menuLabel {
+          display: none;
+        }
+
+        &.active {
+          @include themify($themes) {
+            border-bottom-color: themed('primary');
+            border-left-color: transparent;
+          }
+        }
+      }
+    }
+
+    .bottomMenu {
+      @include flex(row, flex-end, center, nowrap, 8px);
+      padding: 0;
+      border-top: none;
+
+      .actionButton {
+        width: auto;
+        padding: 8px;
+
+        span {
+          display: none;
+        }
+
+        svg {
+          margin: 0;
+        }
+      }
+    }
+  }
+}

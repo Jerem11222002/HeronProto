@@ -1,0 +1,108 @@
+.terms-bg {
+  min-height: 100vh;
+  width: 100vw;
+  background: linear-gradient(135deg, #6A9CE9 0%, #8353CA 35%, #A753CE 65%, #EB98B6 85%, #999999 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+}
+
+.terms-page {
+  max-width: 720px;
+  width: 100%;
+  margin: 40px auto;
+  padding: 40px 32px 32px 32px;
+  background: var(--cardBg, #fff);
+  border-radius: 18px;
+  box-shadow: 0 8px 32px var(--cardShadow, rgba(0,0,0,0.14));
+  font-family: 'Segoe UI', Arial, sans-serif;
+  color: var(--textColor, #222);
+  transition: background 0.2s, color 0.2s;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: -60px;
+    right: -60px;
+    width: 180px;
+    height: 180px;
+    background: linear-gradient(135deg, #8353CA 30%, #EB98B6 100%);
+    opacity: 0.08;
+    border-radius: 50%;
+    z-index: 0;
+  }
+
+  h1 {
+    font-size: 2.4rem;
+    margin-bottom: 22px;
+    color: var(--primary, #5271ff);
+    text-align: center;
+    font-weight: 800;
+    letter-spacing: 1px;
+    z-index: 1;
+    position: relative;
+  }
+
+  p {
+    font-size: 1.13rem;
+    margin-bottom: 20px;
+    line-height: 1.8;
+    color: var(--textColor, #222);
+    z-index: 1;
+    position: relative;
+  }
+
+  ul {
+    margin: 22px 0 28px 24px;
+    padding-left: 18px;
+    font-size: 1.05rem;
+    z-index: 1;
+    position: relative;
+
+    li {
+      margin-bottom: 14px;
+      line-height: 1.7;
+      list-style: disc inside;
+      color: var(--textColor, #222);
+      background: rgba(130, 83, 202, 0.03);
+      border-radius: 6px;
+      padding: 8px 12px 8px 0;
+      transition: background 0.2s;
+    }
+  }
+
+  a {
+    color: var(--primary, #5271ff);
+    text-decoration: underline;
+    font-weight: 500;
+    transition: color 0.2s;
+    &:hover {
+      color: var(--primaryHover, #3f57ff);
+    }
+  }
+}
+
+@media (max-width: 900px) {
+  .terms-page {
+    max-width: 98vw;
+    padding: 28px 10px 24px 10px;
+  }
+}
+
+@media (max-width: 600px) {
+  .terms-page {
+    padding: 18px 4vw 14px 4vw;
+    h1 {
+      font-size: 1.5rem;
+    }
+    ul {
+      font-size: 0.98rem;
+    }
+    p {
+      font-size: 1rem;
+    }
+  }
+}

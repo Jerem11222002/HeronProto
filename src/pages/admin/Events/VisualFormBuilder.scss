@@ -1,0 +1,68 @@
+/* VisualFormBuilder / Live Preview styles (scoped) */
+.visual-form-builder {
+  .preview-panel {
+    width: 100%;
+    margin-top: 12px;
+    padding: 0;
+
+    .MuiCard-root { border-radius: 12px; }
+
+    .MuiCardContent-root { padding: 20px; }
+
+    .drf-fields-only {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      width: 100%;
+    }
+
+    .drf-field {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      background: rgba(0,0,0,0.02);
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+
+    .drf-field > label,
+    .drf-field label {
+      display: block !important;
+      margin: 0 0 12px 0 !important;
+      font-weight: 700;
+      font-size: 1rem;
+      color: rgba(0,0,0,0.87);
+      line-height: 1.25;
+    }
+
+    .drf-field input,
+    .drf-field .form-control,
+    .drf-field textarea,
+    .drf-field select,
+    .drf-field .form-select {
+      display: block !important;
+      width: 100% !important;
+      padding: 12px 14px !important;
+      border-radius: 8px !important;
+      border: 1px solid rgba(0,0,0,0.12) !important;
+      background: #fff !important;
+      font-size: 0.98rem !important;
+      line-height: 1.45 !important;
+      box-sizing: border-box;
+    }
+
+    .drf-field textarea { min-height: 110px; resize: vertical; }
+
+    .drf-field .hint,
+    .drf-field .help-text {
+      margin-top: 10px;
+      font-size: 0.86rem;
+      color: rgba(0,0,0,0.6);
+    }
+
+    /* extra safety for MUI wrappers */
+    .MuiFormControl-root,
+    .MuiTextField-root,
+    .MuiFormGroup-root { margin-bottom: 18px !important; }
+  }
+}

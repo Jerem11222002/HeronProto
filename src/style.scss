@@ -1,0 +1,247 @@
+@use 'sass:map';
+@use 'sass:color';
+
+// Theme Configuration
+$themes: (
+  light: (
+    textColor: #000,
+    /* stronger default for secondary text to meet contrast requirements */
+    textColorSoft: #333,
+    /* slightly darker muted token for better readability */
+    textColorMuted: #444,
+    bg: #fff,
+    bgSoft: #f6f3f3,
+    bgHover: #f8f8f8,
+    bgActive: #f0f0f0,
+    logo: #a5178d,
+    primary: #5271ff,
+    primaryHover: #3f57ff,
+    border: #e0e0e0,
+    borderHover: #d0d0d0, // Added
+    borderSoft: #f0f0f0,
+    shadow: rgba(0, 0, 0, 0.1),
+    shadowHover: rgba(0, 0, 0, 0.15),
+    overlay: rgba(255, 255, 255, 0.8),
+    error: #ff5252,
+    success: #4caf50,
+    warning: #ff9800,
+    buttonSoft: #e9ecef,
+    buttonSoftHover: #dde2e6,
+    buttonText: #333,
+    cardBg: #ffffff,
+    iconFilter: none,  // Add this line
+    cardShadow: rgba(0, 0, 0, 0.1),
+    cardShadowHover: rgba(0, 0, 0, 0.15)
+  ),
+  dark: (
+    textColor: #fff,
+    /* make secondary text brighter for dark background */
+    textColorSoft: #e6e6e6,
+    textColorMuted: #cfcfcf,
+    bg: #222,
+    bgSoft: #333,
+    bgHover: #2a2a2a,
+    bgActive: #383838,
+    logo: #fff,
+    primary: #5271ff,
+    primaryHover: #3f57ff,
+    border: #444,
+    borderHover: #555, // Added
+    borderSoft: #383838,
+    shadow: rgba(0, 0, 0, 0.3),
+    shadowHover: rgba(0, 0, 0, 0.4),
+    overlay: rgba(0, 0, 0, 0.8),
+    error: #ff5252,
+    success: #4caf50,
+    warning: #ff9800,
+    iconFilter: invert(1),  // Add this line
+    buttonSoft: #404040,
+    buttonSoftHover: #4d4d4d,
+    buttonText: #ffffff,
+    cardBg: #2d2d2d,
+    cardShadow: rgba(0, 0, 0, 0.3),
+    cardShadowHover: rgba(0, 0, 0, 0.4)
+  )
+) !default;
+
+/* ensure image-based icons follow theme filter variable */
+.theme-light .icon img,
+.theme-light .icon svg {
+  filter: var(--iconFilter, none);
+}
+.theme-dark .icon img,
+.theme-dark .icon svg {
+  filter: var(--iconFilter, invert(1));
+}
+
+// Rest of the file remains unchanged
+// [Keep all other mixins, functions, and configurations below]
+
+// Theme Variables
+$current-theme: null !default;
+
+// Theme Mixin
+@mixin themify($themes) {
+  @each $theme, $map in $themes {
+    .theme-#{$theme} & {
+      $current-theme: $map !global;
+      @content;
+      $current-theme: null !global;
+    }
+  }
+}
+
+// Theme Function
+@function themed($key) {
+  @if not $current-theme {
+    @error "No theme context found. Use within themify mixin.";
+    @return null;
+  }
+  
+  @if not map.has-key($current-theme, $key) {
+    @error "Key `#{$key}` not found in current theme";
+    @return null;
+  }
+  
+  @return map.get($current-theme, $key);
+}
+
+// Breakpoints
+$breakpoints: (
+  mobile: 480px,
+  tablet: 768px,
+  laptop: 1024px,
+  desktop: 1200px,
+  wide: 1400px
+) !default;
+
+// Media Query Mixins
+@mixin responsive($breakpoint) {
+  @if map.has-key($breakpoints, $breakpoint) {
+    @media (max-width: map.get($breakpoints, $breakpoint)) {
+      @content;
+    }
+  } @else {
+    @error "Invalid breakpoint: #{$breakpoint}";
+  }
+}
+
+@mixin mobile {
+  @include responsive('mobile') {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @include responsive('tablet') {
+    @content;
+  }
+}
+
+@mixin laptop {
+  @include responsive('laptop') {
+    @content;
+  }
+}
+
+@mixin desktop {
+  @include responsive('desktop') {
+    @content;
+  }
+}
+
+@mixin wide {
+  @media (min-width: map.get($breakpoints, 'wide')) {
+    @content;
+  }
+}
+
+// Utility Mixins
+@mixin flex(
+  $direction: row,
+  $justify: flex-start,
+  $align: stretch,
+  $wrap: nowrap,
+  $gap: 0
+) {
+  display: flex;
+  flex-direction: $direction;
+  justify-content: $justify;
+  align-items: $align;
+  flex-wrap: $wrap;
+  @if $gap > 0 {
+    gap: $gap;
+  }
+}
+
+@mixin glass-effect(
+  $blur: 12px,
+  $bg-opacity: 0.7,
+  $border-opacity: 0.1
+) {
+  @supports (backdrop-filter: blur($blur)) {
+    backdrop-filter: blur($blur);
+    background-color: rgba(themed('bg'), $bg-opacity);
+    border: 1px solid rgba(themed('border'), $border-opacity);
+  }
+  
+  @supports not (backdrop-filter: blur($blur)) {
+    background-color: rgba(themed('bg'), 0.95);
+  }
+}
+
+// Animation Mixins
+@mixin transition(
+  $properties: all,
+  $duration: 0.2s,
+  $timing: ease-in-out,
+  $delay: 0s
+) {
+  transition-property: $properties;
+  transition-duration: $duration;
+  transition-timing-function: $timing;
+  transition-delay: $delay;
+}
+
+// Shadow Mixins
+@mixin shadow($level: 'sm') {
+  $shadows: (
+    'sm': '0 2px 4px rgba(0, 0, 0, 0.05)',
+    'md': '0 4px 8px rgba(0, 0, 0, 0.1)',
+    'lg': '0 8px 16px rgba(0, 0, 0, 0.15)',
+    'xl': '0 16px 32px rgba(0, 0, 0, 0.2)'
+  );
+  
+  box-shadow: #{map.get($shadows, $level)};
+}
+
+// Grid Mixins
+@mixin grid($columns: 1, $gap: 0) {
+  display: grid;
+  grid-template-columns: repeat($columns, 1fr);
+  @if $gap > 0 {
+    gap: $gap;
+  }
+}
+
+// CSS Custom Properties
+:root {
+  @each $theme-name, $theme in $themes {
+    .theme-#{$theme-name} {
+      @each $key, $value in $theme {
+        --#{$key}: #{$value};
+      }
+    }
+  }
+}
+
+// Export variables for JavaScript usage
+:export {
+  @each $name, $value in $breakpoints {
+    #{$name}-breakpoint: $value;
+  }
+  
+  @each $theme-name, $theme in $themes {
+    #{$theme-name}-theme: true;
+  }
+}

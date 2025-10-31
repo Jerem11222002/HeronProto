@@ -1,0 +1,177 @@
+.eventDetailPage {
+  max-width: 900px;
+  margin: 40px auto 60px auto;
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(16,24,40,0.08);
+  padding: 36px 32px 32px 32px;
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+
+  h1 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+    color: #222;
+  }
+
+  .eventReportGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    margin-bottom: 18px;
+    align-items: start;
+    @media (max-width: 700px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .eventImage {
+    width: 100%;
+    max-width: 340px;
+    border-radius: 12px;
+    margin-bottom: 18px;
+    box-shadow: 0 4px 18px rgba(16,24,40,0.07);
+    object-fit: cover;
+    display: block;
+  }
+
+  .eventMeta {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+    font-size: 1.08rem;
+    color: #444;
+    .metaItem {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #f6f7fa;
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-weight: 500;
+    }
+  }
+
+  .eventSummary {
+    background: #f8f9fb;
+    border-radius: 12px;
+    padding: 18px 18px 12px 18px;
+    box-shadow: 0 2px 8px rgba(16,24,40,0.04);
+    ul {
+      margin: 0 0 12px 0;
+      padding: 0 0 0 18px;
+      font-size: 1.05rem;
+      color: #333;
+      li {
+        margin-bottom: 6px;
+      }
+      ul {
+        padding-left: 18px;
+        margin-top: 2px;
+        font-size: 0.98rem;
+        color: #555;
+      }
+    }
+    h2 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: #314ac1;
+    }
+  }
+
+  .eventDescription {
+    font-size: 1.08rem;
+    color: #444;
+    margin-bottom: 24px;
+    line-height: 1.6;
+    background: #f8f9fb;
+    border-radius: 8px;
+    padding: 16px;
+  }
+
+  .exportRow {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 18px;
+    align-items: center;
+    button {
+      background: linear-gradient(90deg,#5271ff,#3f57ff);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 18px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(82,113,255,0.09);
+      transition: background 0.18s;
+      &:hover { background: linear-gradient(90deg,#3f57ff,#5271ff); }
+    }
+  }
+
+  h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 28px 0 12px 0;
+    color: #222;
+  }
+
+  .registrantsTable {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-bottom: 32px;
+    th, td {
+      padding: 12px 10px;
+      text-align: left;
+      font-size: 1rem;
+    }
+    th {
+      background: #f6f7fa;
+      font-weight: 700;
+      color: #314ac1;
+      border-bottom: 2px solid #eaeaea;
+    }
+    td {
+      background: #fff;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    tr:last-child td {
+      border-bottom: none;
+    }
+  }
+
+  .emptyState {
+    padding: 40px;
+    text-align: center;
+    color: #888;
+    font-size: 1.1rem;
+    background: #f8f9fb;
+    border-radius: 12px;
+    margin-top: 24px;
+  }
+
+  .eventChartsGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    margin: 32px 0 18px 0;
+    @media (max-width: 700px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .chartCard {
+    background: #f8f9fb;
+    border-radius: 12px;
+    padding: 18px 18px 12px 18px;
+    box-shadow: 0 2px 8px rgba(16,24,40,0.04);
+    h3 {
+      font-size: 1.08rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: #314ac1;
+    }
+  }
+}

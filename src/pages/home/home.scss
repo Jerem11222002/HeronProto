@@ -1,0 +1,286 @@
+@import "../../style.scss";
+
+.home {
+  @include themify($themes) {
+    padding: 20px 70px;
+    background-color: themed("bgSoft");
+    min-height: 100vh;
+
+    @include mobile {
+      padding: 10px;
+    }
+
+    @include tablet {
+      padding: 20px;
+    }
+
+    .home-container {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      gap: 20px;
+
+      @include mobile {
+        flex-direction: column;
+      }
+
+      .left {
+        flex: 6;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+
+        .featured-section,
+        .share-section {
+          background-color: themed("bg");
+          border-radius: 12px;
+          overflow: hidden;
+          box-shadow: 0 2px 8px themed("shadow");
+        }
+
+        .feed-filters {
+          background-color: themed("bg");
+          padding: 16px;
+          border-radius: 12px;
+          display: flex;
+          gap: 12px;
+          align-items: center;
+          box-shadow: 0 2px 8px themed("shadow");
+
+          @include mobile {
+            flex-direction: column;
+            align-items: stretch;
+          }
+
+          .filter-select {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid themed("border");
+            background-color: themed("bgSoft");
+            color: themed("textColor");
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+
+            &:hover {
+              border-color: themed("borderHover");
+            }
+
+            &:focus {
+              outline: none;
+              border-color: themed("primary");
+              box-shadow: 0 0 0 2px rgba(themed("primary"), 0.2);
+            }
+          }
+        }
+
+        .feed-content {
+          display: flex;
+          flex-direction: column;
+          gap: 40px; // Increased gap between posts
+
+          .feed-item {
+            background-color: themed("bg");
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px themed("shadow");
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid themed("border");
+
+            &:hover {
+              transform: translateY(-2px);
+              box-shadow: 0 4px 12px themed("shadowHover");
+            }
+
+            // Event Card Specific Styles
+            &:has(.event-card) {
+              padding: 0;
+              
+              .event-card {
+                margin: 0;
+                border: none;
+                box-shadow: none;
+                border-radius: 0;
+
+                &.homepage {
+                  .event-image {
+                    height: 240px;
+                  }
+
+                  .event-content {
+                    padding: 20px;
+                  }
+
+                  .event-actions {
+                    opacity: 0;
+                    transform: translateY(10px);
+                    transition: all 0.3s ease;
+                  }
+
+                  &:hover .event-actions {
+                    opacity: 1;
+                    transform: translateY(0);
+                  }
+                }
+              }
+            }
+
+            // Post Specific Styles
+            &:has(.post) {
+              padding: 20px;
+
+              .post {
+                margin: 0;
+                border: none;
+                box-shadow: none;
+                border-radius: 0;
+              }
+            }
+          }
+
+          .loading,
+          .error,
+          .empty-feed {
+            background-color: themed("bg");
+            padding: 40px 20px;
+            text-align: center;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px themed("shadow");
+          }
+
+          .loading {
+            color: themed("textColorSoft");
+
+            &::after {
+              content: "";
+              display: block;
+              width: 40px;
+              height: 40px;
+              margin: 20px auto 0;
+              border: 3px solid themed("bgSoft");
+              border-top-color: themed("primary");
+              border-radius: 50%;
+              animation: spin 1s linear infinite;
+            }
+          }
+
+          .error {
+            color: themed("error");
+            background-color: rgba(themed("error"), 0.1);
+
+            button {
+              margin-top: 16px;
+              padding: 8px 16px;
+              border: none;
+              border-radius: 6px;
+              background-color: themed("primary");
+              color: white;
+              cursor: pointer;
+              transition: opacity 0.2s;
+
+              &:hover {
+                opacity: 0.9;
+                background-color: themed("primaryHover");
+              }
+            }
+          }
+
+          .empty-feed {
+            color: themed("textColorSoft");
+            font-size: 15px;
+            padding: 60px 20px;
+
+            p {
+              max-width: 400px;
+              margin: 0 auto;
+              line-height: 1.6;
+            }
+
+            .update-interests-btn {
+              margin-top: 1rem;
+              padding: 0.5rem 1rem;
+              background-color: themed("primary");
+              color: white;
+              border: none;
+              border-radius: 4px;
+              cursor: pointer;
+              
+              &:hover {
+                background-color: themed("primaryHover");
+              }
+            }
+          }
+
+          .scroll-trigger {
+            height: 20px;
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            opacity: 0.8;
+          }
+        }
+      }
+    }
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .home {
+    .home-container {
+      .left {
+        .feed-filters {
+          margin: 0 -10px;
+          border-radius: 0;
+        }
+
+        .feed-content {
+          .feed-item {
+            margin: 0 -10px;
+            border-radius: 0;
+          }
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .home {
+    padding: 0;
+    
+    .home-container {
+      .left {
+        gap: 16px;
+
+        .feed-filters {
+          padding: 12px;
+          
+          .filter-select {
+            padding: 10px;
+            font-size: 13px;
+          }
+        }
+
+        .feed-content {
+          gap: 20px; // Increased gap between posts for mobile
+
+          .feed-item {
+            &:has(.event-card) {
+              .event-card.homepage {
+                .event-image {
+                  height: 200px;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

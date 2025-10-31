@@ -1,0 +1,63 @@
+// src/components/chat/MessageInput.scss
+.message-input {
+    display: flex;
+    padding: 10px;
+    border-top: 1px solid #ccc;
+  
+    input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin-right: 10px;
+    }
+  
+    button {
+      padding: 10px 15px;
+      border: none;
+      background-color: #5271ff; // Button color
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+  
+      &:hover {
+        background-color: #4056b4; // Darker shade on hover
+      }
+    }
+  }
+
+  .message {
+  display: flex;
+  flex-direction: column;
+  max-width: 75%;
+  margin-bottom: 4px;
+  padding: 12px 18px;
+  border-radius: 18px;
+  font-size: 15px;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+
+  &.sent {
+    align-self: flex-end;
+    background: #5271ff;
+    color: #fff;
+    border-bottom-right-radius: 6px;
+    margin-left: 40px;
+  }
+
+  &.received {
+    align-self: flex-start;
+    background: #f1f1f1;
+    color: #222;
+    border-bottom-left-radius: 6px;
+    margin-right: 40px;
+  }
+
+  .timestamp {
+    font-size: 11px;
+    color: #888;
+    margin-top: 6px;
+    display: block;
+    text-align: right;
+  }
+}

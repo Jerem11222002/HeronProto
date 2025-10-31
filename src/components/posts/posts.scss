@@ -1,0 +1,90 @@
+@import "../../style.scss";
+
+.posts {
+  @include themify($themes) {
+    .posts-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding: 12px;
+      background-color: themed("bgSoft");
+      border-radius: 12px;
+      border: 1px solid themed("border");
+
+      select {
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid themed("border");
+        background-color: themed("bg");
+        color: themed("textColor");
+        font-size: 14px;
+        cursor: pointer;
+        outline: none;
+        transition: all 0.2s ease;
+
+        &:hover {
+          border-color: themed("primary");
+        }
+
+        &:focus {
+          border-color: themed("primary");
+          box-shadow: 0 0 0 2px rgba(themed("primary"), 0.2);
+        }
+
+        option {
+          background-color: themed("bg");
+          color: themed("textColor");
+        }
+      }
+    }
+
+    .posts-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .posts-loading,
+    .posts-error,
+    .posts-empty {
+      text-align: center;
+      padding: 40px 20px;
+      background-color: themed("bgSoft");
+      border-radius: 12px;
+      border: 1px solid themed("border");
+      color: themed("textColorSoft");
+
+      button {
+        margin-top: 12px;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        background-color: themed("primary");
+        color: white;
+        cursor: pointer;
+        transition: opacity 0.2s;
+
+        &:hover {
+          opacity: 0.9;
+        }
+      }
+    }
+
+    .posts-error {
+      color: themed("error");
+      background-color: rgba(themed("error"), 0.1);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .posts-controls {
+      flex-direction: column;
+      gap: 12px;
+      
+      select {
+        width: 100%;
+      }
+    }
+  }
+}

@@ -1,0 +1,98 @@
+const DEFAULT_IMAGES = {
+    avatars: {
+      male: '/assets/person/Male.jpg',
+      female: '/assets/person/Female.jpg',
+      default: '/assets/person/default-avatar.png'
+    }
+    // REMOVE: cover: '/assets/cover/default-cover.png'
+  };
+  
+  /**
+   * Get default avatar based on gender
+   * @param {string} gender - User's gender ('male' or 'female')
+   * @returns {string} Path to default avatar image
+   */
+  export const getDefaultAvatar = (gender) => {
+    if (!gender) return DEFAULT_IMAGES.avatars.default;
+    return gender.toLowerCase() === 'female' 
+      ? DEFAULT_IMAGES.avatars.female 
+      : DEFAULT_IMAGES.avatars.male;
+  };
+  
+  /**
+   * Get complete image URL for user uploads
+   * @param {string} imagePath - Raw image path or URL
+   * @param {('avatar'|'cover')} type - Type of image
+   * @returns {string} Complete image URL or default image path
+   */
+  // Update the getImageUrl function
+export const getImageUrl = (imagePath, type = 'avatar') => {
+  if (!imagePath) return DEFAULT_IMAGES.avatars.default;
+
+  // Handle full URLs and blob URLs (for previews)
+  if (imagePath.startsWith('http') || imagePath.startsWith('blob:')) {
+    return imagePath;
+  }
+
+  // Handle absolute paths from server
+  const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  
+  // Remove leading slash if present
+  const cleanPath = imagePath.replace(/^\/+/, '');
+  
+  // Check if path already contains uploads directory
+  const finalPath = cleanPath.startsWith('uploads/') 
+    ? cleanPath 
+    : `uploads/${cleanPath}`;
+
+  return `${baseUrl}/${finalPath}`;
+};
+  
+  /**
+   * Validate image file before upload
+   * @param {File} file - File object to validate
+   * @returns {{ isValid: boolean, error?: string }} Validation result
+   */
+  export const validateImage = (file) => {
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  
+    if (!file) {
+      return { isValid: false, error: 'No file selected' };
+    }
+  
+    if (!allowedTypes.includes(file.type)) {
+      return { 
+        isValid: false, 
+        error: 'Only .jpg, .jpeg, .png, and .webp formats are allowed' 
+      };
+    }
+  
+    if (file.size > maxSize) {
+      return { 
+        isValid: false, 
+        error: 'File size too large. Maximum size is 5MB' 
+      };
+    }
+  
+    return { isValid: true };
+  };
+  
+  /**
+   * Handle image loading errors
+   * @param {Event} event - Error event from img element
+   * @param {string} gender - User's gender for default avatar
+   */
+  export const handleImageError = (event, gender) => {
+    console.warn('Image failed to load:', event.target.src);
+    event.target.onerror = null; // Prevent infinite loop
+    event.target.src = getDefaultAvatar(gender);
+  };
+  
+  export default {
+    DEFAULT_IMAGES,
+    getDefaultAvatar,
+    getImageUrl,
+    validateImage,
+    handleImageError
+  };

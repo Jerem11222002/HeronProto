@@ -1,0 +1,201 @@
+@import "../../style.scss";
+
+.leftBar {
+  @include themify($themes) {
+    flex: 2;
+    position: sticky;
+    top: 70px;
+    height: calc(100vh - 70px);
+    overflow: hidden;
+    background-color: themed("bg");
+    color: themed("textColor");
+    border-right: 1px solid themed("border");
+    transition: all 0.3s ease;
+
+    @include mobile {
+      display: none;
+    }
+
+    &.collapsed {
+      flex: 0.5;
+      min-width: 80px;
+
+      .user-info, .label, .stat .label {
+        display: none;
+      }
+
+      .menu-item {
+        justify-content: center;
+      }
+    }
+
+    .container {
+      padding: 20px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: relative;
+
+      .profile-section {
+        .user-link {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          text-decoration: none;
+          color: themed("textColor");
+          padding: 10px;
+          border-radius: 10px;
+          transition: background-color 0.2s;
+
+          &:hover {
+            background-color: themed("bgSoft");
+          }
+
+          .user-avatar {
+            position: relative;
+            
+            img {
+              width: 40px;
+              height: 40px;
+              border-radius: 50%;
+              object-fit: cover;
+              border: 2px solid themed("border");
+            }
+
+            .online-indicator {
+              position: absolute;
+              bottom: 2px;
+              right: 2px;
+              width: 10px;
+              height: 10px;
+              border-radius: 50%;
+              background-color: #44b700;
+              border: 2px solid themed("bg");
+            }
+          }
+
+          .user-info {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+
+            .name {
+              font-weight: 500;
+              font-size: 14px;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              color: #111827; /* ensure readable */
+            }
+
+            .username {
+              font-size: 12px;
+              color: themed("textColorSoft");
+            }
+          }
+        }
+
+        .user-stats {
+          display: flex;
+          justify-content: space-around;
+          padding: 15px 10px;
+          border-bottom: 1px solid themed("border");
+          margin-top: 10px;
+
+          .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+
+            .count {
+              font-weight: 600;
+              color: #111827;
+              font-size: 14px;
+            }
+
+            .label {
+              font-size: 12px;
+              color: #374151; /* darker than themed grey */
+            }
+          }
+        }
+      }
+
+      .menu {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        flex-grow: 1;
+
+        .menu-item {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px;
+          border-radius: 10px;
+          text-decoration: none;
+          color: themed("textColor");
+          transition: all 0.2s;
+
+          &:hover {
+            background-color: themed("bgSoft");
+          }
+
+          &.active {
+            background-color: themed("bgSoft");
+            color: themed("primary");
+
+            .label {
+              background-color: #2f59ff !important; /* more saturated primary */
+              color: #ffffff !important;
+              box-shadow: 0 1px 0 rgba(0,0,0,0.06);
+            }
+            .icon { color: #2f59ff; }
+          }
+
+          .icon {
+            font-size: 24px;
+          }
+
+          .label {
+            /* stronger text color to meet WCAG contrast */
+            color: #1f2b58 !important; /* dark blue */
+            background: transparent !important;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+          }
+        }
+      }
+
+      .collapse-toggle {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        background-color: themed("bgSoft");
+        color: themed("textColor");
+        cursor: pointer;
+        transition: all 0.2s;
+
+        &:hover {
+          background-color: themed("border");
+        }
+
+        svg {
+          font-size: 20px;
+          color: inherit;
+        }
+      }
+    }
+  }
+}

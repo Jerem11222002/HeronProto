@@ -1,0 +1,86 @@
+@import "../../style.scss";
+
+.share-dialog {
+  @include themify($themes) {
+    .MuiDialog-paper {
+      border-radius: 16px !important;
+      overflow: hidden;
+      max-width: 480px;
+      border: 1px solid themed('border');
+      background: themed('bg');
+      box-shadow: 0 8px 32px themed('shadow') !important;
+
+      @include mobile {
+        border-radius: 10px !important;
+        margin: 8px;
+        max-width: calc(100vw - 16px);
+      }
+    }
+
+    .MuiDialogTitle-root {
+      padding: 14px 18px 8px 18px !important;
+      border-bottom: 1px solid themed('border');
+      background: themed('bgSoft');
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .MuiDialogContent-root {
+      padding: 0 0 8px 0 !important;
+      background: themed('bg');
+    }
+
+    .MuiDivider-root {
+      border-color: themed('border');
+      opacity: 0.5;
+      margin: 16px 0;
+    }
+
+    .MuiButton-root {
+      text-transform: none;
+      font-size: 0.97rem;
+      font-weight: 600;
+      border-radius: 10px;
+      transition: all 0.2s;
+    }
+
+    .MuiButton-contained {
+      background: themed('primary');
+      color: themed('buttonText');
+      &:hover {
+        background: themed('primaryHover');
+      }
+    }
+
+    .MuiButton-outlined {
+      border: 1.5px solid themed('primary');
+      color: themed('primary');
+      background: themed('bg');
+      &:hover {
+        background: themed('bgHover');
+        border-color: themed('primaryHover');
+      }
+    }
+
+    .share-dialog-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1.5px solid themed('border');
+      box-shadow: 0 1px 4px themed('shadow');
+      background: themed('cardBg');
+      margin-right: 8px;
+    }
+
+    .share-dialog-preview {
+      border-radius: 10px;
+      background: themed('cardBg');
+      border: 1px solid themed('border');
+      box-shadow: 0 2px 8px themed('cardShadow');
+      overflow: hidden;
+      margin-bottom: 0;
+    }
+  }
+}

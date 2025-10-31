@@ -1,0 +1,95 @@
+@use '../../../style.scss' as *;
+
+.settingsContainer {
+  padding: 20px;
+
+  .pageTitle {
+    @include themify($themes) {
+      color: themed('textColor');
+    }
+    margin-bottom: 24px;
+  }
+
+  .settingsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+
+    .settingsCard {
+      @include themify($themes) {
+        background-color: themed('bg');
+        border: 1px solid themed('border');
+      }
+      border-radius: 12px;
+      
+      .cardHeader {
+        @include flex(row, flex-start, center);
+        gap: 12px;
+        margin-bottom: 16px;
+
+        svg {
+          @include themify($themes) {
+            color: themed('primary');
+          }
+          font-size: 24px;
+        }
+
+        h6 {
+          @include themify($themes) {
+            color: themed('textColor');
+          }
+        }
+      }
+
+      .settingsList {
+        margin-top: 16px;
+
+        .settingItem {
+          @include flex(row, space-between, center);
+          padding: 12px 0;
+          
+          &:not(:last-child) {
+            @include themify($themes) {
+              border-bottom: 1px solid themed('borderSoft');
+            }
+          }
+
+          p {
+            @include themify($themes) {
+              color: themed('textColor');
+            }
+          }
+
+          .MuiFormControl-root {
+            width: 120px;
+          }
+
+          .MuiSwitch-root {
+            @include themify($themes) {
+              .MuiSwitch-track {
+                background-color: themed('bgSoft');
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .actionButtons {
+    @include flex(row, flex-end, center);
+    gap: 12px;
+  }
+}
+
+// Mobile responsiveness
+@include tablet {
+  .settingsContainer {
+    padding: 12px;
+
+    .settingsGrid {
+      grid-template-columns: 1fr;
+    }
+  }
+}

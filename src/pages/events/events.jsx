@@ -1,0 +1,636 @@
+import React, { useState, useEffect, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { AuthContext } from '../../context/authContext';
+import { useEvents } from '../../context/EventsContext';
+import useEventCounts from '../../hooks/useEventCounts';
+import EventCard from '../../components/evenCard/EventCard';
+import { IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, MenuItem, FormControlLabel, Switch, InputAdornment } from '@mui/material';
+import { Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
+import { toast } from 'react-toastify';
+import './events.scss';
+import api from '../../utils/api';
+
+/**
+ * @typedef {import('../../types/recommendation').EventItem} EventItem
+ * @typedef {import('../../types/recommendation').EventFormData} EventFormData
+ * @typedef {import('../../types/recommendation').OrganizationName} OrganizationName
+ * @typedef {import('../../types/recommendation').EventCategory} EventCategory
+ * @typedef {import('../../types/recommendation').EventStatus} EventStatus
+ */
+
+const EVENT_TYPES = {
+  WATCH_ONLY: 'watch-only',
+  AUDITION: 'audition'
+};
+
+const initialFormData = {
+  title: '',
+  description: '',
+  date: '',
+  image: '',
+  organization: 'CAST',
+  location: '',
+  category: 'workshop',
+  status: 'upcoming',
+  eventType: EVENT_TYPES.WATCH_ONLY,
+  requirements: {
+    videoRequired: false,
+    photoRequired: false,
+    experienceRequired: false,
+    additionalRequirements: '',
+    maxParticipants: null
+  },
+  ticketing: {
+    isPaid: false,
+    price: 0,
+    availableSeats: 0
+  }
+};
+
+const Events = () => {
+  const { currentUser, isAdmin } = useContext(AuthContext);
+  const { events, addEvent, updateEvent, deleteEvent } = useEvents();
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedOrganization, setSelectedOrganization] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedEventType, setSelectedEventType] = useState('all'); // NEW
+  const [currentPage, setCurrentPage] = useState(1);
+  const [eventsPerPage] = useState(6);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState(null);
+  const [formData, setFormData] = useState(initialFormData);
+  const navigate = useNavigate();
+  // Recommended mode state
+  const [recommendedMode, setRecommendedMode] = useState(false);
+  const [recommendedEvents, setRecommendedEvents] = useState([]);
+  const [recommendedLoading, setRecommendedLoading] = useState(false);
+  const [recommendedError, setRecommendedError] = useState(null);
+
+  const fetchRecommended = async () => {
+    setRecommendedLoading(true);
+    setRecommendedError(null);
+    try {
+      // ask for debug info temporarily to inspect why events are excluded
+      const res = await api.get('/api/events/recommended', {
+        // use non-strict mode for the events page so users get useful recommendations
+        params: { strict: 'false', limit: 20, debug: 'true' }
+      });
+
+      const feedItems = Array.isArray(res.data?.events) ? res.data.events : (Array.isArray(res.data?.items) ? res.data.items : []);
+      if (!feedItems || feedItems.length === 0) {
+        // fallback to hybrid feed if strict returned nothing or errored
+        const fallback = await api.get('/api/posts/feed', {
+          params: { includeEvents: true, limit: 20 }
+        });
+        const items = Array.isArray(fallback.data?.items) ? fallback.data.items : [];
+        setRecommendedEvents(items.filter(i => i && (i.type === 'event' || i.title)).map(/* map same as below */));
+        return;
+      }
+
+      // existing normalization mapping...
+      const eventsFromFeed = feedItems
+        .filter(item => item && (item.type === 'event' || item.primaryInterest || item.title))
+        .map(item => {
+          const extractName = v => {
+            if (!v) return null;
+            if (typeof v === 'string') return v;
+            if (Array.isArray(v)) return v.map(x => extractName(x)).filter(Boolean);
+            return v.name || v.title || v.label || v.displayName || null;
+          };
+
+          return {
+            _id: item._id || item.id,
+            title: item.title || item.name || (typeof item.description === 'string' ? item.description.slice(0, 40) : 'Untitled Event'),
+            description: item.description || item.desc || '',
+            date: item.date || item.createdAt || null,
+            image: item.image || item.media || null,
+            organization: extractName(item.organization) || item.org || '',
+            location: typeof item.location === 'string' ? item.location : (extractName(item.location) || ''),
+            category: item.category || 'workshop',
+            status: item.status || 'upcoming',
+            tags: Array.isArray(item.tags) ? item.tags.map(t => extractName(t) || String(t)) : [],
+            createdBy: item.createdBy || item.userId || null,
+            primaryInterest: extractName(item.primaryInterest),
+            secondaryInterests: Array.isArray(item.secondaryInterests) ? item.secondaryInterests.map(extractName).filter(Boolean) : [],
+            // keep original for debugging if needed
+            __rawFeedItem: item
+          };
+        })
+        .filter(ev => ev._id && ev.title);
+      setRecommendedEvents(eventsFromFeed);
+    } catch (err) {
+      console.error('Failed to fetch recommended events (strict):', err);
+      // fallback to hybrid feed
+      try {
+        const fallback = await api.get('/api/posts/feed', { params: { includeEvents: true, limit: 20 } });
+        const items = Array.isArray(fallback.data?.items) ? fallback.data.items : [];
+        // map items -> events shape (same mapping block)
+        setRecommendedEvents(items.filter(i => i && (i.type === 'event' || i.title)).map(/* map */));
+        setRecommendedError(null);
+      } catch (e) {
+        setRecommendedError('Failed to load recommended events');
+        setRecommendedEvents([]);
+      }
+    } finally {
+      setRecommendedLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (recommendedMode) fetchRecommended();
+  }, [recommendedMode]);
+
+  useEffect(() => {
+    setIsLoading(false);
+  }, [events]);
+
+  const handleJoinEvent = (event) => {
+    navigate(`/pre-registration/${event._id}`);
+  };
+
+  const handleShareEvent = async (event) => {
+    try {
+      await navigator.share({
+        title: event.title,
+        text: event.description,
+        url: window.location.href
+      });
+    } catch (err) {
+      console.error('Error sharing event:', err);
+    }
+  };
+
+  const handleCreateEvent = () => {
+    setEditingEvent(null);
+    setFormData(initialFormData);
+    setIsModalOpen(true);
+  };
+
+  const handleEditEvent = (event) => {
+    setEditingEvent(event);
+    setFormData({
+      title: event.title,
+      description: event.description,
+      date: event.date ? new Date(event.date).toISOString().slice(0, 16) : '',
+      image: event.image,
+      organization: event.organization,
+      location: event.location,
+      category: event.category,
+      status: event.status,
+      eventType: event.eventType || EVENT_TYPES.WATCH_ONLY,
+      requirements: event.requirements || {
+        videoRequired: false,
+        photoRequired: false,
+        experienceRequired: false,
+        additionalRequirements: '',
+        maxParticipants: null
+      },
+      ticketing: event.ticketing || {
+        isPaid: false,
+        price: 0,
+        availableSeats: 0
+      }
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteEvent = async (eventId) => {
+    if (!window.confirm('Are you sure you want to delete this event?')) return;
+    try {
+      await deleteEvent(eventId);
+      toast.success('Event deleted successfully');
+    } catch (error) {
+      toast.error('Failed to delete event');
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        ...formData,
+        date: formData.date ? new Date(formData.date).toISOString() : '',
+      };
+      if (editingEvent) {
+        await updateEvent(editingEvent._id, payload);
+        toast.success('Event updated successfully');
+      } else {
+        await addEvent(payload);
+        toast.success('Event created successfully');
+      }
+      setIsModalOpen(false);
+      setEditingEvent(null);
+      setFormData(initialFormData);
+    } catch (error) {
+      toast.error(editingEvent ? 'Failed to update event' : 'Failed to create event');
+    }
+  };
+
+  const filteredEvents = events
+    .filter(event => 
+      event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      event.description.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .filter(event => 
+      selectedOrganization === 'all' || 
+      event.organization === selectedOrganization
+    )
+    .filter(event =>
+      selectedCategory === 'all' ||
+      event.category === selectedCategory
+    )
+    .filter(event =>
+      selectedEventType === 'all' ||
+      event.eventType === selectedEventType
+    ); // NEW
+
+  const organizations = ['all', ...new Set(events.map(event => event.organization))];
+  const categories = ['all', ...new Set(events.map(event => event.category))];
+
+  const indexOfLastEvent = currentPage * eventsPerPage;
+  const indexOfFirstEvent = indexOfLastEvent - eventsPerPage;
+  const currentEvents = filteredEvents.slice(indexOfFirstEvent, indexOfLastEvent);
+  const displayedEvents = recommendedMode ? recommendedEvents : currentEvents;
+  const eventIds = displayedEvents.map(e => e._id).filter(Boolean);
+  const counts = useEventCounts(eventIds);
+
+  if (isLoading) return <div className="events-loading">Loading events...</div>;
+  if (error) return <div className="events-error">{error}</div>;
+
+  return (
+    <div className="events">
+      <div className="events-header">
+        <h1>CCA Events</h1>
+        <div className="header-actions">
+          {isAdmin && (
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<AddIcon />}
+              onClick={handleCreateEvent}
+            >
+              Create Event
+            </Button>
+          )}
+          <div className="events-filters">
+            {/* Recommended toggle */}
+            <button
+              type="button"
+              className={`recommended-btn ${recommendedMode ? 'active' : ''}`}
+              onClick={() => setRecommendedMode(v => !v)}
+              title={recommendedMode ? 'Show all events' : 'Show recommended events for you'}
+            >
+              {recommendedMode ? 'Show All' : 'Show Recommended'}
+            </button>
+            {recommendedMode && recommendedLoading && <span className="recommended-loader">Loading...</span>}
+            {recommendedMode && recommendedError && <span className="recommended-error">{recommendedError}</span>}
+            <label htmlFor="eventSearch" className="sr-only">Search events</label>
+            <input
+              id="eventSearch"
+              name="eventSearch"
+              type="text"
+              placeholder="Search events..."
+              aria-label="Search events"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              disabled={recommendedMode}
+            />
+             <select
+               value={selectedOrganization}
+               onChange={(e) => setSelectedOrganization(e.target.value)}
+               disabled={recommendedMode}
+             >
+               {organizations.map(org => (
+                 <option key={org} value={org}>
+                   {org === 'all' ? 'All Organizations' : org}
+                 </option>
+               ))}
+             </select>
+             <select
+               value={selectedCategory}
+               onChange={(e) => setSelectedCategory(e.target.value)}
+               disabled={recommendedMode}
+             >
+               {categories.map(cat => (
+                 <option key={cat} value={cat}>
+                   {cat === 'all' ? 'All Categories' : cat}
+                 </option>
+               ))}
+             </select>
+             {/* NEW: Event Type Filter */}
+             <select
+               value={selectedEventType}
+               onChange={e => setSelectedEventType(e.target.value)}
+               disabled={recommendedMode}
+             >
+               <option value="all">All Types</option>
+               <option value={EVENT_TYPES.WATCH_ONLY}>Watch-Only</option>
+               <option value={EVENT_TYPES.AUDITION}>Audition/Performance</option>
+             </select>
+           </div>
+        </div>
+      </div>
+
+      {displayedEvents.length === 0 ? (
+        <div className="no-events">
+          {recommendedMode ? 'No recommended events right now.' : 'No events found matching your criteria'}
+        </div>
+      ) : (
+        <>
+          <div className="events-container">
+            {displayedEvents.map((event) => (
+              <EventCard
+                key={event._id}
+                event={event}
+                onJoin={handleJoinEvent}
+                onShare={handleShareEvent}
+                isAdmin={isAdmin}
+                onEdit={handleEditEvent}
+                onDelete={handleDeleteEvent}
+                participantData={counts[event._id] ?? { count: 0, maxParticipants: event.maxParticipants ?? null }}
+              />
+            ))}
+          </div>
+          {!recommendedMode && (
+            <div className="events-pagination">
+              {Array.from({ length: Math.ceil(filteredEvents.length / eventsPerPage) })
+                .map((_, index) => (
+                  <button
+                    key={index}
+                    className={currentPage === index + 1 ? 'active' : ''}
+                    onClick={() => setCurrentPage(index + 1)}
+                  >
+                    {index + 1}
+                  </button>
+                ))}
+            </div>
+          )}
+        </>
+      )}
+
+      <Dialog 
+        open={isModalOpen} 
+        onClose={() => setIsModalOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          {editingEvent ? 'Edit Event' : 'Create New Event'}
+        </DialogTitle>
+        <form onSubmit={handleSubmit}>
+          <DialogContent>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Title"
+              fullWidth
+              required
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            />
+            <TextField
+              margin="dense"
+              label="Description"
+              fullWidth
+              multiline
+              rows={4}
+              required
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            />
+            <TextField
+              margin="dense"
+              label="Image URL"
+              fullWidth
+              required
+              value={formData.image}
+              onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+            />
+            <TextField
+              margin="dense"
+              label="Location"
+              fullWidth
+              required
+              value={formData.location}
+              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+            />
+            <TextField
+              select
+              margin="dense"
+              label="Organization"
+              fullWidth
+              required
+              value={formData.organization}
+              onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
+              SelectProps={{ native: true }}
+            >
+              {organizations
+                .filter(org => org !== 'all')
+                .map(org => (
+                  <option key={org} value={org}>{org}</option>
+                ))}
+            </TextField>
+            <TextField
+              select
+              margin="dense"
+              label="Category"
+              fullWidth
+              required
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              SelectProps={{ native: true }}
+            >
+              {categories
+                .filter(cat => cat !== 'all')
+                .map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+            </TextField>
+            <TextField
+              margin="dense"
+              type="datetime-local"
+              label="Date and Time"
+              fullWidth
+              required
+              InputLabelProps={{ shrink: true }}
+              value={formData.date}
+              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+            />
+
+            <TextField
+              select
+              margin="dense"
+              label="Event Type"
+              fullWidth
+              required
+              value={formData.eventType}
+              onChange={e => setFormData({ ...formData, eventType: e.target.value })}
+              SelectProps={{ native: true }}
+            >
+              <option value={EVENT_TYPES.WATCH_ONLY}>Watch-Only Event</option>
+              <option value={EVENT_TYPES.AUDITION}>Audition/Performance Event</option>
+            </TextField>
+
+            {formData.eventType === EVENT_TYPES.WATCH_ONLY && (
+              <>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={formData.ticketing.isPaid}
+                      onChange={e =>
+                        setFormData({
+                          ...formData,
+                          ticketing: {
+                            ...formData.ticketing,
+                            isPaid: e.target.checked
+                          }
+                        })
+                      }
+                    />
+                  }
+                  label="Paid Event"
+                />
+                {formData.ticketing.isPaid && (
+                  <TextField
+                    margin="dense"
+                    label="Ticket Price"
+                    type="number"
+                    fullWidth
+                    InputProps={{
+                      startAdornment: <InputAdornment position="start">₱</InputAdornment>
+                    }}
+                    value={formData.ticketing.price}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        ticketing: {
+                          ...formData.ticketing,
+                          price: Number(e.target.value)
+                        }
+                      })
+                    }
+                  />
+                )}
+                <TextField
+                  margin="dense"
+                  label="Available Seats"
+                  type="number"
+                  fullWidth
+                  value={formData.ticketing.availableSeats}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      ticketing: {
+                        ...formData.ticketing,
+                        availableSeats: Number(e.target.value)
+                      }
+                    })
+                  }
+                />
+              </>
+            )}
+
+            {formData.eventType === EVENT_TYPES.AUDITION && (
+              <>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={formData.requirements.videoRequired}
+                      onChange={e =>
+                        setFormData({
+                          ...formData,
+                          requirements: {
+                            ...formData.requirements,
+                            videoRequired: e.target.checked
+                          }
+                        })
+                      }
+                    />
+                  }
+                  label="Require Video Submission"
+                />
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={formData.requirements.photoRequired}
+                      onChange={e =>
+                        setFormData({
+                          ...formData,
+                          requirements: {
+                            ...formData.requirements,
+                            photoRequired: e.target.checked
+                          }
+                        })
+                      }
+                    />
+                  }
+                  label="Require Photo Submission"
+                />
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={formData.requirements.experienceRequired}
+                      onChange={e =>
+                        setFormData({
+                          ...formData,
+                          requirements: {
+                            ...formData.requirements,
+                            experienceRequired: e.target.checked
+                          }
+                        })
+                      }
+                    />
+                  }
+                  label="Require Prior Experience"
+                />
+                <TextField
+                  margin="dense"
+                  label="Additional Requirements"
+                  fullWidth
+                  multiline
+                  rows={2}
+                  value={formData.requirements.additionalRequirements}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      requirements: {
+                        ...formData.requirements,
+                        additionalRequirements: e.target.value
+                      }
+                    })
+                  }
+                />
+                <TextField
+                  margin="dense"
+                  label="Maximum Participants"
+                  type="number"
+                  fullWidth
+                  value={formData.requirements.maxParticipants || ''}
+                  onChange={e =>
+                    setFormData({
+                      ...formData,
+                      requirements: {
+                        ...formData.requirements,
+                        maxParticipants: e.target.value ? Number(e.target.value) : null
+                      }
+                    })
+                  }
+                />
+              </>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setIsModalOpen(false)}>Cancel</Button>
+            <Button type="submit" variant="contained" color="primary">
+              {editingEvent ? 'Update' : 'Create'}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+    </div>
+  );
+};
+
+export default Events;

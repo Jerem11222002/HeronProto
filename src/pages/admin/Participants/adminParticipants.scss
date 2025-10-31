@@ -1,0 +1,89 @@
+@use '../../../style.scss' as *;
+
+.participantsContainer {
+  padding: 20px;
+
+  .header {
+    @include flex(row, space-between, center);
+    margin-bottom: 20px;
+
+    h1 {
+      @include themify($themes) {
+        color: themed('textColor');
+      }
+      margin: 0;
+    }
+  }
+
+  .dataGrid {
+    @include themify($themes) {
+      background-color: themed('bg');
+      border: 1px solid themed('border');
+    }
+    border-radius: 8px;
+    overflow: hidden;
+
+    .MuiDataGrid-root {
+      border: none;
+    }
+
+    .MuiDataGrid-cell {
+      @include themify($themes) {
+        color: themed('textColor');
+        border-color: themed('border');
+      }
+    }
+
+    .MuiDataGrid-columnHeaders {
+      @include themify($themes) {
+        background-color: themed('bgSoft');
+        color: themed('textColorSoft');
+        border-color: themed('border');
+      }
+    }
+
+    .eventsCell {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+
+      .eventChip {
+        @include themify($themes) {
+          background-color: themed('bgSoft');
+          color: themed('textColorSoft');
+        }
+      }
+    }
+  }
+}
+
+// Dialog styles
+.MuiDialog-paper {
+  @include themify($themes) {
+    background-color: themed('bg');
+    color: themed('textColor');
+  }
+
+  .MuiDialogTitle-root {
+    @include themify($themes) {
+      border-bottom: 1px solid themed('border');
+    }
+  }
+
+  .MuiTextField-root {
+    margin-bottom: 16px;
+  }
+}
+
+// Mobile responsiveness
+@include tablet {
+  .participantsContainer {
+    padding: 12px;
+
+    .header {
+      flex-direction: column;
+      gap: 12px;
+      align-items: flex-start;
+    }
+  }
+}

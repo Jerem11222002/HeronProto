@@ -1,0 +1,195 @@
+@use '../../../style.scss' as *;
+
+.analyticsContainer {
+  padding: 20px;
+  
+  .headerRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 18px;
+
+    h1 {
+      @include themify($themes) {
+        color: themed('textColor');
+      }
+      margin: 0;
+      font-size: 1.75rem;
+    }
+
+    .controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+
+      label {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        font-size: 0.9rem;
+        input[type="date"] {
+          padding: 6px 8px;
+          border-radius: 6px;
+          border: 1px solid #dcdcdc;
+          background: transparent;
+        }
+      }
+
+      .btn {
+        padding: 8px 12px;
+        border-radius: 8px;
+        /* use theme only inside themify block below; fallback color when theme not available */
+        background: #2d8cff;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        @include themify($themes) {
+          background: themed('primary');
+          /* style.scss exposes a 'buttonText' token — use that instead of missing textOnPrimary */
+          color: themed('buttonText');
+        }
+      }
+
+      .btn.btn-outline {
+        background: transparent;
+        border: 1px solid #d8dbe0;
+        /* themed() can't be used outside themify; use CSS variable fallback which is defined in style.scss */
+        color: var(--textColor);
+      }
+    }
+  }
+
+  .statsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+
+    .statCard {
+      padding: 16px;
+      border-radius: 12px;
+      @include themify($themes) {
+        background-color: themed('bg');
+        border: 1px solid themed('border');
+      }
+      @include transition(all);
+
+      h3 {
+        @include themify($themes) {
+          color: themed('textColorSoft');
+        }
+        font-size: 0.85rem;
+        margin-bottom: 8px;
+      }
+
+      .statNumber {
+        @include themify($themes) {
+          color: themed('textColor');
+        }
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+    }
+  }
+
+  .chartsGrid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 18px;
+    align-items: start;
+
+    .chartCard {
+      padding: 16px;
+      border-radius: 12px;
+      @include themify($themes) {
+        background-color: themed('bg');
+        border: 1px solid themed('border');
+      }
+
+      h2 {
+        @include themify($themes) {
+          color: themed('textColor');
+        }
+        font-size: 1.1rem;
+        margin-bottom: 12px;
+      }
+
+      .chartContainer {
+        height: 360px;
+        position: relative;
+      }
+    }
+
+    .chartCard.small {
+      .chartContainer { height: 240px; }
+    }
+  }
+
+  .errorBanner {
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    background: #ffecec;
+    color: #a33;
+    border: 1px solid #f1c0c0;
+  }
+}
+
+.loadingContainer {
+  @include flex(column, center, center);
+  min-height: 320px;
+  
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid transparent;
+    border-radius: 50%;
+    margin-bottom: 12px;
+    @include themify($themes) {
+      border-top-color: themed('primary');
+    }
+    animation: spin 1s linear infinite;
+  }
+
+  p {
+    @include themify($themes) {
+      color: themed('textColorSoft');
+    }
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@include tablet {
+  .analyticsContainer {
+    padding: 14px;
+
+    .chartsGrid {
+      grid-template-columns: 1fr;
+      
+      .chartCard {
+        padding: 12px;
+      }
+      .chartContainer { height: 280px; }
+    }
+
+    .headerRow {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loadingContainer .spinner {
+    animation: none;
+  }
+}

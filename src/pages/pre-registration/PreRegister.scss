@@ -1,0 +1,580 @@
+@import "../../style.scss";
+
+.pre-register {
+  @include themify($themes) {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 20px;
+
+    // Slightly tighter layout for the header area
+    .pre-register-header {
+      margin-bottom: 28px;
+    }
+
+     // Header Styles
+     .pre-register-header {
+       margin-bottom: 40px;
+       text-align: center;
+
+       h1 {
+         color: themed('textColor');
+         font-size: 36px;
+         font-weight: bold;
+         margin-bottom: 24px;
+       }
+
+       .event-details {
+         background: themed('bgSoft');
+         padding: 24px;
+         border-radius: 16px;
+         box-shadow: 0 6px 18px rgba(11,20,24,0.06);
+
+         h2 {
+           color: themed('primary');
+           font-size: 28px;
+           font-weight: bold;
+           margin-bottom: 16px;
+         }
+
+         .event-meta {
+           display: flex;
+           justify-content: center;
+           gap: 24px;
+           margin-bottom: 16px;
+           color: themed('textColorSoft');
+           flex-wrap: wrap;
+
+           span {
+             display: flex;
+             align-items: center;
+             gap: 8px;
+
+             i {
+               color: themed('primary');
+             }
+           }
+         }
+
+         .organization {
+           color: themed('textColorMuted');
+           font-size: 16px;
+           margin-bottom: 16px;
+           text-align: center;
+         }
+
+         .capacity {
+           text-align: center;
+
+           .capacity-bar {
+             height: 10px;
+             background: rgba(themed('border'), 0.2);
+             border-radius: 5px;
+             margin-bottom: 8px;
+             overflow: hidden;
+
+             .capacity-filled {
+               height: 100%;
+               background: themed('primary');
+               border-radius: 5px;
+               transition: width 0.3s ease;
+             }
+           }
+
+           span {
+             color: themed('textColorSoft');
+             font-size: 14px;
+           }
+         }
+
+         .event-header {
+           display: flex;
+           align-items: flex-start;
+           gap: 1.5rem;
+           margin-bottom: 1.5rem;
+           padding: 1rem;
+           background: themed('bgSoft');
+           border-radius: 8px;
+           box-shadow: 0 2px 6px rgba(11,20,24,0.04);
+
+           .organization-badge {
+             flex-shrink: 0;
+             width: 100px;
+             height: 100px;
+             border-radius: 50%;
+             overflow: hidden;
+             border: 3px solid themed('primary');
+             background: themed('cardBg');
+             padding: 4px;
+             position: relative;
+
+             img.org-badge {
+               width: 100%;
+               height: 100%;
+               object-fit: contain;
+               transition: transform 0.3s ease;
+               border-radius: 50%;
+
+               &:hover {
+                 transform: scale(1.05);
+               }
+             }
+           }
+
+           .event-info {
+             flex: 1;
+
+             h2 {
+               margin: 0 0 0.5rem;
+               color: themed('textColor');
+               font-size: 24px;
+               font-weight: bold;
+             }
+
+             .event-meta {
+               display: flex;
+               gap: 1rem;
+               margin-bottom: 0.5rem;
+               color: themed('textColorSoft');
+               flex-wrap: wrap;
+
+               span {
+                 display: flex;
+                 align-items: center;
+                 gap: 0.5rem;
+
+                 i {
+                   font-size: 0.9rem;
+                   color: themed('primary');
+                 }
+               }
+             }
+
+             .organization {
+               font-weight: 500;
+               color: themed('textColor');
+               margin-bottom: 1rem;
+             }
+           }
+         }
+       }
+     }
+
+    // Loading State
+    .pre-register-loading {
+      text-align: center;
+      padding: 40px;
+      color: themed('textColorSoft');
+
+      .loader {
+        width: 50px;
+        height: 50px;
+        border: 4px solid rgba(themed('primary'), 0.2);
+        border-top-color: themed('primary');
+        border-radius: 50%;
+        margin: 0 auto 16px;
+        animation: spin 1s linear infinite;
+      }
+    }
+
+    // Error State
+    .pre-register-error {
+      text-align: center;
+      padding: 40px;
+      color: themed('error');
+
+      button {
+        margin-top: 16px;
+        padding: 12px 24px;
+        background: themed('buttonSoft');
+        color: themed('textColor');
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+
+        &:hover {
+          background: themed('buttonSoftHover');
+        }
+      }
+    }
+
+    // Form Styles
+    .pre-register-form {
+      background: themed('bgSoft');
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: 0 8px 28px rgba(11,20,24,0.04);
+
+      // --- Differentiation for Audition and Watch Only forms ---
+      &.audition-form {
+        border-left: 6px solid themed('primary');
+        background: linear-gradient(90deg, themed('bgSoft') 82%, rgba(themed('primary'), 0.04));
+      }
+      &.watchonly-form {
+        border-left: 6px solid themed('success');
+      }
+
+      .form-section {
+        margin-bottom: 32px;
+
+        h3 {
+          color: themed('textColor');
+          font-size: 22px;
+          font-weight: bold;
+          margin-bottom: 20px;
+          padding-bottom: 8px;
+          border-bottom: 1px solid rgba(themed('border'), 0.08);
+        }
+
+        // Audition details highlight
+        &.audition-details {
+          background: rgba(themed('primary'), 0.04);
+          border-radius: 8px;
+          padding: 16px;
+        }
+
+        .form-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 20px;
+
+          @include mobile {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        .form-group {
+          margin-bottom: 20px;
+
+          label {
+            display: block;
+            color: themed('textColor');
+            margin-bottom: 8px;
+            font-weight: 600;
+          }
+
+          input,
+          select,
+          textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(themed('border'), 0.2);
+            border-radius: 8px;
+            background: themed('cardBg');
+            color: themed('textColor');
+            font-size: 14px;
+            transition: all 0.2s ease;
+
+            &:focus {
+              outline: none;
+              border-color: themed('primary');
+              box-shadow: 0 6px 18px themed('cardShadow');
+            }
+
+            &::placeholder {
+              color: themed('textColorSoft');
+            }
+          }
+
+          textarea {
+            resize: vertical;
+            min-height: 120px;
+          }
+
+          &.checkbox {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+
+            input[type="checkbox"] {
+              width: auto;
+              margin-top: 4px;
+            }
+
+            label {
+              margin: 0;
+              font-size: 14px;
+              color: themed('textColorSoft');
+            }
+          }
+        }
+
+        // Checkbox group for audition
+        &.checkbox-group {
+          margin-top: 12px;
+          .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+
+            input[type="checkbox"] {
+              margin-top: 0;
+            }
+            label {
+              margin: 0;
+              font-size: 14px;
+              color: themed('textColorSoft');
+            }
+          }
+        }
+      }
+
+      .form-error {
+        padding: 12px;
+        margin-bottom: 20px;
+        background: rgba(themed('error'), 0.08);
+        color: themed('error');
+        border-radius: 8px;
+        font-size: 14px;
+      }
+
+      .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 16px;
+
+        button {
+          padding: 12px 24px;
+          border-radius: 8px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+
+          &:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+          }
+
+          &.btn-secondary {
+            background: themed('buttonSoft');
+            color: themed('textColor');
+            border: 1px solid rgba(themed('border'), 0.08);
+
+            &:hover:not(:disabled) {
+              background: themed('buttonSoftHover');
+            }
+          }
+
+          &.btn-primary {
+            background: themed('primary');
+            color: themed('buttonText');
+            border: 2px solid themed('primaryHover');
+            box-shadow: 0 8px 20px rgba(11,20,24,0.06);
+            font-weight: 700;
+
+            &:hover:not(:disabled) {
+              background: themed('primaryHover');
+              color: themed('buttonText');
+            }
+          }
+        }
+      }
+
+      // Add / tune form control styles for dynamic form
+      .form-label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: themed('textColor');
+      }
+
+      .form-hint {
+        display: block;
+        margin-top: 6px;
+        color: themed('textColorSoft');
+        font-size: 0.9rem;
+      }
+
+      .form-control,
+      .form-select,
+      .form-textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid rgba(themed('border'), 0.12);
+        border-radius: 8px;
+        background: themed('cardBg');
+        color: themed('textColor');
+        font-size: 14px;
+      }
+
+      .form-textarea {
+        min-height: 120px;
+        resize: vertical;
+      }
+
+      .file-input {
+        border: 1px dashed rgba(themed('border'), 0.12);
+        padding: 10px;
+        border-radius: 8px;
+        background: transparent;
+        color: themed('textColor');
+      }
+
+      .checkbox-input {
+        width: 18px;
+        height: 18px;
+        accent-color: themed('primary');
+      }
+
+      .multi-check-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+        color: themed('textColor');
+      }
+
+      .form-actions-inline {
+        margin-top: 12px;
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      /* ensure standalone submit button matches other buttons */
+      .btn-primary {
+        padding: 10px 16px;
+        border-radius: 8px;
+        background: themed('primary');
+        color: themed('buttonText');
+        border: 2px solid themed('primaryHover');
+        font-weight: 700;
+      }
+    }
+
+    // Improvements for DynamicRegistrationForm (field layout, inputs, readonly, errors)
+    .drf-fields-only,
+    .dynamic-registration-form {
+      margin-top: 8px;
+
+      .drf-field {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 16px;
+        align-items: stretch;
+
+        .form-label {
+          font-size: 0.95rem;
+          font-weight: 600;
+          color: themed('textColor');
+          display: flex;
+          gap: 8px;
+          align-items: center;
+
+          .required-asterisk {
+            color: themed('error');
+            font-weight: 700;
+            margin-left: 4px;
+          }
+        }
+
+        input.form-control,
+        select.form-select,
+        textarea.form-textarea,
+        .file-input {
+          width: 100%;
+          padding: 12px 14px;
+          border-radius: 10px;
+          border: 1px solid rgba(themed('border'), 0.12);
+          background: themed('cardBg');
+          color: themed('textColor');
+          font-size: 14px;
+          transition: box-shadow 0.15s ease, border-color 0.15s ease;
+        }
+
+        input.form-control:focus,
+        select.form-select:focus,
+        textarea.form-textarea:focus {
+          outline: none;
+          border-color: themed('primary');
+          box-shadow: 0 6px 18px rgba(themed('primary'), 0.06);
+        }
+
+        textarea.form-textarea {
+          min-height: 120px;
+          resize: vertical;
+        }
+
+        input.form-control[readonly],
+        select.form-select[disabled],
+        textarea.form-textarea[readonly] {
+          background: rgba(themed('border'), 0.03);
+          color: themed('textColorSoft');
+          cursor: not-allowed;
+        }
+
+        .field-hint {
+          font-size: 0.85rem;
+          color: themed('textColorSoft');
+          margin-top: 6px;
+        }
+      }
+
+      .drf-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 12px;
+
+        button {
+          padding: 10px 16px;
+          border-radius: 10px;
+          font-weight: 700;
+          border: none;
+          cursor: pointer;
+
+          &.btn-primary {
+            background: themed('primary');
+            color: themed('buttonText');
+          }
+
+          &.btn-secondary {
+            background: transparent;
+            color: themed('textColor');
+            border: 1px solid rgba(themed('border'), 0.08);
+          }
+
+          &:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+          }
+        }
+      }
+
+      .form-error {
+        color: themed('error');
+        background: rgba(themed('error'), 0.06);
+        padding: 10px 12px;
+        border-radius: 8px;
+        margin-bottom: 12px;
+        font-size: 0.95rem;
+      }
+    }
+
+    // Animations
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    // Responsive Adjustments
+    @include mobile {
+      .pre-register {
+        padding: 16px;
+
+        .pre-register-header {
+          .event-meta {
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+          }
+        }
+
+        .pre-register-form {
+          padding: 20px;
+        }
+      }
+    }
+  }
+}

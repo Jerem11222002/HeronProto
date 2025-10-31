@@ -1,0 +1,568 @@
+@import "../../../style.scss";
+
+// Mixins for common patterns
+@mixin card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px themed("shadowHover");
+  }
+}
+
+@mixin status-badge($color) {
+  background-color: rgba($color, 0.1);
+  color: $color;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+.admin-events {
+  @include themify($themes) {
+    padding: 24px;
+    background-color: themed("bgSoft");
+    min-height: calc(100vh - 70px);
+
+    // Loading and Error States
+    .error-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 32px;
+      text-align: center;
+
+      .error-message {
+        color: themed("error");
+        font-size: 1.1rem;
+      }
+    }
+
+    // Header Section
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+      padding: 20px;
+      background-color: themed("bg");
+      border-radius: 12px;
+      box-shadow: 0 2px 8px themed("shadow");
+
+      h1 {
+        color: themed("textColor");
+        font-size: 1.75rem;
+        font-weight: 600;
+      }
+
+      .MuiButton-root {
+        background: linear-gradient(45deg, themed("primary"), adjust-hue(themed("primary"), 15deg));
+        padding: 10px 24px;
+        font-weight: 500;
+        
+        &:hover {
+          background: linear-gradient(45deg, themed("primaryHover"), themed("primary"));
+        }
+
+        .MuiSvgIcon-root {
+          margin-right: 8px;
+        }
+      }
+    }
+
+    // Events Grid
+    .events-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 24px;
+      padding: 16px;
+
+      .event-card {
+        background-color: themed("cardBg");
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px themed("cardShadow");
+        @include card-hover;
+
+        .event-image {
+          position: relative;
+          height: 200px;
+          overflow: hidden;
+
+          img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+          }
+
+          .event-actions {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            display: flex;
+            gap: 8px;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+
+            .MuiIconButton-root {
+              background-color: rgba(themed("cardBg"), 0.9);
+              backdrop-filter: blur(4px);
+              color: themed("textColor");
+              
+              &:hover {
+                background-color: themed("bgHover");
+                transform: scale(1.1);
+              }
+
+              &:last-child:hover {
+                background-color: rgba(themed("error"), 0.1);
+                color: themed("error");
+              }
+            }
+          }
+
+          &:hover {
+            img {
+              transform: scale(1.05);
+            }
+
+            .event-actions {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+        }
+
+        .event-content {
+          padding: 20px;
+
+          h3 {
+            color: themed("textColor");
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            line-height: 1.4;
+          }
+
+          .description {
+            color: themed("textColorSoft");
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-bottom: 16px;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+          }
+
+          .event-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+
+            span {
+              display: flex;
+              align-items: center;
+              gap: 6px;
+              font-size: 0.85rem;
+
+              &.date, &.location {
+                color: themed("textColorSoft");
+                background-color: themed("bgSoft");
+                padding: 4px 12px;
+                border-radius: 16px;
+              }
+
+              &.status {
+                text-transform: capitalize;
+                &.upcoming { @include status-badge(themed("primary")); }
+                &.ongoing { @include status-badge(themed("success")); }
+                &.completed { @include status-badge(themed("textColorSoft")); }
+                &.cancelled { @include status-badge(themed("error")); }
+              }
+            }
+          }
+
+          .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+
+            .MuiChip-root {
+              background-color: themed("bgSoft");
+              color: themed("textColorSoft");
+              border-color: themed("border");
+              
+              &:hover {
+                background-color: rgba(themed("primary"), 0.1);
+                color: themed("primary");
+                border-color: themed("borderHover");
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Dialog/Modal Styles
+    .MuiDialog-paper {
+      background-color: themed("cardBg");
+      box-shadow: 0 4px 16px themed("shadow");
+      
+      .MuiDialogTitle-root {
+        background-color: themed("bgSoft");
+        color: themed("textColor");
+        padding: 20px 24px;
+        font-weight: 600;
+      }
+
+      .MuiDialogContent-root {
+        padding: 24px;
+
+        .MuiTextField-root {
+          width: 100%;
+          margin-bottom: 16px;
+          
+          .MuiInputLabel-root {
+            color: themed("textColorSoft");
+          }
+          
+          .MuiOutlinedInput-root {
+            background-color: themed("bgSoft");
+            
+            fieldset {
+              border-color: themed("border");
+            }
+            
+            &:hover fieldset {
+              border-color: themed("borderHover");
+            }
+
+            &.Mui-focused fieldset {
+              border-color: themed("primary");
+            }
+          }
+
+          .MuiInputAdornment-root img {
+            border-radius: 4px;
+          }
+        }
+
+        .MuiChip-root {
+          margin: 4px;
+          background-color: themed("bgSoft");
+          
+          &:hover {
+            background-color: rgba(themed("primary"), 0.1);
+          }
+
+          .MuiChip-deleteIcon {
+            color: themed("textColorSoft");
+            
+            &:hover {
+              color: themed("error");
+            }
+          }
+        }
+
+        // --- NEW: Styles for ticketing/audition bordered sections ---
+        .MuiBox-root[sx*="border"] {
+          background-color: themed("bgSoft");
+          border: 1px solid themed("border") !important;
+          border-radius: 8px;
+          padding: 20px !important;
+          margin-bottom: 16px;
+
+          .MuiTypography-subtitle2 {
+            color: themed("textColor");
+            font-weight: 600;
+            margin-bottom: 16px;
+          }
+
+          .MuiFormControlLabel-root {
+            margin-right: 0;
+            margin-bottom: 8px;
+            
+            .MuiSwitch-root {
+              .MuiSwitch-track {
+                background-color: themed("border");
+              }
+              
+              .Mui-checked + .MuiSwitch-track {
+                background-color: rgba(themed("primary"), 0.5) !important;
+              }
+
+              .MuiSwitch-thumb {
+                background-color: themed("textColorSoft");
+              }
+
+              .Mui-checked .MuiSwitch-thumb {
+                background-color: themed("primary");
+              }
+            }
+
+            .MuiFormControlLabel-label {
+              color: themed("textColor");
+              font-size: 0.9rem;
+            }
+          }
+
+          .MuiTextField-root {
+            margin-bottom: 8px;
+            
+            .MuiInputAdornment-root {
+              color: themed("textColorSoft");
+            }
+          }
+        }
+        // --- END NEW ---
+      }
+
+      .MuiDialogActions-root {
+        padding: 16px 24px;
+        background-color: themed("bgSoft");
+
+        .MuiButton-root {
+          &:not(.MuiButton-contained) {
+            color: themed("textColor");
+            background-color: themed("buttonSoft");
+
+            &:hover {
+              background-color: themed("buttonSoftHover");
+            }
+          }
+
+          &.MuiButton-contained {
+            background: themed("primary");
+            color: #fff;
+            
+            &:hover {
+              background: themed("primaryHover");
+            }
+
+            &:disabled {
+              background: rgba(themed("primary"), 0.5);
+            }
+          }
+        }
+      }
+    }
+
+    /* Visual Form Builder specific styles */
+    .visual-form-builder {
+      width: 100%;
+ 
+      .fields-panel {
+        width: 100%;
+        max-width: 900px; /* keep editor comfortable on wide screens */
+        margin: 0 auto;
+      }
+ 
+      .preview-panel {
+        width: 100%;
+        margin-top: 12px;
+        padding: 0;
+      }
+    }
+
+    /* Archive page styles */
+    .admin-archive {
+      padding: 24px;
+      background-color: themed("bgSoft");
+      border-radius: 12px;
+
+      .MuiTypography-h5, h5, h6 {
+        color: themed("textColor");
+        font-weight: 600;
+      }
+
+      .MuiButton-root {
+        &.backBtn {
+          background: transparent;
+          border: 1px solid themed("border");
+        }
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 12px;
+
+        thead {
+          th {
+            text-align: left;
+            padding: 12px 16px;
+            color: themed("textColorSoft");
+            font-weight: 600;
+            border-bottom: 1px solid themed("border");
+          }
+        }
+
+        tbody {
+          td {
+            padding: 12px 16px;
+            vertical-align: middle;
+            border-bottom: 1px dashed rgba(0,0,0,0.04);
+            color: themed("textColor");
+          }
+
+          tr:hover {
+            background: rgba(0,0,0,0.02);
+          }
+        }
+      }
+
+      .archive-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+    }
+
+    /* Archive button: match Create New Event (contained primary) for visual consistency */
+    .archiveBtn {
+      background: linear-gradient(45deg, themed("primary"), adjust-hue(themed("primary"), 15deg));
+      color: #fff;
+      text-transform: none;
+      padding: 10px 24px;
+      font-weight: 500;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 2px 8px themed("cardShadow");
+
+      .MuiSvgIcon-root {
+        margin-right: 8px;
+        color: inherit;
+      }
+
+      &:hover {
+        background: linear-gradient(45deg, themed("primaryHover"), themed("primary"));
+        box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+      }
+    }
+
+  }
+
+  // Responsive Styles
+  @media (max-width: 1200px) {
+    .events-grid {
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 16px;
+
+    .header {
+      flex-direction: column;
+      gap: 16px;
+      
+      .MuiButton-root {
+        width: 100%;
+      }
+    }
+
+    .MuiDialog-paper {
+      margin: 16px;
+      
+      .MuiDialogContent-root {
+        padding: 16px;
+      }
+    }
+  }
+
+  @media (max-width: 480px) {
+    .event-card {
+      .event-content {
+        .event-meta {
+          flex-direction: column;
+          align-items: flex-start;
+
+          span {
+            width: 100%;
+          }
+        }
+      }
+    }
+    // --- NEW: Responsive for bordered form sections ---
+    .MuiDialogContent-root {
+      .MuiBox-root[sx*="border"] {
+        padding: 12px !important;
+
+        .MuiFormControlLabel-root {
+          margin-right: 0;
+          width: 100%;
+        }
+      }
+    }
+    // --- END NEW ---
+  }
+
+  .visual-form-builder .preview-panel {
+    /* strong scoped overrides for preview spacing */
+    .drf-fields-only,
+    .drf-fields-only * {
+      box-sizing: border-box;
+    }
+
+    /* ensure fields stack with big gaps */
+    .drf-fields-only {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 24px !important;
+      width: 100% !important;
+    }
+
+    /* make each field a full-width block with padding */
+    .drf-field {
+      display: block !important;
+      width: 100% !important;
+      padding: 14px !important;
+      margin: 0 !important;
+      border-radius: 10px !important;
+      background: rgba(0,0,0,0.02) !important;
+      border: 1px solid rgba(0,0,0,0.04) !important;
+    }
+
+    /* force label above control and spaced */
+    .drf-field label,
+    .drf-field > label {
+      display: block !important;
+      margin: 0 0 12px 0 !important;
+      padding: 0 !important;
+      font-weight: 700 !important;
+      font-size: 1rem !important;
+      line-height: 1.25 !important;
+    }
+
+    /* controls full width and visually separated */
+    .drf-field input,
+    .drf-field .form-control,
+    .drf-field textarea,
+    .drf-field select,
+    .drf-field .form-select,
+    .drf-field .MuiFormControl-root {
+      display: block !important;
+      width: 100% !important;
+      padding: 12px 14px !important;
+      border-radius: 8px !important;
+      border: 1px solid rgba(0,0,0,0.12) !important;
+      background: #fff !important;
+      font-size: 0.98rem !important;
+      line-height: 1.45 !important;
+    }
+
+    /* add extra gap under inline control wrappers (MUI wrappers) */
+    .MuiFormControl-root, 
+    .MuiTextField-root, 
+    .MuiFormGroup-root {
+      margin-bottom: 18px !important;
+    }
+  }
+}

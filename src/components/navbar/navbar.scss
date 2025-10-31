@@ -1,0 +1,523 @@
+@import "../../style.scss";
+
+// Animations
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes notificationPop {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+// Local Variables
+$navbar-height: 65px;
+$shadows: (
+  'sm': 0 2px 10px rgba(0, 0, 0, 0.06),
+  'md': 0 4px 20px rgba(0, 0, 0, 0.08),
+  'pop': 0 8px 30px rgba(0, 0, 0, 0.12)
+);
+
+// Utility Mixins
+@mixin flex-center {
+  @include flex(row, center, center);
+}
+
+@mixin hover-lift {
+  @include transition(transform);
+  &:hover { transform: translateY(-2px); }
+}
+
+// Navbar Component
+.navbar {
+  @include themify($themes) {
+    height: $navbar-height;
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    @include flex-center;
+    justify-content: space-between;
+    padding: 0 24px;
+    background: linear-gradient(
+      to bottom,
+      rgba(themed('bg'), 0.95),
+      rgba(themed('bg'), 0.92)
+    );
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba(themed('border'), 0.04);
+    box-shadow: map-get($shadows, 'sm');
+
+    // Left Section
+    .left {
+      @include flex-center;
+      gap: 32px;
+
+      .logo {
+        font-size: 24px;
+        font-weight: 700;
+        color: themed('primary');
+      }
+
+      .nav-links {
+        @include flex-center;
+        gap: 24px;
+
+        .nav-icon {
+          font-size: 22px;
+          padding: 10px;
+          border-radius: 12px;
+          color: themed('textColorSoft');
+          cursor: pointer;
+          @include hover-lift;
+          
+          &:hover {
+            color: themed('primary');
+            background: rgba(themed('primary'), 0.06);
+          }
+        }
+      }
+
+      .search-container {
+        position: relative;
+        margin-left: 20px;
+
+        .search-input-wrapper {
+          @include flex-center;
+          background: rgba(themed('bg'), 0.8);
+          border: 1px solid rgba(themed('border'), 0.08);
+          border-radius: 20px;
+          padding: 8px 16px;
+          min-width: 260px;
+          @include transition(all);
+
+          &:focus-within {
+            background: rgba(themed('bg'), 0.95);
+            border-color: rgba(themed('primary'), 0.2);
+            box-shadow: 0 2px 12px rgba(themed('primary'), 0.08);
+          }
+
+          .search-icon {
+            color: themed('textColorSoft');
+            font-size: 20px;
+            margin-right: 12px;
+          }
+
+          input {
+            border: none;
+            background: none;
+            outline: none;
+            width: 100%;
+            font-size: 14px;
+            color: themed('textColor');
+
+            &::placeholder {
+              color: themed('textColorSoft');
+            }
+          }
+        }
+
+        .search-results {
+          position: absolute;
+          top: calc(100% + 8px);
+          left: 0;
+          width: 320px;
+          max-height: 400px;
+          background: rgba(themed('bg'), 0.98);
+          border-radius: 16px;
+          box-shadow: map-get($shadows, 'pop');
+          overflow-y: auto;
+          animation: slideIn 0.2s ease;
+          border: 1px solid rgba(themed('border'), 0.08);
+
+          .search-loading {
+            @include flex-center;
+            padding: 32px;
+            color: themed('textColorSoft');
+          }
+
+          .search-result-item {
+            @include flex-center;
+            gap: 12px;
+            padding: 12px 16px;
+            text-decoration: none;
+            color: themed('textColor');
+            @include transition(all);
+
+            &:hover {
+              background: rgba(themed('primary'), 0.04);
+              transform: translateX(4px);
+            }
+
+            img {
+              width: 40px;
+              height: 40px;
+              border-radius: 50%;
+              object-fit: cover;
+            }
+
+            span {
+              font-size: 14px;
+              font-weight: 500;
+              color: themed('textColor');
+            }
+          }
+
+          .no-results {
+            padding: 24px;
+            text-align: center;
+            color: themed('textColorSoft');
+            font-size: 14px;
+          }
+        }
+      }
+    }
+
+    // Right Section
+    .right {
+      @include flex-center;
+      gap: 18px;
+
+      .nav-icon {
+        color: themed('textColorSoft');
+        cursor: pointer;
+        @include hover-lift;
+
+        &:hover {
+          color: themed('primary');
+        }
+      }
+
+      .user {
+        @include flex-center;
+        gap: 10px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        background: rgba(themed('bg'), 0.6);
+        border: 1px solid rgba(themed('border'), 0.08);
+        cursor: pointer;
+        @include hover-lift;
+
+        &:hover {
+          background: rgba(themed('bg'), 0.8);
+          border-color: rgba(themed('primary'), 0.2);
+        }
+
+        img {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          object-fit: cover;
+        }
+
+        span {
+          font-size: 14px;
+          font-weight: 500;
+          color: themed('textColor');
+        }
+      }
+
+      .dropdown-menu {
+        @include glass-effect;
+        position: absolute;
+        top: calc(100% + 12px);
+        right: 0;
+        width: 260px;
+        border-radius: 16px;
+        animation: slideIn 0.2s ease;
+        overflow: hidden;
+
+        .dropdown-item {
+          padding: 12px 16px;
+          margin: 4px 8px;
+          border-radius: 10px;
+          color: themed('textColor');
+          font-size: 14px;
+          @include flex-center;
+          gap: 12px;
+          cursor: pointer;
+
+          &:hover {
+            background: rgba(themed('primary'), 0.04);
+            transform: translateX(4px);
+          }
+
+          &.logout {
+            color: themed('error');
+
+            &:hover {
+              background: rgba(themed('error'), 0.04);
+            }
+          }
+        }
+      }
+
+      // Enhanced Friends Dropdown
+      .friends-dropdown {
+        position: absolute;
+        top: calc(100% + 12px);
+        right: 60px;
+        width: 320px;
+        max-height: 420px;
+        background: rgba(themed('bg'), 0.98);
+        border-radius: 18px;
+        box-shadow: map-get($shadows, 'pop');
+        border: 1px solid rgba(themed('border'), 0.08);
+        overflow-y: auto;
+        z-index: 1001;
+        animation: slideIn 0.2s ease;
+        padding-bottom: 8px;
+
+        .dropdown-header {
+          font-size: 16px;
+          font-weight: 600;
+          padding: 18px 20px 8px 20px;
+          color: themed('primary');
+          letter-spacing: 0.5px;
+          background: none;
+          border-bottom: 1px solid rgba(themed('border'), 0.06);
+        }
+
+        .dropdown-search {
+          padding: 10px 20px 8px 20px;
+          input {
+            width: 100%;
+            padding: 7px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(themed('border'), 0.12);
+            background: rgba(themed('bg'), 0.92);
+            font-size: 14px;
+            color: themed('textColor');
+            outline: none;
+            &:focus {
+              border-color: themed('primary');
+              background: #fff;
+            }
+          }
+        }
+
+        .dropdown-loading {
+          @include flex-center;
+          padding: 32px;
+          color: themed('textColorSoft');
+        }
+
+        .friend-item {
+          @include flex-center;
+          justify-content: flex-start;
+          gap: 12px;
+          padding: 13px 20px;
+          cursor: pointer;
+          border-radius: 10px;
+          transition: background 0.15s, transform 0.15s;
+          position: relative;
+
+          &:hover, &.active {
+            background: rgba(themed('primary'), 0.06);
+            transform: translateX(4px);
+          }
+
+          img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(themed('primary'), 0.08);
+          }
+
+          .friend-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+
+            .friend-name {
+              font-size: 15px;
+              font-weight: 500;
+              color: themed('textColor');
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+            }
+            .last-message {
+              font-size: 13px;
+              color: themed('textColorSoft');
+              margin-top: 2px;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+            }
+          }
+
+          .online-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4caf50;
+            margin-left: 8px;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 2px rgba(76,175,80,0.15);
+          }
+
+          .unread-badge {
+            background: themed('primary');
+            color: #fff;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 10px;
+            padding: 2px 7px;
+            margin-left: 8px;
+            min-width: 20px;
+            text-align: center;
+            display: inline-block;
+          }
+
+          .unread-dot {
+            background: themed('error');
+            color: #fff;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 10px;
+            padding: 2px 7px;
+            margin-left: 8px;
+            min-width: 20px;
+            text-align: center;
+            display: inline-block;
+            animation: notificationPop 0.2s;
+            box-shadow: 0 1px 4px rgba(themed('error'), 0.10);
+          }
+
+          .message-preview {
+            margin-top: 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            max-width: 180px;
+
+            .preview-read {
+              color: themed('textColorSoft');
+              font-size: 13px;
+              background: none;
+              padding: 0;
+            }
+            .preview-unread {
+              color: themed('primary');
+              font-weight: 600;
+              font-size: 13px;
+              background: rgba(themed('primary'), 0.06);
+              border-radius: 6px;
+              padding: 2px 6px;
+            }
+            .no-preview {
+              color: themed('textColorSoft');
+              font-size: 12px;
+              font-style: italic;
+            }
+          }
+        }
+
+        .no-friends {
+          padding: 32px 0;
+          text-align: center;
+          color: themed('textColorSoft');
+          font-size: 15px;
+        }
+
+        .start-chat-btn {
+          display: block;
+          width: calc(100% - 40px);
+          margin: 12px 20px 0 20px;
+          padding: 10px 0;
+          background: themed('primary');
+          color: #fff;
+          border: none;
+          border-radius: 8px;
+          font-size: 15px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background 0.15s;
+          &:hover {
+            background: darken(themed('primary'), 8%);
+          }
+        }
+      }
+    }
+  }
+
+  // Responsive Styles
+  @include mobile {
+    @include themify($themes) {
+      padding: 0 16px;
+
+      .left {
+        gap: 20px;
+
+        .search-container {
+          .search-input-wrapper {
+            min-width: 200px;
+          }
+
+          .search-results {
+            width: calc(100vw - 32px);
+            left: -16px;
+          }
+        }
+      }
+
+      .right {
+        .user span {
+          display: none;
+        }
+
+        .dropdown-menu {
+          right: -16px;
+          width: 240px;
+        }
+        .friends-dropdown {
+          right: 0;
+          width: 100vw;
+          border-radius: 0 0 18px 18px;
+        }
+      }
+    }
+  }
+
+  @include tablet {
+    @include themify($themes) {
+      .left {
+        .nav-links {
+          display: none;
+        }
+
+        .search-container .search-input-wrapper {
+          min-width: 220px;
+        }
+      }
+    }
+  }
+}
+
+/* Screen-reader only helper for accessible labels */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}

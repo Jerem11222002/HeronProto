@@ -1,0 +1,251 @@
+.login {
+  height: 100vh;
+  background: linear-gradient(to bottom, #6A9CE9, #8353CA, #A753CE, #EB98B6, #999999);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative; /* added so logo can be absolutely positioned */
+
+  .card {
+    width: 50%;
+    display: flex;
+    background-color: white;
+    border-radius: 15px;
+    min-height: 600px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease;
+
+    
+
+    .left {
+      position: relative;
+      flex: 1;
+      background: linear-gradient(rgba(39, 11, 96, 0.5), rgba(39, 11, 96, 0.5)),
+        url("../../assets/umak-picture.png") center / cover no-repeat;
+      background-size: cover;
+      padding: 50px;
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+      color: white;
+
+      /* ensure logo is visible */
+      .school-logo {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        width: 120px;
+        height: auto;
+        z-index: 999;   // raised so it appears above overlays
+        pointer-events: none;
+        background: transparent;
+        display: block; // make sure it's visible
+      }
+
+      h1 {
+        font-size: 100px;
+        line-height: 100px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+      
+      p {
+        font-size: 18px;
+        line-height: 1.6;
+      }
+
+      .loginTypeSwitch {
+        display: flex;
+        gap: 10px;
+        margin: 20px 0;
+
+        button {
+          flex: 1;
+          padding: 12px;
+          border: 2px solid white;
+          background-color: transparent;
+          color: white;
+          font-weight: bold;
+          cursor: pointer;
+          border-radius: 25px;
+          transition: all 0.3s ease;
+
+          &.active {
+            background-color: white;
+            color: #8353CA;
+          }
+
+          &:hover:not(.active) {
+            background-color: rgba(255, 255, 255, 0.1);
+          }
+
+          &:active:not(.active) {
+            transform: translateY(1px);
+          }
+        }
+      }
+
+      span {
+        font-size: 14px;
+        opacity: 0.9;
+      }
+      
+      button:not(.loginTypeSwitch button) {
+        width: 50%;
+        padding: 12px;
+        border: 2px solid white;
+        background-color: transparent;
+        color: white;
+        font-weight: bold;
+        cursor: pointer;
+        border-radius: 25px;
+        transition: all 0.3s ease;
+
+        &:hover {
+          background-color: white;
+          color: #8353CA;
+          transform: translateY(-2px);
+        }
+
+        &:active {
+          transform: translateY(0);
+        }
+      }
+    }
+
+    .right {
+      flex: 1;
+      padding: 50px;
+      display: flex;
+      flex-direction: column;
+      gap: 50px;
+      justify-content: center;
+
+      h1 {
+        color: #333;
+        font-size: 32px;
+        margin-bottom: 10px;
+      }
+      
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+        
+        .error-message {
+          color: #ff4d4f;
+          background-color: #fff2f0;
+          border: 1px solid #ffccc7;
+          padding: 12px;
+          border-radius: 8px;
+          font-size: 14px;
+          text-align: center;
+          animation: shake 0.5s ease-in-out;
+        }
+        
+        input {
+          border: none;
+          border-bottom: 2px solid #eee;
+          padding: 15px 10px;
+          font-size: 16px;
+          transition: all 0.3s ease;
+
+          &:focus {
+            outline: none;
+            border-bottom-color: #8353CA;
+          }
+
+          &::placeholder {
+            color: #999;
+          }
+        }
+        
+        button {
+          width: 50%;
+          padding: 12px;
+          border: none;
+          background: linear-gradient(135deg, #6A9CE9, #8353CA);
+          color: white;
+          font-weight: bold;
+          cursor: pointer;
+          border-radius: 25px;
+          transition: all 0.3s ease;
+          position: relative;
+          overflow: hidden;
+
+          &:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(131, 83, 202, 0.3);
+          }
+
+          &:active:not(:disabled) {
+            transform: translateY(0);
+          }
+
+          &:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+          }
+
+          &.loading {
+            color: transparent;
+            
+            &::after {
+              content: '';
+              position: absolute;
+              left: 50%;
+              top: 50%;
+              width: 20px;
+              height: 20px;
+              margin: -10px 0 0 -10px;
+              border: 2px solid white;
+              border-top-color: transparent;
+              border-radius: 50%;
+              animation: button-loading 0.8s linear infinite;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /* site logo placed at top-left of the page */
+  .school-logo {
+    display: block;
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 150px;
+    height: auto;
+    z-index: 1200;
+    pointer-events: none;
+  }
+}
+
+/* responsive */
+@media (max-width: 768px) {
+  .school-logo {
+    top: 12px;
+    left: 12px;
+    width: 90px;
+  }
+}
+@media (max-width: 480px) {
+  .school-logo {
+    top: 10px;
+    left: 10px;
+    width: 72px;
+  }
+}
+
+@keyframes button-loading {
+  to { 
+    transform: rotate(360deg); 
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}

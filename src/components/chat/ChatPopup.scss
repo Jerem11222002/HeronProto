@@ -1,0 +1,113 @@
+// src/components/chat/ChatPopup.scss
+.chat-popup {
+    display: flex;
+    flex-direction: column;
+    width: 370px;
+    border-radius: 18px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    overflow: hidden;
+    background: #fff;
+    position: fixed;
+    bottom: 24px; // Distance from the bottom of the screen
+    max-height: 500px; // Set a maximum height
+    z-index: 2000; // Ensure it appears above other content
+    animation: fadeIn 0.25s;
+
+    // Accent stripe
+    &::before {
+      content: "";
+      display: block;
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 5px;
+      background: linear-gradient(135deg, #5271ff, #00c6ff);
+      border-radius: 18px 0 0 18px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 18px 22px 18px 32px;
+      background: #f7f8fa;
+      border-bottom: 1px solid #eee;
+  
+      .friend-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+  
+        .avatar {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          object-fit: cover;
+        }
+  
+        .friend-name {
+          font-weight: 600;
+          font-size: 16px;
+        }
+  
+        .status-dot {
+          display: inline-block;
+          width: 10px; height: 10px;
+          border-radius: 50%;
+          margin-left: 8px;
+          background: #bbb;
+  
+          &.online { background: #4caf50; }
+          &.offline { background: #bbb; }
+        }
+      }
+  
+      .close-button {
+        margin-left: auto;
+        font-size: 22px;
+        background: none;
+        border: none;
+        color: #888;
+        cursor: pointer;
+        padding: 6px 10px;
+        border-radius: 50%;
+        transition: background 0.2s;
+  
+        &:hover { background: #eee; color: #b30000; }
+      }
+    }
+  
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px 22px;
+      background: #fafbfc;
+      display: flex;
+      flex-direction: column;
+      gap: 14px; // space between messages
+      min-height: 120px;
+      max-height: 320px;
+    }
+  
+    .empty-state {
+      color: #aaa;
+      text-align: center;
+      margin-top: 40px;
+      font-size: 15px;
+    }
+  }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px);}
+  to { opacity: 1; transform: translateY(0);}
+}
+
+@media (max-width: 600px) {
+  .chat-popup {
+    right: 0;
+    left: 0;
+    bottom: 0;
+    width: 100vw;
+    border-radius: 0;
+    max-width: 100vw;
+  }
+}

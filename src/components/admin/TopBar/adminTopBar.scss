@@ -1,0 +1,201 @@
+@use '../../../style.scss' as *;
+
+.adminTopBar {
+  height: 60px;
+  padding: 0 max(20px, 4vw);
+  @include themify($themes) {
+    background-color: themed('bg');
+    border-bottom: 1px solid themed('border');
+  }
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  @include transition(box-shadow);
+  
+  &.scrolled {
+    @include themify($themes) {
+      box-shadow: 0 2px 10px themed('shadow');
+    }
+  }
+
+  .searchBar {
+    @include flex(row, flex-start, center);
+    @include themify($themes) {
+      background-color: themed('bgSoft');
+    }
+    border-radius: 12px;
+    padding: 8px 15px;
+    width: clamp(200px, 30vw, 400px);
+    position: relative;
+    @include transition(all);
+
+    &:focus-within {
+      @include themify($themes) {
+        box-shadow: 0 0 0 2px themed('primary');
+        background-color: themed('bg');
+      }
+    }
+
+    .searchIcon {
+      @include themify($themes) {
+        color: themed('textColorSoft');
+      }
+      margin-right: 10px;
+      font-size: 20px;
+      @include transition(color);
+    }
+
+    .clearButton {
+      background: none;
+      border: none;
+      padding: 4px;
+      border-radius: 50%;
+      cursor: pointer;
+      @include transition(all);
+      @include flex(row, center, center);
+
+      &:hover {
+        @include themify($themes) {
+          background-color: themed('bgHover');
+        }
+      }
+
+      &:focus-visible {
+        @include themify($themes) {
+          outline: 2px solid themed('primary');
+          outline-offset: 2px;
+        }
+      }
+
+      .clearIcon {
+        @include themify($themes) {
+          color: themed('textColorSoft');
+        }
+        font-size: 18px;
+      }
+    }
+
+    input {
+      border: none;
+      background: none;
+      outline: none;
+      width: 100%;
+      font-size: 0.95rem;
+      padding: 4px 0;
+      @include themify($themes) {
+        color: themed('textColor');
+
+        &::placeholder {
+          color: themed('textColorSoft');
+          @include transition(color);
+        }
+
+        &:focus::placeholder {
+          color: themed('textColorMuted');
+        }
+      }
+    }
+  }
+
+  .rightSection {
+    @include flex(row, flex-end, center);
+    gap: clamp(12px, 2vw, 20px);
+    margin-left: auto;
+
+    .notifications {
+      position: relative;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 50%;
+      @include transition(all);
+      border: none;
+      background: none;
+
+      &:hover {
+        @include themify($themes) {
+          background-color: themed('bgHover');
+        }
+        transform: translateY(-1px);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+
+      &:focus-visible {
+        @include themify($themes) {
+          outline: 2px solid themed('primary');
+          outline-offset: 2px;
+        }
+      }
+
+      .icon {
+        @include themify($themes) {
+          color: themed('textColorSoft');
+        }
+        font-size: 24px;
+        @include transition(color);
+      }
+
+      .badge {
+        position: absolute;
+        top: 0;
+        right: 0;
+        @include themify($themes) {
+          background-color: themed('error');
+          color: #fff;
+        }
+        font-size: 12px;
+        padding: 2px 5px;
+        border-radius: 12px;
+        min-width: 18px;
+        height: 18px;
+        @include flex(row, center, center);
+        font-weight: 600;
+        animation: badgePulse 2s infinite;
+      }
+    }
+  }
+}
+
+@keyframes badgePulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@include tablet {
+  .adminTopBar {
+    padding: 0 12px;
+
+    .searchBar {
+      width: 160px;
+      padding: 6px 12px;
+
+      input {
+        font-size: 0.9rem;
+      }
+    }
+
+    .rightSection {
+      gap: 8px;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adminTopBar {
+    .notifications .badge {
+      animation: none;
+    }
+  }
+}

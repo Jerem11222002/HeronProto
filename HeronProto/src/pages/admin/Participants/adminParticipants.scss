@@ -1,0 +1,95 @@
+.adminParticipants {
+  padding: 20px;
+
+  .participantsHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .filterControls {
+      select {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        min-width: 200px;
+      }
+    }
+  }
+
+  .participantsTable {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+    overflow: hidden;
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+
+      th, td {
+        padding: 15px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+      }
+
+      th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        color: #333;
+      }
+
+      tr:hover {
+        background-color: #f8f9fa;
+      }
+    }
+  }
+
+  .participantStats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+
+    .statCard {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      text-align: center;
+
+      h3 {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 10px;
+      }
+
+      .statValue {
+        font-size: 24px;
+        font-weight: 600;
+        color: #333;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .participantsHeader {
+    flex-direction: column;
+    gap: 15px;
+    
+    .filterControls {
+      width: 100%;
+      
+      select {
+        width: 100%;
+      }
+    }
+  }
+}

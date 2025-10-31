@@ -1,0 +1,704 @@
+@use 'sass:color';
+@use '../../style.scss' as *;
+
+// Keyframes for animations
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.event-card {
+  @include themify($themes) {
+    background-color: themed("bg");
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(themed("textColorSoft"), 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid themed("border");
+    animation: fadeIn 0.3s ease-in-out;
+
+    &.hovered {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 16px rgba(themed("textColorSoft"), 0.15);
+
+      .event-image img {
+        transform: scale(1.05);
+      }
+    }
+
+    // Homepage specific styles
+    &.homepage {
+      .event-image { height: 200px; }
+      .event-info {
+        padding: 16px;
+        .event-header h2 {
+          font-size: 1.2rem;
+          margin-bottom: 8px;
+        }
+        .description {
+          -webkit-line-clamp: 3;
+          line-clamp: 3;
+          cursor: pointer;
+          
+          &:hover {
+            color: color.adjust(themed("primary"), $hue: 15deg);
+          }
+        }
+      }
+    }
+
+    // Event image container
+    .event-image {
+      position: relative;
+      width: 100%;
+      height: 240px;
+      overflow: hidden;
+      background: themed("bgSoft");
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      // Loading state
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 50%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(themed("textColorSoft"), 0.1),
+          transparent
+        );
+        animation: loading 1.5s infinite;
+      }
+
+      // Status badges
+      .event-badge {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        transition: transform 0.3s ease;
+
+        .status {
+          padding: 4px 12px;
+          border-radius: 16px;
+          font-size: 0.8rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          backdrop-filter: blur(4px);
+
+          &.upcoming { 
+            background-color: rgba(themed("primary"), 0.9);
+            color: white;
+          }
+          &.ongoing { 
+            background-color: rgba(themed("success"), 0.9);
+            color: white;
+          }
+          &.completed { 
+            background-color: rgba(themed("textColorSoft"), 0.9);
+            color: white;
+          }
+          &.cancelled { 
+            background-color: rgba(themed("error"), 0.9);
+            color: white;
+          }
+        }
+
+        .date {
+          background: rgba(themed("bg"), 0.9);
+          color: themed("textColor");
+          padding: 4px 12px;
+          border-radius: 16px;
+          font-size: 0.85rem;
+          backdrop-filter: blur(4px);
+          display: flex;
+          align-items: center;
+          gap: 4px;
+
+          svg {
+            font-size: 14px;
+          }
+        }
+      }
+
+      // Admin controls
+      .admin-controls {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        display: flex;
+        gap: 8px;
+        opacity: 0;
+        transform: translateX(10px);
+        transition: all 0.3s ease;
+
+        .edit-button, .delete-button {
+          background: rgba(themed("bg"), 0.9);
+          color: themed("textColor");
+          backdrop-filter: blur(4px);
+          padding: 8px;
+          border-radius: 8px;
+
+          &:hover {
+            background: rgba(themed("bg"), 1);
+            transform: scale(1.1);
+          }
+        }
+
+        .delete-button:hover {
+          color: themed("error");
+          background: rgba(themed("error"), 0.1);
+        }
+      }
+
+      &:hover .admin-controls {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    // Event information section
+    .event-info {
+      padding: 20px;
+
+      // Engagement metrics
+      .engagement-metrics {
+        display: flex;
+        gap: 16px;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(themed("textColorSoft"), 0.1);
+        margin-bottom: 16px;
+
+        .metric {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          color: themed("textColorSoft");
+          font-size: 0.9rem;
+          transition: color 0.2s ease;
+
+          &:hover {
+            color: themed("primary");
+          }
+
+          svg {
+            color: themed("primary");
+          }
+        }
+      }
+
+      .event-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+
+        h2 {
+          color: themed("textColor");
+          margin: 0;
+          font-weight: 600;
+          font-size: 1.4rem;
+          line-height: 1.3;
+        }
+
+        .org-info {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+
+          /* Logo container: fixed size, neutral bg and subtle border to ensure contrast
+             without making the logo larger or shifting layout. Keeps image aspect
+             and prevents "bloating". */
+          .organization-badge {
+            width: 40px;               /* fixed size */
+            height: 40px;
+            min-width: 40px;          /* prevent growing in flex layouts */
+            min-height: 40px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: #F5F5F5 !important; /* Wave-suggested light bg */
+            border: 1px solid #e6e6e6 !important; /* subtle frame to separate */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.04) inset;
+            flex-shrink: 0;
+
+            img {
+              width: 100%;
+              height: 100%;
+              object-fit: cover;      /* keep aspect, crop center if needed */
+              display: block;
+            }
+          }
+
+          /* If logos appear outside badge (legacy code), force sane limits */
+          .organization img,
+          img.organization-badge-img {
+            max-width: 40px !important;
+            max-height: 40px !important;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            border-radius: 6px;
+          }
+
+          /* accessible focus for clickable logos */
+          a .organization-badge:focus,
+          .organization-badge:focus-visible {
+            outline: 3px solid rgba(9,47,83,0.12);
+            outline-offset: 2px;
+          }
+
+           .organization {
+             color: themed("primary");
+             font-weight: 500;
+             transition: color 0.2s ease;
+           
+             &:hover {
+               color: color.adjust(themed("primary"), $hue: 15deg);
+             }
+           }
+
+          .primary-category {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background-color: themed("bgSoft");
+            color: themed("textColorSoft");
+            font-size: 0.85rem;
+            text-transform: capitalize;
+            transition: all 0.2s ease;
+
+            &:hover {
+              background-color: rgba(themed("primary"), 0.1);
+              color: themed("primary");
+            }
+
+            svg {
+              font-size: 16px;
+            }
+          }
+
+          .organization-badge {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-left: 8px;
+            object-fit: cover;
+          }
+        }
+      }
+
+      .description {
+        color: themed("textColorSoft");
+        line-height: 1.6;
+        margin: 16px 0;
+        /* autoprefixer: ignore next */
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        transition: color 0.2s ease;
+      }
+
+      // NEW: Extra event details (type, ticketing, requirements)
+      .event-extra-details {
+        margin: 12px 0 0 0;
+        padding: 12px 0;
+        border-top: 1px solid rgba(themed("textColorSoft"), 0.08);
+        border-bottom: 1px solid rgba(themed("textColorSoft"), 0.08);
+
+        .event-type {
+          background-color: #F5F5F5 !important; /* light neutral background */
+          color: #000 !important;               /* black text for max contrast */
+          padding: 6px 12px;
+          border-radius: 8px;
+          font-weight: 600;
+          font-size: 1rem;
+          margin-bottom: 4px;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .event-ticketing {
+          /* High-contrast ticket chip, override inline/theme values if needed */
+          font-size: 1rem !important;
+          font-weight: 600 !important;
+          background-color: #F5F5F5 !important;
+          color: #000000 !important;
+          padding: 6px 10px !important;
+          border-radius: 8px !important;
+          margin-bottom: 4px !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          gap: 8px !important;
+          border: 1px solid #e6e6e6 !important;
+          box-shadow: none !important;
+
+          /* Ensure the bold label inside the ticket chip is clearly readable */
+          strong,
+          strong[style] {
+            color: #000000 !important;
+            font-weight: 700 !important;
+            margin-right: 6px !important;
+          }
+        }
+
+        .event-requirements {
+          margin-top: 6px;
+          font-size: 0.97rem;
+          color: themed("textColorSoft");
+
+          strong {
+            color: themed("primary");
+            font-weight: 600;
+          }
+
+          ul {
+            margin: 4px 0 0 18px;
+            padding: 0;
+            list-style: disc inside;
+            font-size: 0.95rem;
+
+            li {
+              margin-bottom: 2px;
+            }
+          }
+        }
+      }
+
+      // Tags section
+      .event-tags {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin: 16px 0;
+
+        svg {
+          color: themed("primary");
+          margin-top: 4px;
+        }
+
+        .tags-container {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+
+          .tag {
+            background-color: themed("bgSoft");
+            color: themed("textColorSoft");
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+            cursor: default;
+
+            &:hover {
+              transform: translateY(-2px);
+              background-color: rgba(themed("primary"), 0.1);
+            }
+
+            &.matching {
+              background-color: rgba(themed("primary"), 0.15);
+              color: themed("primary");
+              font-weight: 500;
+              animation: pulse 2s infinite;
+            }
+          }
+        }
+      }
+
+      // Event details
+      .event-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin: 20px 0;
+        padding: 16px;
+        background-color: themed("bgSoft");
+        border-radius: 12px;
+        transition: background-color 0.2s ease;
+
+        &:hover {
+          background-color: rgba(themed("primary"), 0.05);
+        }
+
+        .detail {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          color: themed("textColorSoft");
+          transition: color 0.2s ease;
+
+          &:hover {
+            color: themed("primary");
+          }
+
+          svg {
+            color: themed("primary");
+          }
+        }
+      }
+
+      // Action buttons
+      .event-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 20px;
+
+        button {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 12px 24px;
+          border-radius: 20px;
+          border: none;
+          cursor: pointer;
+          font-weight: 500;
+          transition: all 0.2s ease;
+
+          svg {
+            transition: transform 0.2s ease;
+          }
+
+          &:hover {
+            transform: translateY(-2px);
+            
+            svg {
+              transform: scale(1.2);
+            }
+          }
+
+          &:active {
+            transform: translateY(0);
+          }
+        }
+
+        .join-button {
+          background: linear-gradient(
+            45deg, 
+            themed("primary") 0%, 
+            color.adjust(themed("primary"), $hue: 15deg) 100%
+          );
+          color: white;
+          box-shadow: 0 4px 12px rgba(themed("primary"), 0.2);
+
+          &:hover {
+            box-shadow: 0 6px 16px rgba(themed("primary"), 0.3);
+          }
+        }
+
+        .share-button {
+          background-color: themed("bgSoft");
+          color: themed("textColor");
+
+          &:hover {
+            background-color: themed("bg");
+            box-shadow: 0 4px 12px rgba(themed("textColorSoft"), 0.1);
+          }
+        }
+      }
+    }
+  }
+}
+
+// Loading animation
+@keyframes loading {
+  0% { left: -100%; }
+  100% { left: 200%; }
+}
+
+// Responsive styles
+@media (max-width: 768px) {
+  .event-card {
+    margin-bottom: 16px;
+
+    .event-image {
+      height: 180px;
+    }
+
+    .event-info {
+      padding: 16px;
+
+      .event-header {
+        .org-info {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 8px;
+        }
+      }
+
+      .event-details {
+        grid-template-columns: 1fr;
+        padding: 12px;
+      }
+
+      .event-actions {
+        flex-direction: column;
+        
+        button {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .event-card {
+    .event-image {
+      height: 160px;
+
+      .event-badge {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  }
+}
+
+/* ----- Accessibility & logo fixes ----- */
+/* Ensure organization text meets contrast even if Tooltip clones element or inline styles exist */
+.org-info .organization,
+.org-info .organization[style],
+.org-info .organization[data-mui-internal-clone-element] {
+  background-color: #F5F5F5 !important; /* Wave suggestion: light background */
+  color: #000000 !important;             /* black foreground for max contrast */
+  padding: 4px 8px !important;
+  border-radius: 6px !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+  line-height: 1 !important;
+  display: inline-block !important;
+  text-decoration: none !important;
+  opacity: 1 !important;
+  border: 1px solid #e6e6e6 !important;
+  box-shadow: none !important;
+}
+
+/* Constrain organization badge / logo to fixed small container to avoid "bloating" */
+.org-info .organization-badge,
+.org-info img.organization-badge,
+.org-info img.organization-badge-img {
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px !important;
+  min-height: 40px !important;
+  max-width: 40px !important;
+  max-height: 40px !important;
+  object-fit: cover !important;
+  display: inline-block !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(0,0,0,0.04) !important;
+  background: #F5F5F5 !important;
+  flex-shrink: 0 !important;
+}
+
+/* If the logo is inline with the label, add small gap and keep vertical alignment */
+.org-info .organization + .organization-badge,
+.org-info .organization-badge + .organization {
+  vertical-align: middle;
+  margin-left: 8px;
+}
+
+/* keyboard focus */
+.org-info .organization:focus,
+.org-info .organization:focus-visible,
+.org-info .organization-badge:focus,
+.org-info .organization-badge:focus-visible {
+  outline: 3px solid rgba(9,47,83,0.12) !important;
+  outline-offset: 2px !important;
+}
+
+/* Ensure Requirements label inside event-requirements is high-contrast */
+.event-extra-details .event-requirements strong,
+.event-extra-details .event-requirements strong[style],
+.event-extra-details .event-requirements strong[data-mui-internal-clone-element] {
+  color: #000000 !important;            /* black foreground for max contrast */
+  background: transparent !important;   /* keep layout, avoid visual bloat */
+  padding: 0 !important;
+  margin-right: 8px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  border: none !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+.event-extra-details .event-requirements strong:focus,
+.event-extra-details .event-requirements strong:focus-visible {
+  outline: 3px solid rgba(9,47,83,0.12) !important;
+  outline-offset: 2px !important;
+}
+
+/* Ensure pagination active button meets WCAG contrast */
+.events-pagination {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 16px;
+
+  button {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    /* can't call themed() outside the themify mixin — use CSS var fallback */
+    color: var(--textColorSoft, #6b7280);
+    cursor: pointer;
+    font-weight: 600;
+    min-width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    &:focus-visible {
+      outline: 3px solid rgba(9,47,83,0.12);
+      outline-offset: 2px;
+    }
+  }
+
+  /* Strong override to beat inline/theme values */
+  button.active,
+  button.active[style] {
+    background-color: #0b3a75 !important; /* darker blue for good contrast */
+    color: #ffffff !important;
+    border-color: #07315a !important;
+    box-shadow: 0 6px 18px rgba(11,58,117,0.12) !important;
+  }
+
+  /* hover for non-active */
+  button:not(.active):hover {
+    background-color: rgba(11,58,117,0.06);
+    color: #0b3a75;
+  }
+}

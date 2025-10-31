@@ -1,0 +1,22 @@
+@baseUrl = http://localhost:5000/api
+
+### Login to get token
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "cheesecake0101",
+    "password": "crossfire1"
+}
+
+### Test Events Recommendations
+GET {{baseUrl}}/posts/recommendations/test?filterType=events&sampleSize=5
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3NGI5ZGM4OWVkNWFlYjk2NTBmM2RmMyIsImlhdCI6MTc0MjEyMjAyMywiZXhwIjoxNzQyMjA4NDIzfQ.fwqbZzb9XzLYjIkocz1QMp8_I3XsS6-YLT2Bh84bfYE
+
+### Test Upcoming Events
+GET {{baseUrl}}/posts/recommendations/test?filterType=events&status=upcoming&sampleSize=5
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3NGI5ZGM4OWVkNWFlYjk2NTBmM2RmMyIsImlhdCI6MTc0MjEyMjAyMywiZXhwIjoxNzQyMjA4NDIzfQ.fwqbZzb9XzLYjIkocz1QMp8_I3XsS6-YLT2Bh84bfYE
+
+### Test Organization Events
+GET {{baseUrl}}/posts/recommendations/test?filterType=events&organization=true&sampleSize=5
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3NGI5ZGM4OWVkNWFlYjk2NTBmM2RmMyIsImlhdCI6MTc0MjEyMjAyMywiZXhwIjoxNzQyMjA4NDIzfQ.fwqbZzb9XzLYjIkocz1QMp8_I3XsS6-YLT2Bh84bfYE

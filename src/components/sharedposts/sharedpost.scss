@@ -1,0 +1,219 @@
+.shared-post {
+  background: var(--cardBg, #f9f9f9);
+  border: 1px solid var(--border, #e0e0e0);
+  border-radius: 12px;
+  margin: 16px 0;
+  padding: 16px 18px 12px 18px;
+  box-shadow: 0 2px 8px var(--cardShadow, rgba(0,0,0,0.04));
+  transition: box-shadow 0.2s;
+
+  &:hover {
+    box-shadow: 0 4px 16px var(--cardShadow, rgba(0,0,0,0.08));
+  }
+
+  .shared-by {
+    font-size: 1rem;
+    color: var(--primary, #3f51b5);
+    margin-bottom: 4px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* ensure "Shared Post" label has sufficient contrast */
+  .shared-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.92rem;
+    line-height: 1;
+    /* darker blue background + white text gives good WCAG contrast */
+    background: #0b66c3 !important;
+    color: #ffffff !important;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.04) inset;
+  }
+
+  .shared-label:focus-visible {
+    outline: 3px solid rgba(11,102,195,0.18);
+    outline-offset: 2px;
+  }
+
+  .share-message {
+    font-size: 0.97rem;
+    color: var(--textColorSoft, #666);
+    margin-bottom: 10px;
+    background: var(--bgSoft, #f3f3f3);
+    border-radius: 8px;
+    padding: 8px 12px;
+    word-break: break-word;
+  }
+
+  .user {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+
+    &.shared-user {
+      margin-bottom: 0;
+    }
+    &.original-user {
+      margin-bottom: 0;
+    }
+  }
+
+  .userInfo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .avatar-container {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .profile-pic, .default-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--border, #e0e0e0);
+    background: #fff;
+  }
+
+  .details {
+    display: flex;
+    flex-direction: column;
+    margin-left: 8px;
+  }
+
+  .name {
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--primaryText, #222);
+  }
+
+  .date {
+    font-size: 0.85rem;
+    color: var(--textColorSoft, #888);
+  }
+
+  .post-tags {
+    margin: 6px 0 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .tag {
+    background: var(--tagBg, #e3e3e3);
+    color: var(--primary, #3f51b5);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 0.93rem;
+    cursor: pointer;
+    transition: background 0.15s;
+    &:hover {
+      background: var(--primary, #3f51b5);
+      color: #fff;
+    }
+  }
+
+  .content {
+    margin-top: 6px;
+  }
+
+  .image-container, .video-container {
+    margin-top: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .original-media-img, .original-media-video {
+    max-width: 100%;
+    max-height: 320px;
+    border-radius: 8px;
+    border: 1px solid var(--border, #e0e0e0);
+    background: #fff;
+    object-fit: contain;
+  }
+
+  .original-post-card {
+    background: var(--bgSoft, #f5f5f5);
+    border-radius: 8px;
+    border: 1px solid var(--border, #e0e0e0);
+    box-shadow: none;
+    padding: 12px 14px 10px 14px;
+    margin-top: 8px;
+  }
+}
+
+/* defensive: reset any unexpected global scaling on this component and constrain media */
+.shared-post, .shared-post * {
+  transform: none !important;
+  zoom: 1 !important;
+  box-sizing: border-box;
+  font-size: inherit !important;
+}
+
+.shared-post {
+  max-width: 100%;
+}
+
+.shared-post .original-post-card {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.shared-post .image-container,
+.shared-post .video-container {
+  width: 100%;
+  overflow: hidden;
+}
+
+.shared-post .original-media-img,
+.shared-post .original-media-video {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  max-height: 600px;
+  object-fit: cover;
+}
+
+/* Strong, global override for shared-label to beat inline/theme colors */
+.shared-label,
+.shared-post .shared-label,
+.shared-label[style],
+.shared-post .shared-label[style] {
+  background-color: #F5F5F5 !important; /* Wave suggestion: light neutral background */
+  color: #000000 !important;            /* Wave suggestion: black text */
+  padding: 6px 10px !important;
+  border-radius: 8px !important;
+  font-weight: 700 !important;
+  font-size: 0.94rem !important;
+  line-height: 1 !important;
+  border: 1px solid #e0e0e0 !important;
+  box-shadow: none !important;
+  background-image: none !important;
+  text-shadow: none !important;
+  opacity: 1 !important;
+}
+
+/* keyboard focus */
+.shared-label:focus,
+.shared-label:focus-visible {
+  outline: 3px solid #00000022 !important;
+  outline-offset: 2px !important;
+}

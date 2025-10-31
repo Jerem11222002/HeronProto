@@ -1,0 +1,34 @@
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+
+export default function useEventCounts(eventIds = []) {
+  const [counts, setCounts] = useState({}); // { [eventId]: { count, maxParticipants } }
+
+  useEffect(() => {
+    if (!Array.isArray(eventIds)) return;
+    if (eventIds.length === 0) {
+      setCounts({});
+      return;
+    }
+
+    let cancelled = false;
+    const fetchCounts = async () => {
+      try {
+        // default to backend dev URL if env var not set
+        const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+        const url = `${baseURL.replace(/\/$/,'')}/api/event-registrations/counts`;
+        console.debug('useEventCounts: POST', url, { eventIds });
+        const res = await axios.post(url, { eventIds });
+        console.debug('useEventCounts response:', res?.data);
+        if (!cancelled && res.data?.counts) setCounts(res.data.counts);
+      } catch (err) {
+        if (!cancelled) console.warn('Failed to fetch event counts', err && err.message);
+      }
+    };
+
+    fetchCounts();
+    return () => { cancelled = true; };
+  }, [JSON.stringify(eventIds)]);
+
+  return counts;
+}

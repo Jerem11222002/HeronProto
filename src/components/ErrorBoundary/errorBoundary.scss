@@ -1,0 +1,80 @@
+@import "../../style.scss";
+
+.error-boundary {
+  @include themify($themes) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    padding: 2rem;
+    background-color: themed("bgSoft");
+    border-radius: 8px;
+    margin: 1rem;
+
+    .error-content {
+      text-align: center;
+      max-width: 600px;
+
+      h2 {
+        color: themed("textColor");
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+      }
+
+      .error-message {
+        color: themed("textColorSoft");
+        margin-bottom: 1rem;
+        padding: 1rem;
+        background-color: rgba(themed("error"), 0.1);
+        border-radius: 4px;
+      }
+
+      .error-stack {
+        text-align: left;
+        background-color: themed("bg");
+        padding: 1rem;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        color: themed("textColorSoft");
+        max-height: 200px;
+        overflow-y: auto;
+        margin-bottom: 1rem;
+      }
+
+      .error-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 1.5rem;
+
+        button {
+          padding: 0.75rem 1.5rem;
+          border-radius: 4px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+
+          &.retry-button {
+            background-color: themed("primary");
+            color: white;
+            border: none;
+
+            &:hover {
+              background-color: darken(themed("primary"), 10%);
+            }
+          }
+
+          &.home-button {
+            background-color: transparent;
+            border: 1px solid themed("border");
+            color: themed("textColor");
+
+            &:hover {
+              background-color: themed("bgSoft");
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -203,6 +203,8 @@ const SuggestedTags = ({ organization, onAddTag }) => {
   );
 };
 
+const BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+
 const AdminEvents = () => {
   const [isFormBuilderOpen, setIsFormBuilderOpen] = useState(false);
   const { events, loading, error, addEvent, updateEvent, deleteEvent } = useEvents();
@@ -358,10 +360,14 @@ const AdminEvents = () => {
          const result = await updateEvent(editingEvent._id, eventData);
          console.log('[AdminEvents] updateEvent result:', result);
          toast.success('Event updated successfully');
+         // notify other admin UIs that events changed
+         try { window.dispatchEvent(new CustomEvent('app:events:updated', { detail: { eventId: editingEvent._id } })); } catch (e) {}
        } else {
          const result = await addEvent(eventData);
          console.log('[AdminEvents] addEvent result:', result);
          toast.success('Event created successfully');
+         // notify other admin UIs that an event was created
+         try { window.dispatchEvent(new CustomEvent('app:events:updated', { detail: { eventId: result && result._id || result.id } })); } catch (e) {}
        }
        
        handleClose();
@@ -432,6 +438,42 @@ const AdminEvents = () => {
   const handleImageChange = (url) => {
     setFormData({ ...formData, image: url });
     setImagePreview(url);
+  };
+
+  const handleFileSelect = async (file) => {
+    if (!file) return;
+    setIsSaving(true);
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        toast.error('Authentication required to upload image');
+        return;
+      }
+      const form = new FormData();
+      form.append('image', file);
+
+      const res = await axios.post(`${BASE_URL}/api/events/upload`, form, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        },
+        timeout: 60000
+      });
+
+      if (res?.data?.success && res.data.url) {
+        const url = res.data.url;
+        setFormData(prev => ({ ...prev, image: url }));
+        setImagePreview(url);
+        toast.success('Image uploaded and set');
+      } else {
+        throw new Error(res?.data?.message || 'Upload failed');
+      }
+    } catch (err) {
+      console.error('Event image upload failed', err);
+      toast.error(err?.response?.data?.message || err.message || 'Upload failed');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleAddTag = () => {
@@ -683,22 +725,42 @@ const AdminEvents = () => {
                         : '')
                 }
               />
-              <TextField
-                label="Image URL"
-                value={formData.image}
-                onChange={(e) => handleImageChange(e.target.value)}
-                required
-                error={validationErrors.includes('image')}
-                InputProps={{
-                  endAdornment: imagePreview && (
-                    <img 
-                      src={imagePreview} 
-                      alt="preview"
-                      style={{ height: 40, marginLeft: 8 }}
-                    />
-                  )
-                }}
-              />
+              <Box display="flex" gap={2} alignItems="center">
+                <TextField
+                  label="Image URL"
+                  value={formData.image}
+                  onChange={(e) => handleImageChange(e.target.value)}
+                  required
+                  error={validationErrors.includes('image')}
+                  fullWidth
+                  InputProps={{
+                    endAdornment: imagePreview && (
+                      <img 
+                        src={imagePreview} 
+                        alt="preview"
+                        style={{ height: 40, marginLeft: 8 }}
+                      />
+                    )
+                  }}
+                />
+                <input
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  id="event-image-file"
+                  type="file"
+                  onChange={(e) => {
+                    const f = e.target.files && e.target.files[0];
+                    if (f) handleFileSelect(f);
+                    // reset input so same file can be re-selected later
+                    e.target.value = '';
+                  }}
+                />
+                <label htmlFor="event-image-file">
+                  <Button component="span" variant="outlined" startIcon={<ImageIcon />} disabled={isSaving}>
+                    Upload from device
+                  </Button>
+                </label>
+              </Box>
               <TextField
                 select
                 label="Organization"

@@ -1083,24 +1083,29 @@ const AdminParticipants = () => {
             }
 
             return formSchema.map((field, idx) => {
-              const value = raw[field.key];
-              const displayValue = Array.isArray(value) 
+              // Prefer dynamic responses (stored in formResponses) then fallback to top-level fields
+              const formResponses = raw?.formResponses || {};
+              let value = formResponses[field.key];
+              if (value === undefined) value = raw[field.key];
+              const displayValue = Array.isArray(value)
                 ? value.join(', ')
                 : typeof value === 'boolean'
                   ? (value ? 'Yes' : 'No')
-                  : value || 'Not provided';
-
-              return (
-                <Box key={idx} sx={{ mb: 2 }}>
-                  <Typography variant="body2" color="textSecondary">
-                    {field.label}
-                  </Typography>
-                  <Typography variant="body1">
-                    {displayValue}
-                  </Typography>
-                </Box>
-              );
-            });
+                  : (value === null || value === undefined || value === '') 
+                    ? 'Not provided' 
+                    : String(value);
+ 
+               return (
+                 <Box key={idx} sx={{ mb: 2 }}>
+                   <Typography variant="body2" color="textSecondary">
+                     {field.label}
+                   </Typography>
+                   <Typography variant="body1">
+                     {displayValue}
+                   </Typography>
+                 </Box>
+               );
+             });
           })()}
 
           {/* File Uploads Section */}

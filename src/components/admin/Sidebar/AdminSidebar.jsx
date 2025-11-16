@@ -14,6 +14,7 @@ import {
   MdSwapHoriz,
   MdLogout
 } from 'react-icons/md';
+import { MdManageAccounts } from 'react-icons/md';
 
 const AdminSidebar = () => {
   const navigate = useNavigate();
@@ -49,6 +50,12 @@ const AdminSidebar = () => {
       label: 'Participants',
       icon: <MdPeople />,
       show: canAccess('canManageUsers')
+    },
+    {
+      path: '/admin/accounts',
+      label: 'Accounts',
+      icon: <MdManageAccounts />,
+      show: isSuperAdmin // only visible to super admins
     },
     { 
       path: '/admin/monitoring',

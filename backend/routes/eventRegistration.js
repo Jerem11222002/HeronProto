@@ -93,14 +93,34 @@ router.post('/register', authenticate, async (req, res) => {
       fullUser = null;
     }
 
-    // Build registration payload from request and user profile
+    // Build registration payload from request and user profile.
+    // Put unknown/dynamic keys into `formResponses` so they are preserved.
+    const allowedSchemaKeys = new Set(Object.keys(EventRegistration.schema.paths || {}));
     const registrationPayload = {
       eventId,
       userId: req.user._id,
       organization: event.organization,
-      uploadedFiles,
-      ...req.body // allow all fields from frontend form
+      uploadedFiles
     };
+
+    const formResponses = {};
+    // iterate incoming keys and split into allowed top-level fields vs formResponses
+    Object.keys(req.body || {}).forEach(k => {
+      if (['eventId', 'organization', 'uploadedFiles', 'userId'].includes(k)) return;
+      // If key is a known schema path, copy as top-level
+      if (allowedSchemaKeys.has(k)) {
+        registrationPayload[k] = req.body[k];
+      } else {
+        // try to parse JSON strings (from FormData)
+        let v = req.body[k];
+        if (typeof v === 'string') {
+          try { v = JSON.parse(v); } catch { /* keep original string */ }
+        }
+        formResponses[k] = v;
+      }
+    });
+    // attach parsed form responses
+    registrationPayload.formResponses = formResponses;
 
     // Fill basic fields from user profile if missing
     ['name', 'studentId', 'email'].forEach(key => {
@@ -129,7 +149,7 @@ router.post('/register', authenticate, async (req, res) => {
 
     const missing = [];
     requiredFields.forEach(key => {
-      const val = getDeep(registrationPayload, key);
+      const val = getDeep(registrationPayload, key) ?? getDeep(registrationPayload.formResponses || {}, key);
       const empty = (val === undefined || val === null || (typeof val === 'string' && val.trim() === '') || (Array.isArray(val) && val.length === 0));
       if (empty) missing.push(key);
     });

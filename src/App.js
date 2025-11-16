@@ -37,6 +37,7 @@ import AdminMonitoring from "./pages/admin/Monitoring/AdminMonitoring";
 import AdminParticipants from "./pages/admin/Participants/AdminParticipants";
 import AdminSettings from "./pages/admin/Settings/AdminSettings";
 import AdminEventsArchive from './pages/admin/Events/AdminEventsArchive';
+import AdminAccounts from "./pages/admin/Accounts/AdminAccounts";
 
 // Terms and Conditions import
 import Terms from "./pages/Pledge/Terms";
@@ -141,6 +142,11 @@ function AppContent() {
       children: [
         { index: true, element: <AdminDashboard /> },
         { path: "dashboard", element: <AdminDashboard /> },
+        // Admin accounts management (list / create / edit UI to be implemented)
+        { 
+          path: "accounts",
+          element: isSuperAdmin ? <AdminAccounts /> : <Navigate to="/admin/dashboard" replace />
+        },
         { path: "analytics", element: isSuperAdmin ? <AdminAnalytics /> : <Navigate to="/admin/dashboard" replace /> },
         // --- ARCHIVE ROUTE MUST COME FIRST ---
         { 

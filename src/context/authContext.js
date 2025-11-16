@@ -433,38 +433,31 @@ export const AuthContextProvider = ({ children }) => {
   if (!currentUser?._id) return false;
 
   try {
-    const token = localStorage.getItem("token");
-    if (!token || !isTokenValid(token)) throw new Error("Invalid token");
-
-    // Normalize user after update
-    setCurrentUser(prev => normalizeUserData({ ...prev, ...updates }));
-
-    const response = await axios.patch(
-      `${BASE_URL}/api/profile/${currentUser._id}`,
-      updates,
-      {
-        headers: { Authorization: `Bearer ${token}` }
+    // Immediately update local state and persist — backend update for arbitrary profile fields
+    // is not implemented as a single PATCH route in the server, so keep this local and
+    // let endpoints that modify specific fields (bio, images) handle persistence.
+    setCurrentUser(prev => {
+      const merged = normalizeUserData({ ...(prev || {}), ...(updates || {}) });
+      try {
+        localStorage.setItem("currentUser", JSON.stringify(merged));
+      } catch (e) {
+        console.warn("Could not persist currentUser to localStorage", e);
       }
-    );
+      return merged;
+    });
 
-    if (!response.data.success) {
-      throw new Error('Profile update failed');
-    }
-
-    // Normalize before saving to localStorage
-    const updatedUser = normalizeUserData({ ...currentUser, ...updates });
-    localStorage.setItem("currentUser", JSON.stringify(updatedUser));
-
+    // Return true to indicate success (caller already performed server-side update for images/bio)
     return true;
   } catch (error) {
-    console.error("❌ Profile update failed:", error);
-    const storedUser = localStorage.getItem("currentUser");
-    if (storedUser) {
-      setCurrentUser(normalizeUserData(JSON.parse(storedUser)));
-    }
+    console.error("❌ Profile update failed (local):", error);
+    // attempt to restore from storage if available
+    try {
+      const stored = JSON.parse(localStorage.getItem("currentUser") || "null");
+      if (stored) setCurrentUser(normalizeUserData(stored));
+    } catch (e) { /* ignore */ }
     return false;
   }
-}, [currentUser, BASE_URL, isTokenValid, normalizeUserData]);
+}, [currentUser, normalizeUserData]);
 
     const updateProfileImage = useCallback(async (type, imageUrl) => {
     if (!currentUser?._id) return false;
@@ -597,6 +590,7 @@ export const AuthContextProvider = ({ children }) => {
       },
       // expose image updater used elsewhere
       updateProfileImage,
+      updateUserProfile, // <-- add this export so Profile.jsx can call it
       initialized
     }}>
       {children}

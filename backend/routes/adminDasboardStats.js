@@ -134,56 +134,55 @@ router.get('/events/upcoming', adminAuthMiddleware, async (req, res) => {
   try {
     const now = new Date();
 
-    // Query using model 'date' field; accept both 'active' and 'upcoming' statuses (or ignore status)
+    // Query using model 'date' field; include canonical statuses and return more items
     const events = await Event.aggregate([
       {
         $match: {
           date: { $gte: now },
           $or: [
-            { status: 'active' },
-            { status: 'upcoming' },
+            { status: { $in: ['upcoming', 'ongoing'] } },
             { status: { $exists: false } } // include events without status
           ]
         }
       },
       { $sort: { date: 1 } },
-      { $limit: 5 },
-      // lookup participant counts from EventRegistration
-      {
-        $lookup: {
-          from: 'eventregistrations',
-          let: { eventId: '$_id' },
-          pipeline: [
-            { $match: { $expr: { $or: [
-              { $eq: ['$event', '$$eventId'] },
-              { $eq: ['$eventId', '$$eventId'] },
-              { $eq: ['$event_id', '$$eventId'] }
-            ] } } },
-            { $count: 'count' }
-          ],
-          as: 'regInfo'
-        }
-      },
-      {
-        $addFields: {
-          participantCount: { $ifNull: [{ $arrayElemAt: ['$regInfo.count', 0] }, 0] }
-        }
-      },
-      {
-        $project: {
-          regInfo: 0
-        }
-      }
-    ]);
-
-    res.json(events);
-  } catch (error) {
-    logger.error('admin.events.upcoming.error', { message: error?.message || String(error) });
-    res.status(500).json({ 
-      message: 'Failed to fetch upcoming events',
-      error: error.message 
-    });
-  }
+      { $limit: 10 }, // return more upcoming events so dashboard can show the newest
+       // lookup participant counts from EventRegistration
+       {
+         $lookup: {
+           from: 'eventregistrations',
+           let: { eventId: '$_id' },
+           pipeline: [
+             { $match: { $expr: { $or: [
+               { $eq: ['$event', '$$eventId'] },
+               { $eq: ['$eventId', '$$eventId'] },
+               { $eq: ['$event_id', '$$eventId'] }
+             ] } } },
+             { $count: 'count' }
+           ],
+           as: 'regInfo'
+         }
+       },
+       {
+         $addFields: {
+           participantCount: { $ifNull: [{ $arrayElemAt: ['$regInfo.count', 0] }, 0] }
+         }
+       },
+       {
+         $project: {
+           regInfo: 0
+         }
+       }
+     ]);
+ 
+     res.json(events);
+   } catch (error) {
+     logger.error('admin.events.upcoming.error', { message: error?.message || String(error) });
+     res.status(500).json({ 
+       message: 'Failed to fetch upcoming events',
+       error: error.message 
+     });
+   }
 });
 
 // Event registrations counts route

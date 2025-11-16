@@ -71,7 +71,25 @@ export default function AuditionRegister({ event, user }) {
     }
     return field;
   });
-  
+
+  // Ensure consent checkbox exists (required)
+  const consentKey = 'consent.agreeToUse';
+  const hasConsent = patchedSchema.some(f => f.key === consentKey);
+  if (!hasConsent) {
+    patchedSchema.push({
+      key: consentKey,
+      label: 'I agree to allow my information to be used for event registration and communication.',
+      type: 'checkbox',
+      required: true,
+      hint: 'By checking this box you consent to use of your information for registration and event-related communication.'
+    });
+  }
+
+  // Ensure initialValues contains consent default
+  // set initialValues.consent.agreeToUse = false if not present
+  if (!initialValues.consent) initialValues.consent = { agreeToUse: false };
+  if (initialValues.consent && initialValues.consent.agreeToUse === undefined) initialValues.consent.agreeToUse = false;
+
   // If no schema available, show a friendly message instead of an empty form
   if (!schema.length) {
     return (

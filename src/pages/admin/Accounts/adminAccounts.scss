@@ -1,0 +1,363 @@
+@use '../../../style.scss' as *;
+
+.adminAccountsPage {
+  max-width: 1100px;
+  margin: 28px auto;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgba(16,24,40,0.06);
+
+  @include themify($themes) {
+    background: themed('cardBg');
+    color: themed('textColor');
+
+    .pageHeader {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+
+      .titleWrap {
+        display: flex;
+        flex-direction: column;
+        h1 {
+          margin: 0;
+          font-size: 1.25rem;
+          font-weight: 700;
+        }
+        .subtitle {
+          margin: 4px 0 0;
+          font-size: 0.9rem;
+          color: themed('textColorSoft');
+        }
+      }
+
+      .controls {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+
+        .search {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          /* use existing theme tokens */
+          background: themed('buttonSoft');
+          padding: 6px 10px;
+          border-radius: 8px;
+          min-width: 260px;
+          border: 1px solid themed('border');
+
+          .icon {
+            color: themed('textColorSoft');
+            font-size: 1.1rem;
+          }
+          input {
+            border: 0;
+            outline: none;
+            background: transparent;
+            width: 100%;
+            color: themed('textColor');
+            &::placeholder {
+              color: themed('textColorSoft');
+            }
+          }
+          .clear {
+            background: transparent;
+            border: 0;
+            color: themed('textColorSoft');
+            font-weight: 700;
+            cursor: pointer;
+          }
+        }
+
+        .btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 12px;
+          border-radius: 8px;
+          cursor: pointer;
+          border: 1px solid transparent;
+          background: themed('buttonSoft');
+          color: themed('textColor');
+          font-weight: 600;
+          transition: all 0.2s ease;
+
+          &.primary {
+            background: themed('primary');
+            color: #fff;
+            box-shadow: 0 6px 18px rgba(79, 70, 229, 0.08);
+            &:hover {
+              box-shadow: 0 8px 24px rgba(79, 70, 229, 0.12);
+            }
+          }
+        }
+      }
+    }
+
+    .accountsList {
+      .muted {
+        color: themed('textColorSoft');
+        padding: 24px 0;
+      }
+
+      .emptyState {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        padding: 36px;
+        border-radius: 10px;
+        border: 1px dashed themed('border');
+        .emptyTitle {
+          font-weight: 600;
+          color: themed('textColor');
+        }
+        .emptySubtitle {
+          color: themed('textColorSoft');
+        }
+      }
+
+      .tableWrap {
+        overflow: auto;
+        border-radius: 10px;
+        border: 1px solid themed('border');
+        background: themed('cardBg');
+      }
+
+      .accountsTable {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 900px;
+
+        thead th {
+          text-align: left;
+          padding: 12px 16px;
+          font-size: 0.9rem;
+          color: themed('textColorSoft');
+          background: themed('bgSoft');
+        }
+
+        tbody td {
+          padding: 14px 16px;
+          border-top: 1px solid themed('border');
+          vertical-align: middle;
+          color: themed('textColor');
+        }
+
+        tbody tr:hover {
+          background: themed('bgHover');
+        }
+
+        .mono {
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco,
+            "Roboto Mono", monospace;
+        }
+
+        .perms .chip {
+          display: inline-block;
+          margin-right: 6px;
+          margin-bottom: 4px;
+          padding: 6px 8px;
+          border-radius: 999px;
+          background: themed('buttonSoft');
+          color: themed('buttonText');
+          font-size: 0.8rem;
+        }
+
+        .actions {
+          display: flex;
+          gap: 8px;
+        }
+        .actions button {
+          border: 0;
+          background: transparent;
+          padding: 6px;
+          border-radius: 6px;
+          cursor: pointer;
+          color: themed('textColorSoft');
+          transition: color 0.2s ease;
+
+          &:hover {
+            color: themed('textColor');
+          }
+
+          &.danger {
+            color: themed('error');
+            &:hover {
+              background: rgba(220, 38, 38, 0.08);
+            }
+          }
+        }
+      }
+    }
+
+    /* Modal */
+    .modalBackdrop {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(2, 6, 23, 0.45);
+      z-index: 1200;
+      padding: 20px;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 720px;
+      background: themed('cardBg');
+      color: themed('textColor');
+      border-radius: 12px;
+      box-shadow: 0 18px 40px rgba(2, 6, 23, 0.25);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modalHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 18px;
+      border-bottom: 1px solid themed('border');
+      h3 {
+        margin: 0;
+        font-size: 1.05rem;
+      }
+      .closeBtn {
+        border: 0;
+        background: transparent;
+        font-size: 1.15rem;
+        cursor: pointer;
+        color: themed('textColorSoft');
+        padding: 6px;
+        transition: color 0.2s ease;
+        &:hover {
+          color: themed('textColor');
+        }
+      }
+    }
+
+    .modalBody {
+      padding: 18px;
+      display: grid;
+      gap: 12px;
+      grid-template-columns: 1fr 1fr;
+
+      .formRow {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        span {
+          font-weight: 600;
+          font-size: 0.9rem;
+        }
+        input,
+        select {
+          padding: 10px;
+          border-radius: 8px;
+          border: 1px solid themed('border');
+          background: themed('bg');
+          color: themed('textColor');
+          &::placeholder {
+            color: themed('textColorSoft');
+          }
+        }
+      }
+
+      .permissions {
+        grid-column: span 2;
+      }
+      .grid {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .permissionItem {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        background: themed('buttonSoft');
+        padding: 8px;
+        border-radius: 8px;
+        input {
+          cursor: pointer;
+        }
+        .permLabel {
+          color: themed('textColor');
+        }
+      }
+    }
+
+    .modalFooter {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      padding: 14px 18px;
+      border-top: 1px solid themed('border');
+      .btn {
+        padding: 8px 12px;
+        border-radius: 8px;
+      }
+    }
+  }
+
+  /* Responsive styles */
+  @media (max-width: 820px) {
+    @include themify($themes) {
+      .accountsList {
+        .tableWrap {
+          display: none;
+        }
+        .cards {
+          display: grid;
+          gap: 12px;
+          grid-template-columns: 1fr;
+          margin-top: 8px;
+        }
+        .card {
+          padding: 12px;
+          border-radius: 10px;
+          border: 1px solid themed('border');
+          background: themed('cardBg');
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .card .meta {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 8px;
+        }
+        .card .chip {
+          margin: 6px 6px 0 0;
+        }
+      }
+    }
+  }
+
+  @media (max-width: 720px) {
+    @include themify($themes) {
+      .pageHeader {
+        flex-direction: column;
+        .controls {
+          width: 100%;
+          flex-direction: column;
+          .search {
+            min-width: auto;
+            width: 100%;
+          }
+        }
+      }
+
+      .modalBody {
+        grid-template-columns: 1fr;
+      }
+    }
+  }
+}

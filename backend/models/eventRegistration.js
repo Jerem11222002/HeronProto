@@ -165,6 +165,12 @@ const eventRegistrationSchema = new mongoose.Schema({
     type: String
   }],
 
+  // Free-form storage for admin-created registration form answers
+  formResponses: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
+
   // Watch-only-specific fields
   reasonForWatching: {
     type: String,

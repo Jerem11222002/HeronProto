@@ -95,6 +95,7 @@ const Profile = () => {
   const { 
     currentUser, 
     updateUserProfile, 
+    updateProfileImage, // fallback helper (kept in auth context)
     refreshUser, 
     fetchUserRelationships 
   } = useContext(AuthContext);
@@ -198,6 +199,15 @@ const Profile = () => {
     // backend returns { success: true, data: userData } — prefer .data.data but fallback to .data
     const userPayload = userResponse?.data?.data ?? userResponse?.data;
     if (!userPayload) throw new Error('User not found');
+
+    // normalize profile/cover URLs so UI gets full URLs
+    const normalizedProfilePic = formatMediaUrl(userPayload.profilePic) || (userPayload.profilePic && userPayload.profilePic.startsWith('http') ? userPayload.profilePic : null) || getDefaultProfilePic(userPayload.sex);
+    const normalizedCoverPic = formatMediaUrl(userPayload.coverPic) || (userPayload.coverPic && userPayload.coverPic.startsWith('http') ? userPayload.coverPic : '');
+
+    // attach normalized values before setting state
+    const normalizedUserPayload = { ...userPayload, profilePic: normalizedProfilePic, coverPic: normalizedCoverPic };
+
+    setUserData(normalizedUserPayload);
 
     // Check follow status if not own profile
     if (!isOwnProfile && currentUser) {
@@ -461,11 +471,39 @@ const Profile = () => {
       if (response.data.success) {
         const fieldName = type === 'profilePic' ? 'profilePic' : 'coverPic';
         const newImage = response.data[fieldName];
-        
-        await updateUserProfile({ [fieldName]: newImage });
 
+        // Primary: call updateUserProfile if available
+        if (typeof updateUserProfile === 'function') {
+          try {
+            await updateUserProfile({ [fieldName]: newImage });
+          } catch (e) {
+            console.warn('updateUserProfile failed, falling back:', e);
+          }
+        } else if (typeof updateProfileImage === 'function') {
+          // Backwards-compatible fallback
+          try {
+            await updateProfileImage(fieldName, newImage);
+          } catch (e) {
+            console.warn('updateProfileImage failed, falling back to local update:', e);
+            setUserData(prev => ({ ...prev, [fieldName]: newImage }));
+          }
+        } else {
+          // Final fallback: update local component state so UI updates immediately
+          setUserData(prev => ({ ...prev, [fieldName]: newImage }));
+          try {
+            // keep localStorage in sync
+            const stored = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            stored[fieldName] = newImage;
+            localStorage.setItem('currentUser', JSON.stringify(stored));
+          } catch (e) { /* ignore */ }
+        }
+
+        // NEW: always update local userData so profile view updates immediately
         setUserData(prev => ({ ...prev, [fieldName]: newImage }));
+
+        // Emit a normalized update event for real-time listeners
         emitProfileUpdate({ userId: currentUser._id, updates: { [fieldName]: newImage } });
+
         setSuccessMessage(response.data.message || `${type === 'profilePic' ? 'Profile picture' : 'Cover photo'} updated successfully`);
         // refresh relationships and previous images
         await fetchUserRelationships(currentUser._id);
@@ -639,17 +677,56 @@ const Profile = () => {
   const handleSetPreviousImage = async (img, type) => {
     try {
       const token = localStorage.getItem("token");
+      if (!token) throw new Error("Not authenticated");
+
       const endpoint = type === "profilePic"
         ? `${API_URL}/api/profile/upload/profile-pic/${currentUser._id}`
         : `${API_URL}/api/profile/upload/cover-pic/${currentUser._id}`;
-      // Instead of uploading, just update the user with the previous image URL
-      await axios.put(endpoint, { url: img.url }, {
+
+      // server expects { url } for history -> set
+      const res = await axios.put(endpoint, { url: img.url }, {
         headers: { Authorization: `Bearer ${token}` }
       });
+
+      if (!res.data?.success) throw new Error(res.data?.message || 'Failed to set previous image');
+
+      const fieldName = type === 'profilePic' ? 'profilePic' : 'coverPic';
+      const normalizedUrl = formatMediaUrl(img.url) || img.url;
+
+      // Update component-local profile view immediately
+      setUserData(prev => ({ ...prev, [fieldName]: normalizedUrl }));
+
+      // Update AuthContext so other components (avatars, nav, lists) update instantly
+      if (typeof updateUserProfile === 'function') {
+        try {
+          await updateUserProfile({ [fieldName]: normalizedUrl });
+        } catch (e) {
+          console.warn('updateUserProfile failed:', e);
+          // fallback to updateProfileImage
+          if (typeof updateProfileImage === 'function') {
+            await updateProfileImage(fieldName, normalizedUrl);
+          }
+        }
+      } else if (typeof updateProfileImage === 'function') {
+        await updateProfileImage(fieldName, normalizedUrl);
+      } else {
+        // last resort persist to localStorage so subsequent reloads see it
+        try {
+          const stored = JSON.parse(localStorage.getItem('currentUser') || '{}');
+          stored[fieldName] = normalizedUrl;
+          localStorage.setItem('currentUser', JSON.stringify(stored));
+        } catch (e) { /* ignore */ }
+      }
+
+      // Emit socket so other tabs/users get the update
+      emitProfileUpdate({ userId: currentUser._id, updates: { [fieldName]: normalizedUrl } });
+
+      // Refresh lightweight data and UI
+      await fetchUserRelationships(currentUser._id);
       setSuccessMessage(`Updated ${type === "profilePic" ? "profile" : "cover"} photo!`);
-      fetchProfileData();
     } catch (err) {
-      setError("Failed to update image");
+      console.error('Failed to set previous image:', err);
+      setError(err.response?.data?.message || err.message || "Failed to update image");
     } finally {
       setShowPrevProfileDialog(false);
       setShowPrevCoverDialog(false);
@@ -683,12 +760,25 @@ const Profile = () => {
       );
 
       if (res.data?.success) {
-        setUserData(prev => ({ ...prev, bio: res.data.bio }));
-        setSuccessMessage(res.data.message || 'Bio updated');
-        emitProfileUpdate({ userId: currentUser._id, updates: { bio: res.data.bio } });
+        // Update local state immediately
+        setUserData(prev => ({
+          ...prev,
+          bio: editingBio // Use editingBio instead of res.data.bio
+        }));
+        
+        // Emit socket event for real-time updates
+        emitProfileUpdate({
+          userId: currentUser._id,
+          updates: { 
+            bio: editingBio,
+            profileSetup: true
+          }
+        });
+
+        setSuccessMessage('Bio updated successfully');
         setEditBioOpen(false);
       } else {
-        setError(res.data?.message || 'Failed to update bio');
+        throw new Error(res.data?.message || 'Failed to update bio');
       }
     } catch (err) {
       console.error('Bio update error:', err);
@@ -850,8 +940,8 @@ const Profile = () => {
           <DialogContent>
             {prevLoading ? <CircularProgress /> : (
               <ImageList cols={3} gap={12}>
-                {prevProfilePics.map((img) => (
-                  <ImageListItem key={img.url}>
+                {prevProfilePics.map((img, idx) => (
+                  <ImageListItem key={`${img.url}-${idx}`}>
                     <img src={img.url} alt="Previous profile" style={{ width: "100%", borderRadius: 12, cursor: "pointer" }}
                       onClick={() => handleSetPreviousImage(img, "profilePic")}
                     />
@@ -871,8 +961,8 @@ const Profile = () => {
           <DialogContent>
             {prevLoading ? <CircularProgress /> : (
               <ImageList cols={3} gap={12}>
-                {prevCoverPics.map((img) => (
-                  <ImageListItem key={img.url}>
+                {prevCoverPics.map((img, idx) => (
+                  <ImageListItem key={`${img.url}-${idx}`}>
                     <img src={img.url} alt="Previous cover" style={{ width: "100%", borderRadius: 12, cursor: "pointer" }}
                       onClick={() => handleSetPreviousImage(img, "coverPic")}
                     />

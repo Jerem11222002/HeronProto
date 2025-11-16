@@ -88,7 +88,7 @@ router.post('/upload/profile-pic/:userId', auth, upload.single('profilePic'), as
 
     // Emit socket event if available
     const io = req.app.get('io');
-    if (io) io.emit('profile:updated', { userId, profilePic: secureUrl });
+    if (io) io.emit('profile:updated', { userId, updates: { profilePic: secureUrl } });
 
     res.status(200).json({ success: true, profilePic: secureUrl, user: updatedUser, message: 'Profile picture updated successfully' });
   } catch (error) {
@@ -127,6 +127,10 @@ router.post('/upload/cover-pic/:userId', auth, upload.single('coverPic'), async 
     }
 
     const updatedUser = await User.findByIdAndUpdate(userId, update, { new: true, useFindAndModify: false });
+
+    // Emit socket event if available (normalize payload to { updates: {...} })
+    const io = req.app.get('io');
+    if (io) io.emit('profile:updated', { userId, updates: { coverPic: secureUrl } });
 
     res.status(200).json({ success: true, coverPic: secureUrl, user: updatedUser, message: 'Cover photo updated successfully' });
   } catch (error) {
@@ -310,6 +314,9 @@ router.put('/upload/profile-pic/:userId', auth, async (req, res) => {
 
     const updatedUser = await User.findByIdAndUpdate(userId, update, { new: true, useFindAndModify: false });
     res.status(200).json({ success: true, profilePic: url, user: updatedUser, message: 'Profile photo updated from history' });
+
+    const io = req.app.get('io');
+    if (io) io.emit('profile:updated', { userId, updates: { profilePic: url } });
   } catch (error) {
     console.error('Error updating profile from history:', error);
     res.status(500).json({ success: false, message: 'Error updating profile photo from history', error: process.env.NODE_ENV === 'development' ? error.message : undefined });
@@ -339,6 +346,9 @@ router.put('/upload/cover-pic/:userId', auth, async (req, res) => {
 
     const updatedUser = await User.findByIdAndUpdate(userId, update, { new: true, useFindAndModify: false });
     res.status(200).json({ success: true, coverPic: url, user: updatedUser, message: 'Cover photo updated from history' });
+
+    const io = req.app.get('io');
+    if (io) io.emit('profile:updated', { userId, updates: { coverPic: url } });
   } catch (error) {
     console.error('Error updating cover from history:', error);
     res.status(500).json({ success: false, message: 'Error updating cover photo from history', error: process.env.NODE_ENV === 'development' ? error.message : undefined });
@@ -375,21 +385,64 @@ router.put('/bio/:userId', auth, async (req, res) => {
       return res.status(403).json({ success: false, message: 'Forbidden' });
     }
 
-    const updatedUser = await User.findByIdAndUpdate(
+    // Update with $set to ensure atomic operation
+    const updateResult = await User.findByIdAndUpdate(
       userId,
-      { $set: { bio: trimmed, updatedAt: Date.now() } },
-      { new: true, select: '-password' }
+      { 
+        $set: { 
+          bio: trimmed,
+          updatedAt: Date.now(),
+          profileSetup: true // Always set to true when bio is updated
+        } 
+      },
+      { 
+        new: true, // Return updated document
+        runValidators: true,
+        select: '-password'  // Exclude password
+      }
     );
 
-    if (!updatedUser) return res.status(404).json({ success: false, message: 'User not found' });
+    if (!updateResult) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
 
+    // Log success
+    console.log('Bio updated:', {
+      userId,
+      newBio: trimmed,
+      success: true
+    });
+
+    // Emit socket event
     const io = req.app.get('io');
-    if (io) io.emit('profile:updated', { userId, updates: { bio: updatedUser.bio } });
+    if (io) {
+      io.emit('profile:updated', { 
+        userId, 
+        updates: { 
+          bio: trimmed,
+          profileSetup: true
+        } 
+      });
+    }
 
-    res.status(200).json({ success: true, bio: updatedUser.bio, user: updatedUser, message: 'Bio updated' });
+    // Return success with full user data
+    res.status(200).json({ 
+      success: true, 
+      data: {
+        ...updateResult.toObject(),
+        bio: trimmed,
+        profileSetup: true
+      },
+      message: 'Bio updated successfully'
+    });
+
   } catch (err) {
     console.error('Error updating bio:', err);
-    res.status(500).json({ success: false, message: 'Error updating bio', error: process.env.NODE_ENV === 'development' ? err.message : undefined });
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error updating bio', 
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined 
+    });
   }
 });
 

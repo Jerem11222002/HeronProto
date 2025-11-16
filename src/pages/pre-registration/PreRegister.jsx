@@ -52,6 +52,8 @@ const PreRegister = () => {
       });
       const eventData = response.data;
 
+      console.debug('[PreRegister] fetched event:', { id: eventId, registrationForm: eventData.registrationForm });
+      
       // If admin saved a template reference but not the embedded schema, fetch the template
       if ((!Array.isArray(eventData.registrationForm) || eventData.registrationForm.length === 0)
           && eventData.registrationFormTemplate) {

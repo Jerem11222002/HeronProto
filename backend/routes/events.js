@@ -1,6 +1,11 @@
 const router = require("express").Router();
 const logger = require('../utils/logger');
 
+// Add these imports so Cloudinary/multer are defined
+const multer = require('multer');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+
 logger.debug('[events.js] module load START', { file: __filename });
 
 let RecommendationService;
@@ -20,6 +25,45 @@ const EventArchive = require('../models/eventArchive');
 const { ORGANIZATION_CATEGORIES, EVENT_STATUS } = require("../utils/constants");
 
 logger.debug('[events.js] module load COMPLETE', { file: __filename });
+
+// --- Add Cloudinary + upload endpoint HERE (before any param-based routes) ---
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+const eventsStorage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: 'heron_events',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+    transformation: [{ width: 1600, height: 900, crop: 'limit', quality: 'auto' }],
+  }
+});
+
+const uploadSingleImage = multer({ storage: eventsStorage }).single('image');
+
+// Admin image upload endpoint for event images (placed before param routes)
+router.post('/upload', adminAuthMiddleware, (req, res) => {
+  uploadSingleImage(req, res, (err) => {
+    if (err) {
+      console.error('[events.upload] upload error', err);
+      return res.status(500).json({ success: false, message: 'Image upload failed', error: err.message });
+    }
+    const file = req.file;
+    if (!file) return res.status(400).json({ success: false, message: 'No file uploaded' });
+
+    // multer-storage-cloudinary provides path/secure_url/url depending on version
+    const url = file.path || file.secure_url || file.url || (file?.metadata && file.metadata.secure_url) || null;
+    if (!url) {
+      console.warn('[events.upload] uploaded file object', file);
+      return res.status(500).json({ success: false, message: 'Could not determine uploaded file URL' });
+    }
+    return res.status(200).json({ success: true, url });
+  });
+});
+// --- end added block ---
 
 // Get all events (accessible by all authenticated users)
 router.get("/", async (req, res) => {
@@ -73,15 +117,27 @@ router.post("/", adminAuthMiddleware, async (req, res) => {
     // sanitize registrationForm (if provided)
     const registrationForm = sanitizeRegistrationForm(req.body.registrationForm);
 
+    // normalize date to JS Date (avoid storing raw string which may cause filtering issues)
+    const normalizedDate = req.body.date ? new Date(req.body.date) : null;
+    if (!normalizedDate || isNaN(normalizedDate.getTime())) {
+      return res.status(400).json({ message: 'Invalid date' });
+    }
+
+    // normalize status to lowercase canonical value expected by schema
+    const providedStatus = String(req.body.status || EVENT_STATUS?.UPCOMING || 'upcoming').trim();
+    const normalizedStatus = providedStatus.toLowerCase();
+    const allowedStatuses = ['upcoming', 'ongoing', 'completed', 'cancelled'];
+    const finalStatus = allowedStatuses.includes(normalizedStatus) ? normalizedStatus : 'upcoming';
+
     const newEvent = new Event({
       title: req.body.title,
       description: req.body.description,
-      date: req.body.date,
+      date: normalizedDate,
       image: req.body.image,
       organization: req.body.organization,
       location: req.body.location,
       category: req.body.category,
-      status: req.body.status || EVENT_STATUS.UPCOMING,
+      status: finalStatus,
       eventType: req.body.eventType || 'watch-only',
       requirements: req.body.requirements || {
         videoRequired: false,
@@ -100,16 +156,50 @@ router.post("/", adminAuthMiddleware, async (req, res) => {
       createdBy: req.user.id
     });
 
-    // Validate organization categories
-    if (!ORGANIZATION_CATEGORIES[newEvent.organization]) {
-      return res.status(400).json({ 
-        message: 'Invalid organization',
-        validOrganizations: Object.keys(ORGANIZATION_CATEGORIES)
-      });
+    // Normalize organization to one of the Event schema enum values (case-insensitive)
+    try {
+      const validOrgs = Array.isArray(Event.schema.path('organization').enumValues)
+        ? Event.schema.path('organization').enumValues
+        : [];
+      const provided = String(newEvent.organization || '').trim();
+      const canonical = validOrgs.find(o => String(o).toLowerCase() === provided.toLowerCase());
+      if (!canonical) {
+        // fallback: try to match against ORGANIZATION_CATEGORIES display values (if any)
+        const fallbackMatch = Object.values(ORGANIZATION_CATEGORIES || {}).find(v => String(v).toLowerCase() === provided.toLowerCase());
+        if (fallbackMatch) {
+          // try to find canonical by matching display value to enum
+          const matchedByDisplay = validOrgs.find(o => String(o).toLowerCase() === String(fallbackMatch).toLowerCase());
+          if (matchedByDisplay) {
+            newEvent.organization = matchedByDisplay;
+          } else {
+            return res.status(400).json({
+              message: 'Invalid organization',
+              validOrganizations: validOrgs
+            });
+          }
+        } else {
+          return res.status(400).json({
+            message: 'Invalid organization',
+            validOrganizations: validOrgs
+          });
+        }
+      } else {
+        newEvent.organization = canonical;
+      }
+    } catch (normErr) {
+      console.warn('[events] organization normalization failed:', normErr);
+      return res.status(400).json({ message: 'Invalid organization' });
     }
-
+    
     const savedEvent = await newEvent.save();
     console.log('Event created:', savedEvent);
+    // Emit a server-side socket event so admin UIs update in realtime
+    try {
+      const io = req.app && req.app.get && req.app.get('io');
+      if (io && typeof io.emit === 'function') {
+        io.emit('events:changed', { action: 'created', event: savedEvent });
+      }
+    } catch (e) { console.warn('[events] realtime emit failed', e); }
     
     res.status(201).json(savedEvent);
   } catch (err) {
@@ -124,10 +214,15 @@ router.post("/", adminAuthMiddleware, async (req, res) => {
 // Update event (admin only)
 router.put("/:id", adminAuthMiddleware, async (req, res) => {
   try {
-    // Build an update payload and sanitize registrationForm if present
     const updatePayload = { ...req.body };
     if (Object.prototype.hasOwnProperty.call(req.body, 'registrationForm')) {
       updatePayload.registrationForm = sanitizeRegistrationForm(req.body.registrationForm);
+    }
+    if (Object.prototype.hasOwnProperty.call(req.body, 'status')) {
+      const allowedStatuses = ['upcoming', 'ongoing', 'completed', 'cancelled'];
+      const s = String(req.body.status || '').trim().toLowerCase();
+      updatePayload.status = allowedStatuses.includes(s) ? s : undefined;
+      if (updatePayload.status === undefined) delete updatePayload.status;
     }
 
     const updatedEvent = await Event.findByIdAndUpdate(
@@ -135,6 +230,14 @@ router.put("/:id", adminAuthMiddleware, async (req, res) => {
       { $set: updatePayload },
       { new: true }
     );
+
+    try {
+      const io = req.app && req.app.get && req.app.get('io');
+      if (io && typeof io.emit === 'function') {
+        io.emit('events:changed', { action: 'updated', event: updatedEvent });
+      }
+    } catch (e) { console.warn('[events] realtime emit failed', e); }
+
     res.status(200).json(updatedEvent);
   } catch (err) {
     res.status(500).json({ error: "Failed to update event" });
@@ -158,7 +261,13 @@ router.delete("/:id", adminAuthMiddleware, async (req, res) => {
 
     // remove original event and related registrations if desired
     await Event.findByIdAndDelete(req.params.id);
-    // optional: keep EventRegistration documents — adjust if you want to cascade delete.
+
+    try {
+      const io = req.app && req.app.get && req.app.get('io');
+      if (io && typeof io.emit === 'function') {
+        io.emit('events:changed', { action: 'deleted', eventId: req.params.id });
+      }
+    } catch (e) { console.warn('[events] realtime emit failed', e); }
 
     return res.status(200).json({ success: true, message: 'Event archived', archiveId: archive._id });
   } catch (err) {
@@ -714,6 +823,5 @@ router.get('/recommended/debug-verbose', authenticate, async (req, res) => {
     return res.status(500).json({ success: false, error: err.message || 'server error' });
   }
 });
-
 
 module.exports = router;

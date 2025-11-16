@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 /**
  * DynamicRegistrationForm
@@ -33,15 +33,59 @@ const getDeep = (obj, path) => {
   return cur;
 };
 
-const Field = ({ field, value, onChange }) => {
+// ----------------- Enhanced Field component -----------------
+const Field = ({ field, value, onChange, errorId }) => {
   const common = {
     id: field.key,
     name: field.key,
     placeholder: field.placeholder || '',
     value: value ?? '',
     readOnly: field.readOnly || false,
-    disabled: field.readOnly || false
+    disabled: field.readOnly || false,
+    'aria-required': !!field.required,
+    'aria-describedby': errorId || undefined,
+    'aria-invalid': !!errorId
   };
+
+  // file-specific UI: show list of selected files and allow removal
+  if (field.type === 'file') {
+    const files = Array.isArray(value) ? value : [];
+    return (
+      <div>
+        <input
+          className="file-input"
+          type="file"
+          multiple={!!field.validation?.multiple}
+          onChange={e => onChange(field.key, Array.from(e.target.files))}
+          disabled={field.readOnly}
+          aria-label={field.label}
+        />
+        {files && files.length > 0 && (
+          <div className="file-list" aria-live="polite">
+            {files.map((f, idx) => (
+              <div key={`${f.name || f.size}-${idx}`} className="file-item">
+                <span className="file-name">{f.name || f.filename || `file-${idx+1}`}</span>
+                <small className="file-meta">{f.size ? `${Math.round(f.size/1024)} KB` : ''}</small>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => {
+                    const next = files.slice();
+                    next.splice(idx, 1);
+                    onChange(field.key, next);
+                  }}
+                  style={{ marginLeft: 8 }}
+                  aria-label={`Remove ${f.name || 'file'}`}
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   switch (field.type) {
     case 'textarea':
@@ -52,33 +96,56 @@ const Field = ({ field, value, onChange }) => {
       return (
         <select className="form-select" {...common} onChange={e => onChange(field.key, e.target.value)}>
           <option value="">Select</option>
-          {(field.options || []).map(opt => <option key={opt} value={opt}>{opt}</option>)}
+          {(field.options || []).map((opt, i) => <option key={`${opt}-${i}`} value={opt}>{opt}</option>)}
         </select>
       );
-    case 'multicheck':
+    case 'multicheck': {
+      const seen = new Set();
       return (
-        <div className="multi-check">
-          {field.options.map(opt => (
-            <label key={opt} className="multi-check-item">
-              <input
-                className="checkbox-input"
-                type="checkbox"
-                checked={(value || []).includes(opt)}
-                onChange={e => {
-                  const next = new Set(value || []);
-                  if (e.target.checked) next.add(opt); else next.delete(opt);
-                  onChange(field.key, Array.from(next));
-                }}
-                disabled={field.readOnly}
-              /> <span>{opt}</span>
-            </label>
-          ))}
+        <div className="multi-check" role="group" aria-label={field.label || field.key}>
+          {(field.options || []).map((opt, i) => {
+            // support option objects { label, value } and primitive options
+            const optLabel = opt && typeof opt === 'object' ? (opt.label ?? String(opt.value)) : String(opt);
+            // base value (may collide if labels/texts are same)
+            let baseValue = opt && typeof opt === 'object' ? (opt.value ?? optLabel) : String(opt);
+            baseValue = String(baseValue).trim();
+            // if a duplicate baseValue already seen, make a unique value by appending the index
+            const optValue = seen.has(baseValue) ? `${baseValue}__dup__${i}` : baseValue;
+            seen.add(baseValue);
+            const itemKey = `${field.key}__multi__${i}__${optValue}`;
+            const inputId = `${field.key}__checkbox__${i}`;
+            const checked = Array.isArray(value) && value.includes(optValue);
+            return (
+              <label key={itemKey} htmlFor={inputId} className="multi-check-item">
+                <input
+                  id={inputId}
+                  name={`${field.key}-${i}`}
+                  className="checkbox-input"
+                  type="checkbox"
+                  value={optValue}
+                  checked={checked}
+                  onChange={e => {
+                    const cur = Array.isArray(value) ? value.slice() : [];
+                    if (e.target.checked) {
+                      if (!cur.includes(optValue)) cur.push(optValue);
+                    } else {
+                      const idx = cur.indexOf(optValue);
+                      if (idx >= 0) cur.splice(idx, 1);
+                    }
+                    onChange(field.key, cur);
+                  }}
+                  disabled={field.readOnly}
+                  aria-checked={checked}
+                />
+                <span>{optLabel}</span>
+              </label>
+            );
+          })}
         </div>
       );
+    }
     case 'checkbox':
       return <input className="checkbox-input" type="checkbox" checked={!!value} onChange={e => onChange(field.key, e.target.checked)} disabled={field.readOnly} />;
-    case 'file':
-      return <input className="file-input" type="file" multiple={!!field.validation?.multiple} onChange={e => onChange(field.key, Array.from(e.target.files))} disabled={field.readOnly} />;
     case 'email':
       return <input className="form-control" {...common} type="email" onChange={e => onChange(field.key, e.target.value)} />;
     case 'tel':
@@ -91,6 +158,7 @@ const Field = ({ field, value, onChange }) => {
       return <input className="form-control" {...common} type="text" onChange={e => onChange(field.key, e.target.value)} />;
   }
 };
+// ----------------- end Field -----------------
 
 export default function DynamicRegistrationForm({
   schema = [],
@@ -100,6 +168,10 @@ export default function DynamicRegistrationForm({
   className = '',
   asForm = true // when false render fields-only preview
 }) {
+  useEffect(() => {
+    console.debug('[DynamicRegistrationForm] schema:', schema, 'initialValues:', initialValues);
+  }, [schema, JSON.stringify(initialValues)]);
+
   // build initial nested values
   const buildInitial = () => {
     const init = {};
@@ -114,6 +186,7 @@ export default function DynamicRegistrationForm({
       } else {
         if (f.type === 'multicheck') val = [];
         else if (f.type === 'checkbox') val = false;
+        else if (f.type === 'file') val = [];
         else val = '';
       }
       setDeep(init, key, val);
@@ -123,7 +196,9 @@ export default function DynamicRegistrationForm({
 
   const [values, setValues] = useState(buildInitial);
   const [error, setError] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({}); // per-field error messages
   const [submitting, setSubmitting] = useState(false);
+  const firstInvalidRef = useRef(null);
 
   useEffect(() => {
     // if schema or initialValues change, rebuild values conservatively
@@ -132,7 +207,7 @@ export default function DynamicRegistrationForm({
       (schema || []).forEach(f => {
         const existing = getDeep(next, f.key);
         if (existing === undefined) {
-          const defaultVal = f.type === 'multicheck' ? [] : (f.type === 'checkbox' ? false : '');
+          const defaultVal = f.type === 'multicheck' ? [] : (f.type === 'checkbox' ? false : (f.type === 'file' ? [] : ''));
           setDeep(next, f.key, defaultVal);
         }
         // merge provided initialValues
@@ -150,18 +225,38 @@ export default function DynamicRegistrationForm({
       setDeep(next, key, val);
       return next;
     });
+    // clear per-field error on change
+    setFieldErrors(prev => {
+      const copy = { ...prev };
+      delete copy[key];
+      return copy;
+    });
+    setError(null);
   };
 
   const validate = () => {
+    const newFieldErrors = {};
     for (const f of schema) {
       if (f.required) {
         const v = getDeep(values, f.key);
         if (f.type === 'file') {
-          if (!v || v.length === 0) { setError(`${f.label} is required`); return false; }
+          if (!v || v.length === 0) { newFieldErrors[f.key] = `${f.label} is required`; }
         } else if (f.type === 'multicheck') {
-          if (!v || v.length === 0) { setError(`${f.label} is required`); return false; }
+          if (!v || v.length === 0) { newFieldErrors[f.key] = `${f.label} is required`; }
+        } else if (f.type === 'checkbox') {
+          // required checkbox must be checked (true)
+          if (v !== true) {
+            // Formal consent message for agreement/consent checkboxes
+            const keyLower = String(f.key || '').toLowerCase();
+            const labelLower = String(f.label || '').toLowerCase();
+            if (keyLower.includes('consent') || keyLower.includes('agree') || labelLower.includes('consent') || labelLower.includes('agree')) {
+              newFieldErrors[f.key] = 'You must agree to the collection and use of your information for event registration and related communication before proceeding.';
+            } else {
+              newFieldErrors[f.key] = `${f.label} is required`;
+            }
+          }
         } else if ((v === undefined || v === null || v === '') && v !== 0) {
-          setError(`${f.label} is required`); return false;
+          newFieldErrors[f.key] = `${f.label} is required`;
         }
       }
       if (f.validation?.pattern) {
@@ -169,17 +264,32 @@ export default function DynamicRegistrationForm({
         if (v) {
           try {
             const re = new RegExp(f.validation.pattern);
-            if (!re.test(v)) { setError(f.validation.message || `${f.label} is invalid`); return false; }
+            if (!re.test(v)) { newFieldErrors[f.key] = f.validation.message || `${f.label} is invalid`; }
           } catch (e) {
             // ignore invalid regex from admin
           }
         }
       }
     }
+
+    setFieldErrors(newFieldErrors);
+    if (Object.keys(newFieldErrors).length) {
+      // removed global message — display errors inline per-field only
+      setError(null);
+      // focus first invalid input
+      const firstKey = Object.keys(newFieldErrors)[0];
+      firstInvalidRef.current = firstKey;
+      setTimeout(() => {
+        const el = document.querySelector(`[name="${firstKey}"]`);
+        if (el) el.focus();
+      }, 50);
+      return false;
+    }
     setError(null);
     return true;
   };
 
+  // flattenForFormData and handleSubmit unchanged
   const flattenForFormData = (obj, parentKey = '') => {
     const entries = [];
     for (const k of Object.keys(obj || {})) {
@@ -221,29 +331,21 @@ export default function DynamicRegistrationForm({
 
       if (hasFiles) {
         const fd = new FormData();
-        // Append files and non-file fields. For nested non-file objects, serialize to JSON under top-level key
-        // Strategy: for each top-level key in schema, if it contains nested structure and contains non-file values -> append as JSON
-        // and append files with their field key (dot-notation) multiple times.
         const flat = flattenForFormData(values);
-        // first append non-file entries (strings, numbers, booleans) grouped by top-level key when nested
         const nonFileGrouped = {};
         flat.forEach(({ key, value, isFile }) => {
           if (isFile) return;
-          // for nested keys, group into a top-level JSON object by top-level field
           const top = key.split('.')[0];
           if (!nonFileGrouped[top]) nonFileGrouped[top] = {};
-          // set nested path inside group
           const rest = key.split('.').slice(1).join('.');
           if (rest) setDeep(nonFileGrouped[top], rest, value);
           else nonFileGrouped[top] = value;
         });
         Object.keys(nonFileGrouped).forEach(k => {
-          // if the value is an object, stringify it
           const v = nonFileGrouped[k];
           if (typeof v === 'object' && v !== null) fd.append(k, JSON.stringify(v));
           else fd.append(k, v ?? '');
         });
-        // append files (flat entries) using their exact dot key
         flat.forEach(({ key, value, isFile }) => {
           if (!isFile) return;
           fd.append(key, value);
@@ -251,7 +353,6 @@ export default function DynamicRegistrationForm({
 
         await onSubmit(fd, true);
       } else {
-        // Non-file submit: send nested object as-is
         await onSubmit(values, false);
       }
     } catch (err) {
@@ -264,11 +365,38 @@ export default function DynamicRegistrationForm({
 
   const renderField = (field) => {
     const value = getDeep(values, field.key);
+    const fe = fieldErrors[field.key];
+    const errorId = fe ? `${field.key}-error` : undefined;
+
+    // Render checkbox inline with label for better UX
+    if (field.type === 'checkbox') {
+      return (
+        <div key={field.key} className="drf-field drf-field-inline">
+          <label className="form-label checkbox-label" htmlFor={field.key}>
+            <Field field={field} value={value} onChange={handleChange} errorId={errorId} />
+            <span style={{ marginLeft: 10 }}>
+              {field.label}
+              {field.required && <span className="required-asterisk" aria-hidden="true">*</span>}
+            </span>
+          </label>
+
+          {field.hint && <small className="field-hint">{field.hint}</small>}
+          {fe && <div id={errorId} className="form-error" role="alert">{fe}</div>}
+        </div>
+      );
+    }
+
     return (
       <div key={field.key} className="drf-field">
-        <label htmlFor={field.key}>{field.label}{field.required ? ' *' : ''}</label>
-        <Field field={field} value={value} onChange={handleChange} />
+        <label className="form-label" htmlFor={field.key}>
+          {field.label}
+          {field.required && <span className="required-asterisk" aria-hidden="true">*</span>}
+        </label>
+
+        <Field field={field} value={value} onChange={handleChange} errorId={errorId} />
+
         {field.hint && <small className="field-hint">{field.hint}</small>}
+        {fe && <div id={errorId} className="form-error" role="alert">{fe}</div>}
       </div>
     );
   };
@@ -282,11 +410,18 @@ export default function DynamicRegistrationForm({
   if (!asForm) return renderFieldsOnly();
 
   return (
-    <form className={`dynamic-registration-form ${className}`} onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className={`dynamic-registration-form ${className}`}>
       {(schema || []).map(renderField)}
-      {error && <div className="form-error">{error}</div>}
+
+      {error && <div className="form-error" role="alert">{error}</div>}
+
       <div className="drf-actions">
-        <button disabled={submitting} type="submit">{submitting ? 'Submitting...' : submitLabel}</button>
+        <button type="button" className="btn-secondary" onClick={() => { setValues(buildInitial()); setError(null); setFieldErrors({}); }}>
+          Reset
+        </button>
+        <button type="submit" className="btn-primary" disabled={submitting}>
+          {submitting ? 'Submitting...' : submitLabel}
+        </button>
       </div>
     </form>
   );

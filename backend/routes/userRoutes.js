@@ -201,7 +201,8 @@ router.get("/:id", authenticateToken, async (req, res) => {
     const id = req.params.id.trim();
 
     const user = await User.findById(id)
-      .select("studentId name username profilePic profilePicture sex followers following")
+      // Add coverPic to selected fields
+      .select("studentId name username profilePic profilePicture sex followers following bio coverPic")
       .lean();
 
     if (!user) {
@@ -214,7 +215,10 @@ router.get("/:id", authenticateToken, async (req, res) => {
       studentId: user.studentId || user.studentID || user.student_number || null,
       isOnline: getOnlineStatus(req, user._id || id),
       profilePic: user.profilePic || user.profilePicture || getDefaultProfilePic(user.sex),
-      profilePicture: user.profilePicture || user.profilePic || getDefaultProfilePic(user.sex)
+      profilePicture: user.profilePicture || user.profilePic || getDefaultProfilePic(user.sex),
+      // Ensure bio and cover are included
+      bio: user.bio || "",
+      coverPic: user.coverPic || "" 
     };
 
     return res.status(200).json({ success: true, data: userData });

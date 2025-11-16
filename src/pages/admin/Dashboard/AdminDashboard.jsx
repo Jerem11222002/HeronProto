@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../context/authContext';
 import axios from 'axios';
 import { toast } from 'react-toastify';
@@ -6,96 +6,114 @@ import { CircularProgress } from '@mui/material';
 import "./adminDashboard.scss";
 import logger from '../../../utils/logger';
 import { Link } from "react-router-dom";
+import { useSocket } from '../../../context/SocketContext';
 
 const AdminDashboard = () => {
   const { currentUser } = useAuth();
+  const socket = useSocket();
   const [stats, setStats] = useState({
     totalUsers: 0,
     activeEvents: 0,
     totalParticipants: 0,
     onlineUsers: 0
   });
-  // removed activities to maximize upcoming events area
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  // Extracted fetch function so it can be reused by effect and event listeners
+  const fetchDashboardData = useCallback(async () => {
     let mounted = true;
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
+    try {
+      setLoading(true);
 
-        // Try multiple places for the admin token: localStorage first, then currentUser fields
-        const tokenFromStorage = (() => {
-          try {
-            // check both normal user token and admin token keys
-            return localStorage.getItem('token') || localStorage.getItem('adminToken');
-          } catch (e) { return null; }
-        })();
-        const tokenFromCurrentUser = currentUser && (currentUser.token || currentUser.accessToken || currentUser.authToken || currentUser.jwt || currentUser.tokenString || currentUser.access_token);
-        const token = tokenFromStorage || tokenFromCurrentUser || null;
-        console.info('AdminDashboard: token present?', !!token, token ? `${String(token).slice(0,8)}...` : null);
+      const tokenFromStorage = (() => {
+        try {
+          return localStorage.getItem('token') || localStorage.getItem('adminToken');
+        } catch (e) { return null; }
+      })();
+      const tokenFromCurrentUser = currentUser && (currentUser.token || currentUser.accessToken || currentUser.authToken || currentUser.jwt || currentUser.tokenString || currentUser.access_token);
+      const token = tokenFromStorage || tokenFromCurrentUser || null;
+      console.info('AdminDashboard: token present?', !!token, token ? `${String(token).slice(0,8)}...` : null);
 
-        // Persist token if found on currentUser but not in storage
-        if (!tokenFromStorage && tokenFromCurrentUser) {
-          try { localStorage.setItem('token', tokenFromCurrentUser); } catch (e) { /* ignore storage errors */ }
+      if (!token) {
+        setLoading(false);
+        console.debug('AdminDashboard: no token available yet, skipping stats fetch');
+        return;
+      }
+
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
+      };
 
-        // If no token, skip fetching (do NOT show toast here; allow effect to re-run when auth becomes available)
-        if (!token) {
-          if (mounted) setLoading(false);
-          console.debug('AdminDashboard: no token available yet, skipping stats fetch');
-          return;
-        }
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-        const config = {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        };
+      logger.info('admin.dashboard.fetch.start', { timestamp: new Date().toISOString() });
 
-        // Also set axios default so other calls use the same header
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      const [statsRes, eventsRes] = await Promise.all([
+        axios.get('/api/admin/stats', config),
+        axios.get('/api/admin/events/upcoming', config)
+      ]);
 
-        logger.info('admin.dashboard.fetch.start', { timestamp: new Date().toISOString() });
+      if (!mounted) return;
 
-        // fetch stats + upcoming events (no activities to reduce payload)
-        const [statsRes, eventsRes] = await Promise.all([
-          axios.get('/api/admin/stats', config),
-          axios.get('/api/admin/events/upcoming', config)
-        ]);
+      setStats({
+        totalUsers: statsRes.data.totalUsers || 0,
+        activeEvents: statsRes.data.activeEvents || 0,
+        totalParticipants: statsRes.data.totalParticipants || 0,
+        onlineUsers: statsRes.data.onlineUsers || 0
+      });
+      setUpcomingEvents(Array.isArray(eventsRes.data) ? eventsRes.data : (eventsRes.data?.items || []));
+      setLoading(false);
+    } catch (error) {
+      logger.error('admin.dashboard.fetch.error', { message: error?.message || String(error), response: error?.response?.data });
+      if (error.response?.status === 401) {
+        toast.error('Your session has expired. Please login again.');
+      } else {
+        toast.error(error.response?.data?.message || 'Failed to load dashboard data');
+      }
+      setLoading(false);
+    }
+  }, [currentUser]);
 
-        if (!mounted) return;
+  useEffect(() => {
+    // initial fetch
+    fetchDashboardData();
 
-        console.debug('AdminDashboard: statsRes', statsRes);
-        console.debug('AdminDashboard: eventsRes', eventsRes);
+    // re-fetch when other admin UIs signal an update
+    const handler = (e) => {
+      console.debug('AdminDashboard: app:events:updated received', e?.detail);
+      fetchDashboardData();
+    };
+    window.addEventListener('app:events:updated', handler);
 
-        setStats({
-          totalUsers: statsRes.data.totalUsers || 0,
-          activeEvents: statsRes.data.activeEvents || 0,
-          totalParticipants: statsRes.data.totalParticipants || 0,
-          onlineUsers: statsRes.data.onlineUsers || 0
-        });
-        setUpcomingEvents(eventsRes.data || []);
+    // listen for server socket events
+    const socketHandler = (payload) => {
+      console.debug('AdminDashboard: events:changed', payload);
+      fetchDashboardData();
+    };
+    if (socket && typeof socket.on === 'function') {
+      socket.on('events:changed', socketHandler);
+    }
 
-      } catch (error) {
-        logger.error('admin.dashboard.fetch.error', { message: error?.message || String(error), response: error?.response?.data });
-        // show toast only for real failures (not for missing token)
-        if (error.response?.status === 401) {
-          toast.error('Your session has expired. Please login again.');
-        } else {
-          toast.error(error.response?.data?.message || 'Failed to load dashboard data');
-        }
-      } finally {
-        if (mounted) setLoading(false);
+    // also listen to storage changes (in case token is set in another tab)
+    const storageHandler = (e) => {
+      if (e.key === 'adminToken' || e.key === 'token') {
+        fetchDashboardData();
       }
     };
+    window.addEventListener('storage', storageHandler);
 
-    fetchDashboardData();
-    return () => { mounted = false; };
-  // Re-run when currentUser changes (or when a token is stored manually)
-  }, [currentUser]);
+    return () => {
+      window.removeEventListener('app:events:updated', handler);
+      window.removeEventListener('storage', storageHandler);
+      if (socket && typeof socket.off === 'function') {
+        socket.off('events:changed', socketHandler);
+      }
+    };
+  }, [currentUser, fetchDashboardData, socket]);
   
   if (loading) {
     return (

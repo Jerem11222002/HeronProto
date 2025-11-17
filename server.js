@@ -23,6 +23,7 @@ const messageRoutes = require("./backend/routes/messages");
 const uploadRoutes = require('./backend/routes/upload');
 const adminAnalyticsRouter = require('./backend/routes/adminAnalytics');
 const adminMonitoringRouter = require('./backend/routes/adminMonitoring');
+const adminAccountsRouter = require('./backend/routes/adminAccounts');
 
 const path = require("path");
 const fs = require("fs");
@@ -328,6 +329,7 @@ app.use("/api/messages", messageRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/admin/analytics', adminAnalyticsRouter);
 app.use('/api/admin/monitoring', adminMonitoringRouter);
+app.use('/api/admin/accounts', adminAccountsRouter);
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 // health check for quick dev diagnostics

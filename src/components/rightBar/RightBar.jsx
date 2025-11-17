@@ -113,11 +113,28 @@ const RightBar = () => {
 
   const { mutualFriends, following, followers } = userRelationships;
 
-  const userLists = useMemo(() => ({
-    [TABS.friends.id]: mutualFriends?.filter(friend => friend._id !== currentUser?._id) || [],
-    [TABS.following.id]: following?.filter(user => user._id !== currentUser?._id) || [],
-    [TABS.followers.id]: followers?.filter(user => user._id !== currentUser?._id) || []
-  }), [mutualFriends, following, followers, currentUser?._id]);
+  const userLists = useMemo(() => {
+    const currId = String(currentUser?._id || currentUser?.id || '');
+    const norm = (list) => (Array.isArray(list) ? list.map(u => ({
+      ...u,
+      _id: String(u._id || u.id || ''),
+
+      name: u.name || '',
+      username: u.username || '',
+      profilePic: u.profilePic || u.profilePicture || null,
+      sex: u.sex || u.gender || null
+    })) : []);
+
+    const mf = norm(mutualFriends).filter(f => f._id !== currId);
+    const fw = norm(following).filter(f => f._id !== currId);
+    const fv = norm(followers).filter(f => f._id !== currId);
+
+    return {
+      friends: mf,
+      following: fw,
+      followers: fv
+    };
+  }, [mutualFriends, following, followers, currentUser?._id]);
 
   useEffect(() => {
     if (!socket || !isConnected) return;
@@ -237,7 +254,14 @@ const RightBar = () => {
     );
   }, [addOnlineStatus, handleUserClick]);
 
-  if (!currentUser) return null;
+  // compute safe counts (fallback to currentUser fields if relationships not ready)
+  const counts = {
+    friends: (userLists.friends?.length) ?? (currentUser?.mutualFriends?.length || 0),
+    following: (userLists.following?.length) ?? (currentUser?.following?.length || 0),
+    followers: (userLists.followers?.length) ?? (currentUser?.followers?.length || 0)
+  };
+
+  // tabs render: use counts for labels
   if (loading) return <LoadingSkeleton />;
   if (error) {
     return (
@@ -260,7 +284,11 @@ const RightBar = () => {
               className={`tab ${activeTab === tab.id ? 'active' : ''}`}
               onClick={() => setActiveTab(tab.id)}
             >
-              {tab.label} ({userLists[tab.id]?.length || 0})
+              {tab.label} (
+                {tab.id === 'friends' ? counts.friends 
+                  : tab.id === 'following' ? counts.following 
+                  : counts.followers}
+              )
             </button>
           ))}
         </div>

@@ -103,35 +103,49 @@ export const AuthContextProvider = ({ children }) => {
   }, []);
 
   const fetchUserRelationships = useCallback(async (userId) => {
-    if (!userId) return false;
-  
-    const token = getAuthToken(false);
-    if (!token || !checkTokenValidity(token)) return false;
-  
     try {
-      const headers = { Authorization: `Bearer ${token}` };
+      const token = localStorage.getItem("token");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      // fetch endpoints (some endpoints return array directly, others wrap with { success, data })
       const [mutualRes, followingRes, followersRes] = await Promise.all([
-        axios.get(`${BASE_URL}/api/users/${userId}/mutual-friends`, { headers }),
-        axios.get(`${BASE_URL}/api/users/${userId}/following`, { headers }),
-        axios.get(`${BASE_URL}/api/users/${userId}/followers`, { headers })
+        axios.get(`${BASE_URL}/api/users/${userId}/mutual-friends`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${BASE_URL}/api/users/${userId}/following`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${BASE_URL}/api/users/${userId}/followers`, { headers }).catch(() => ({ data: [] }))
       ]);
-  
-      const [mutual, following, followers] = await Promise.all([
-        mutualRes.data,
-        followingRes.data,
-        followersRes.data
-      ]);
-  
+
+      const extractArray = (r) => {
+        if (!r) return [];
+        const body = r.data ?? r;
+        if (Array.isArray(body)) return body;
+        if (Array.isArray(body.data)) return body.data;
+        if (body && body.success && Array.isArray(body.data)) return body.data;
+        return [];
+      };
+
+      const normalizeUsers = (arr) => (extractArray(arr) || []).map(u => ({
+        ...u,
+        _id: String(u._id || u.id || ''),
+        name: u.name || '',
+        username: u.username || '',
+        profilePic: u.profilePic || u.profilePicture || null,
+        sex: u.sex || u.gender || null
+      }));
+
+      const mutual = normalizeUsers(mutualRes);
+      const following = normalizeUsers(followingRes);
+      const followers = normalizeUsers(followersRes);
+
       setUserRelationships({
         mutualFriends: mutual,
-        following: following,
-        followers: followers
+        following,
+        followers
       });
-  
+
       setInitialized(true);
       return true;
     } catch (error) {
-      console.error("❌ Relationship fetch failed:", error);
+      console.error('❌ Relationship fetch failed:', error);
       return false;
     }
   }, [BASE_URL]);

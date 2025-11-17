@@ -17,11 +17,12 @@ const AdminAccounts = () => {
   const { currentUser } = useAuth();
 
   const [query, setQuery] = useState('');
-  const [list, setList] = useState([]); // placeholder data
+  const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const [showModal, setShowModal] = useState(false);
-  const [editing, setEditing] = useState(null); // null => create
+  const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({
     username: '',
     email: '',
@@ -31,11 +32,13 @@ const AdminAccounts = () => {
     adminRole: 'admin',
     adminPermissions: { ...DEFAULT_PERMISSIONS }
   });
+  const [formError, setFormError] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   const modalRef = useRef(null);
   const searchRef = useRef(null);
 
-  // media query state to replace undefined `matchedMedia`
+  // Media query for responsive design — MOVED BEFORE GUARD
   const [isNarrow, setIsNarrow] = useState(
     typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : false
   );
@@ -44,10 +47,8 @@ const AdminAccounts = () => {
     if (typeof window === 'undefined' || !window.matchMedia) return;
     const mq = window.matchMedia('(max-width: 820px)');
     const handler = (e) => setIsNarrow(e.matches);
-    // modern & fallback
     if (mq.addEventListener) mq.addEventListener('change', handler);
     else mq.addListener(handler);
-    // set initial
     setIsNarrow(mq.matches);
     return () => {
       if (mq.removeEventListener) mq.removeEventListener('change', handler);
@@ -55,20 +56,43 @@ const AdminAccounts = () => {
     };
   }, []);
 
-  useEffect(() => {
-    setLoading(true);
-    setTimeout(() => {
-      setList([
-        { _id: '1', username: 'superadmin', email: 'superadmin@gmail.com', adminRole: 'super', adminPermissions: { ...DEFAULT_PERMISSIONS, canManageUsers: true, canManageEvents: true, canAccessAnalytics: true } },
-        { _id: '2', username: 'eventmgr', email: 'events@umak.edu', adminRole: 'admin', adminPermissions: { ...DEFAULT_PERMISSIONS, canManageEvents: true } }
-      ]);
+  // Fetch admin accounts from backend
+  const fetchAccounts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetch('/api/admin/accounts', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          navigate('/admin/login');
+          return;
+        }
+        throw new Error(`Failed to fetch accounts: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      setList(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError(err.message);
+      console.error('Fetch error:', err);
+    } finally {
       setLoading(false);
-    }, 200);
+    }
+  };
+
+  // Load accounts on mount
+  useEffect(() => {
+    fetchAccounts();
   }, []);
 
   useEffect(() => {
     if (showModal) {
-      // focus first input in modal
       modalRef.current?.querySelector('input,select,button')?.focus();
     }
   }, [showModal]);
@@ -93,6 +117,7 @@ const AdminAccounts = () => {
 
   const openCreate = () => {
     setEditing(null);
+    setFormError(null);
     setForm({
       username: '',
       email: '',
@@ -107,6 +132,7 @@ const AdminAccounts = () => {
 
   const openEdit = (user) => {
     setEditing(user);
+    setFormError(null);
     setForm({
       username: user.username || '',
       email: user.email || '',
@@ -121,20 +147,115 @@ const AdminAccounts = () => {
 
   const handleSave = async (e) => {
     e?.preventDefault();
-    if (editing) {
-      setList(prev => prev.map(p => (p._id === editing._id ? { ...p, ...form } : p)));
-    } else {
-      setList(prev => [{ _id: Date.now().toString(), ...form }, ...prev]);
+    setFormError(null);
+
+    // Validation
+    if (!form.username.trim() || !form.email.trim() || !form.name.trim()) {
+      setFormError('Username, email, and name are required.');
+      return;
     }
-    window.dispatchEvent(new CustomEvent('app:admin:accounts:changed', { detail: { action: editing ? 'updated' : 'created' } }));
-    setShowModal(false);
+    if (!editing && !form.password.trim()) {
+      setFormError('Password is required for new accounts.');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const token = localStorage.getItem('adminToken') || '';
+      const url = editing ? `/api/admin/accounts/${editing._id}` : '/api/admin/accounts';
+      const method = editing ? 'PUT' : 'POST';
+
+      // Build request body
+      const body = {
+        email: form.email,
+        name: form.name,
+        adminRole: form.adminRole,
+        adminPermissions: form.adminPermissions
+      };
+
+      // Only include username and password for new accounts
+      if (!editing) {
+        body.username = form.username;
+        body.password = form.password;
+      }
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Failed to ${editing ? 'update' : 'create'} account`);
+      }
+
+      const savedAdmin = await response.json();
+
+      if (editing) {
+        setList(prev => prev.map(p => (p._id === editing._id ? savedAdmin.admin : p)));
+      } else {
+        setList(prev => [savedAdmin.admin, ...prev]);
+      }
+
+      window.dispatchEvent(new CustomEvent('app:admin:accounts:changed', {
+        detail: { action: editing ? 'updated' : 'created', admin: savedAdmin.admin }
+      }));
+
+      setShowModal(false);
+    } catch (err) {
+      setFormError(err.message || 'An error occurred');
+      console.error('Save error:', err);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDelete = (id) => {
-    if (!window.confirm('Delete this admin account?')) return;
-    setList(prev => prev.filter(p => p._id !== id));
-    window.dispatchEvent(new CustomEvent('app:admin:accounts:changed', { detail: { action: 'deleted', id } }));
+  const handleDelete = async (id) => {
+    if (!window.confirm('Delete this admin account? This will remove their admin privileges.')) return;
+
+    try {
+      const token = localStorage.getItem('adminToken') || '';
+      const response = await fetch(`/api/admin/accounts/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete account');
+      }
+
+      setList(prev => prev.filter(p => p._id !== id));
+
+      window.dispatchEvent(new CustomEvent('app:admin:accounts:changed', {
+        detail: { action: 'deleted', adminId: id }
+      }));
+    } catch (err) {
+      setError(err.message || 'Failed to delete account');
+      console.error('Delete error:', err);
+    }
   };
+
+  // GUARD CHECK NOW COMES AFTER ALL HOOKS
+  if (!currentUser || currentUser.adminRole !== 'super') {
+    return (
+      <div className="adminAccountsPage">
+        <header className="pageHeader">
+          <h1>Admin Accounts</h1>
+        </header>
+        <div className="accessDenied" style={{ padding: 24 }}>
+          Access denied — Super admin role required.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="adminAccountsPage">
@@ -157,13 +278,17 @@ const AdminAccounts = () => {
             {query && <button className="clear" onClick={() => setQuery('')} aria-label="Clear search">×</button>}
           </div>
 
-          {currentUser?.adminPermissions?.canManageUsers && (
-            <button className="btn primary" onClick={openCreate} aria-label="Create admin account">
-              <MdAdd /> Create
-            </button>
-          )}
+          <button className="btn primary" onClick={openCreate} aria-label="Create admin account">
+            <MdAdd /> Create
+          </button>
         </div>
       </header>
+
+      {error && (
+        <div className="errorBanner" style={{ padding: 12, marginBottom: 16, borderRadius: 8, background: 'rgba(220,38,38,0.1)', color: '#dc2626' }}>
+          {error}
+        </div>
+      )}
 
       <section className="accountsList" aria-live="polite">
         {loading ? (
@@ -172,7 +297,7 @@ const AdminAccounts = () => {
           <div className="emptyState">
             <div className="emptyTitle">No admin accounts found</div>
             <div className="emptySubtitle">Create a new admin account to get started.</div>
-            {currentUser?.adminPermissions?.canManageUsers && <button className="btn primary" onClick={openCreate}>Create account</button>}
+            <button className="btn primary" onClick={openCreate}>Create account</button>
           </div>
         ) : (
           <>
@@ -196,7 +321,9 @@ const AdminAccounts = () => {
                       <td>{u.email}</td>
                       <td>{u.adminRole || '-'}</td>
                       <td className="perms">
-                        {Object.entries(u.adminPermissions || {}).filter(([k,v]) => v).map(([k]) => <span key={k} className="chip" title={k}>{k.replace(/([A-Z])/g, ' $1')}</span>)}
+                        {Object.entries(u.adminPermissions || {}).filter(([k,v]) => v).map(([k]) => (
+                          <span key={k} className="chip" title={k}>{k.replace(/([A-Z])/g, ' $1')}</span>
+                        ))}
                       </td>
                       <td className="actions">
                         <button title="Edit" onClick={() => openEdit(u)} aria-label={`Edit ${u.username}`}><MdEdit /></button>
@@ -208,7 +335,7 @@ const AdminAccounts = () => {
               </table>
             </div>
 
-            {/* responsive cards for narrow screens */}
+            {/* Responsive card view for narrow screens */}
             <div className="cards" aria-hidden={!isNarrow ? 'true' : 'false'}>
               {isNarrow && filtered.map(u => (
                 <div className="card" key={`card-${u._id}`}>
@@ -227,7 +354,9 @@ const AdminAccounts = () => {
                     </div>
                   </div>
                   <div className="chipRow">
-                    {Object.entries(u.adminPermissions || {}).filter(([k,v]) => v).map(([k]) => <span key={k} className="chip">{k.replace(/([A-Z])/g, ' $1')}</span>)}
+                    {Object.entries(u.adminPermissions || {}).filter(([k,v]) => v).map(([k]) => (
+                      <span key={k} className="chip">{k.replace(/([A-Z])/g, ' $1')}</span>
+                    ))}
                   </div>
                 </div>
               ))}
@@ -244,15 +373,23 @@ const AdminAccounts = () => {
               <button type="button" className="closeBtn" onClick={() => setShowModal(false)} aria-label="Close dialog"><MdClose /></button>
             </div>
 
+            {formError && (
+              <div className="formError" style={{ padding: '12px 18px', background: 'rgba(220,38,38,0.1)', color: '#dc2626', borderBottom: '1px solid rgba(220,38,38,0.2)' }}>
+                {formError}
+              </div>
+            )}
+
             <div className="modalBody">
-              <label className="formRow">
-                <span>Username</span>
-                <input required value={form.username} onChange={e => setForm({...form, username: e.target.value})} />
-              </label>
+              {!editing && (
+                <label className="formRow">
+                  <span>Username</span>
+                  <input required value={form.username} onChange={e => setForm({...form, username: e.target.value})} />
+                </label>
+              )}
 
               <label className="formRow">
                 <span>Name</span>
-                <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+                <input required value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
               </label>
 
               <label className="formRow">
@@ -271,11 +408,13 @@ const AdminAccounts = () => {
                 <span>Role</span>
                 <select value={form.adminRole} onChange={e => setForm({...form, adminRole: e.target.value})}>
                   <option value="admin">Admin</option>
+                  <option value="moderator">Moderator</option>
+                  <option value="editor">Editor</option>
                   <option value="super">Super Admin</option>
                 </select>
               </label>
 
-              <div className="formRow permissions">
+              <div className="formRow permissions" style={{ gridColumn: !editing ? 'span 2' : 'span 2' }}>
                 <span>Permissions</span>
                 <div className="grid">
                   {Object.entries(DEFAULT_PERMISSIONS).map(([key]) => (
@@ -296,8 +435,10 @@ const AdminAccounts = () => {
             </div>
 
             <div className="modalFooter">
-              <button type="button" className="btn" onClick={() => setShowModal(false)}>Cancel</button>
-              <button type="submit" className="btn primary">{editing ? 'Update' : 'Create'}</button>
+              <button type="button" className="btn" onClick={() => setShowModal(false)} disabled={saving}>Cancel</button>
+              <button type="submit" className="btn primary" disabled={saving}>
+                {saving ? 'Saving…' : (editing ? 'Update' : 'Create')}
+              </button>
             </div>
           </form>
         </div>

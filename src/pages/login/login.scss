@@ -205,6 +205,29 @@
             }
           }
         }
+
+        .forgot-password-link {
+          text-align: left;
+          margin-left: 10px;
+          font-size: 14px;
+
+          a {
+            color: #8353CA;
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+
+            &:hover {
+              color: #6A9CE9;
+              text-decoration: underline;
+            }
+
+            &:active {
+              transform: scale(0.98);
+            }
+          }
+        }
       }
     }
   }

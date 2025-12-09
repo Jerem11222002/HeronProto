@@ -41,6 +41,8 @@ import AdminAccounts from "./pages/admin/Accounts/AdminAccounts";
 
 // Terms and Conditions import
 import Terms from "./pages/Pledge/Terms";
+import ForgotPassword from "./pages/forgot-password/ForgotPassword";
+import ResetPassword from "./pages/reset-password/ResetPassword";
 
 // Layout Components
 const Layout = ({ darkMode }) => (
@@ -230,6 +232,15 @@ function AppContent() {
     {
       path: "/post/:postId",
       element: <FullScreenPostPage />
+    },
+    // Password Reset Routes
+    {
+      path: '/forgot-password',
+      element: <ForgotPassword />
+    },
+    {
+      path: '/reset-password',
+      element: <ResetPassword />
     }
   ]);
 

@@ -86,15 +86,27 @@ const Login = () => {
   
     } catch (err) {
       console.error("🚨 Login error:", {
-        message: err.message,
-        type: isAdmin ? 'admin' : 'user',
-        error: err
+        message: err?.message,
+        status: err?.response?.status,
+        responseData: err?.response?.data
       });
-      
-      setError(err.message || "Login failed - Please try again");
+
+      let message = "Login failed - Please try again";
+
+      // Prefer server-sent message shapes: { message } or { error } or { msg }
+      const resData = err?.response?.data;
+      if (resData && typeof resData === 'object') {
+        message = resData.message || resData.error || resData.msg || message;
+      } else if (err?.response?.status === 401) {
+        // Generic unauthorized fallback
+        message = "Invalid username or password";
+      } else if (err?.message) {
+        message = err.message;
+      }
+
+      setError(message);
       clearAuthData();
       setCurrentUser(null);
-  
     } finally {
       setLoading(false);
     }
@@ -164,6 +176,9 @@ const Login = () => {
             >
               {loading ? "Logging in..." : (isAdmin ? "Login as Admin" : "Login")}
             </button>
+            <p className="forgot-password-link">
+              <a href="/forgot-password">Forgot your password?</a>
+            </p>
           </form>
         </div>
       </div>

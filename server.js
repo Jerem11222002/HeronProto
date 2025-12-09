@@ -371,6 +371,37 @@ app.use((err, req, res, next) => {
   });
 });
 
+// --- DEBUG: inspect imported route objects to find non-router values ---
+try {
+  const routeInspect = (name, obj) => {
+    const t = typeof obj;
+    const isRouter = !!(obj && (typeof obj === 'function' || typeof obj.use === 'function' || obj.stack));
+    console.log(`ROUTE CHECK: ${name} -> type=${t}, isRouter=${isRouter}, keys=${obj && Object.keys(obj).slice(0,6)}`);
+  };
+
+  routeInspect('authRoutes', authRoutes);
+  routeInspect('adminAuthRoutes', adminAuthRoutes);
+  routeInspect('notificationRoutes', notificationRoutes);
+  routeInspect('settingsRoutes', settingsRoutes);
+  routeInspect('userRoutes', userRoutes);
+  routeInspect('postRoutes', postRoutes);
+  routeInspect('commentRoutes', commentRoutes);
+  routeInspect('featuredRoutes', featuredRoutes);
+  routeInspect('profileRoutes', profileRoutes);
+  routeInspect('userSearchRoutes', userSearchRoutes);
+  routeInspect('eventRoute', eventRoute);
+  routeInspect('eventRegistrationRoutes', eventRegistrationRoutes);
+  routeInspect('adminParticipantsRouter', adminParticipantsRouter);
+  routeInspect('adminStatsRouter', adminStatsRouter);
+  routeInspect('messageRoutes', messageRoutes);
+  routeInspect('uploadRoutes', uploadRoutes);
+  routeInspect('adminAnalyticsRouter', adminAnalyticsRouter);
+  routeInspect('adminMonitoringRouter', adminMonitoringRouter);
+  routeInspect('adminAccountsRouter', adminAccountsRouter);
+} catch (err) {
+  console.error('Route inspect error:', err);
+}
+
 // Server Startup
 const startServer = async () => {
   try {

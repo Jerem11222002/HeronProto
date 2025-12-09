@@ -274,7 +274,20 @@ const UserSchema = new mongoose.Schema({
     ref: "User", 
     default: [],
     index: true
+  },
+
+  // Password reset
+  passwordResetToken: {
+    type: String,
+    default: null,
+    select: false
+  },
+  passwordResetExpires: {
+    type: Date,
+    default: null,
+    select: false
   }
+
 }, { 
   timestamps: true,
   toJSON: { 

@@ -4,6 +4,8 @@ const jwt = require("jsonwebtoken");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 const User = require("../models/users");
 const Interest = require('../models/interest');
 const authenticateToken = require('../Middleware/authenticateToken');
@@ -83,6 +85,40 @@ const upload = multer({
     cb(null, true);
   }
 });
+
+// Configure email transporter (prefer SMTP config, fall back to Gmail or JSON for dev)
+let transporter;
+
+if (process.env.SMTP_HOST && process.env.SMTP_PASS) {
+  transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: parseInt(process.env.SMTP_PORT, 10) || 587,
+    secure: (process.env.SMTP_SECURE === 'true') || false,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS
+    }
+  });
+  console.info('Email transporter: using SMTP host', process.env.SMTP_HOST);
+} else if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
+  transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASSWORD
+    }
+  });
+  console.info('Email transporter: using Gmail service for', process.env.EMAIL_USER);
+} else {
+  // No real email credentials — use jsonTransport so code paths work in dev
+  transporter = nodemailer.createTransport({ jsonTransport: true });
+  console.warn('Email transporter: no SMTP/EMAIL credentials found — using jsonTransport (dev only)');
+}
+
+// Optional: verify transporter at startup and log result
+transporter.verify()
+  .then(() => console.info('✅ Email transporter verified'))
+  .catch((err) => console.warn('⚠️ Email transporter verification failed:', err && err.message));
 
 // Helper: Generate JWT Token
 const generateToken = (userId) => {
@@ -447,5 +483,194 @@ router.post("/update-setup", authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * POST /api/auth/forgot-password
+ * User enters email → send reset link
+ */
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email is required' 
+      });
+    }
 
+    const user = await User.findOne({ email: email.toLowerCase() }).select('+passwordResetToken +passwordResetExpires');
+    
+    if (!user) {
+      // Don't reveal if email exists (security best practice)
+      return res.status(200).json({ 
+        success: true, 
+        message: 'If an account exists, a reset link has been sent to your email.' 
+      });
+    }
+
+    // Generate reset token (32 bytes = 64 hex chars)
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+    // Set token expiry (1 hour)
+    user.passwordResetToken = resetTokenHash;
+    user.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000);
+    await user.save();
+
+    // Build reset URL (frontend will handle this)
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
+
+    // Email content
+    const mailOptions = {
+      from: process.env.EMAIL_USER || 'noreply@heronFusion.com',
+      to: email,
+      subject: 'Heron Fusion - Password Reset Request',
+      html: `
+        <h2>Password Reset Request</h2>
+        <p>Hi ${user.name || user.username},</p>
+        <p>You requested a password reset. Click the link below to set a new password:</p>
+        <p><a href="${resetUrl}" style="background-color: #4f46e5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Password</a></p>
+        <p>This link expires in 1 hour.</p>
+        <p>If you didn't request this, ignore this email.</p>
+        <p>Best,<br/>Heron Fusion Team</p>
+      `
+    };
+
+    // Send email
+    await transporter.sendMail(mailOptions);
+
+    console.log('✅ Password reset email sent to:', email);
+
+    res.status(200).json({
+      success: true,
+      message: 'If an account exists, a reset link has been sent to your email.'
+    });
+  } catch (error) {
+    console.error('❌ Forgot password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to process password reset request',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+/**
+ * POST /api/auth/reset-password
+ * User provides token + new password → reset password
+ */
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, email, newPassword, confirmPassword } = req.body;
+
+    if (!token || !email || !newPassword || !confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Token, email, password, and confirmation are required'
+      });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Passwords do not match'
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters'
+      });
+    }
+
+    // Hash the token to compare with stored hash
+    const resetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Find user with matching token and unexpired expiry
+    const user = await User.findOne({
+      email: email.toLowerCase(),
+      passwordResetToken: resetTokenHash,
+      passwordResetExpires: { $gt: new Date() }
+    }).select('+password +passwordResetToken +passwordResetExpires');
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired reset token'
+      });
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+
+    // Clear reset token fields
+    user.passwordResetToken = null;
+    user.passwordResetExpires = null;
+
+    await user.save();
+
+    console.log('✅ Password reset successful for:', email);
+
+    res.status(200).json({
+      success: true,
+      message: 'Password has been reset successfully. You can now login with your new password.'
+    });
+  } catch (error) {
+    console.error('❌ Reset password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to reset password',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+/**
+ * POST /api/auth/verify-reset-token
+ * Check if reset token is valid (optional, for frontend validation)
+ */
+router.post('/verify-reset-token', async (req, res) => {
+  try {
+    const { token, email } = req.body;
+
+    if (!token || !email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Token and email are required'
+      });
+    }
+
+    const resetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+    const user = await User.findOne({
+      email: email.toLowerCase(),
+      passwordResetToken: resetTokenHash,
+      passwordResetExpires: { $gt: new Date() }
+    }).select('_id');
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired token'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Token is valid'
+    });
+  } catch (error) {
+    console.error('❌ Token verification error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Token verification failed'
+    });
+  }
+});
+
+/**
+ * Export router
+ */
 module.exports = router;

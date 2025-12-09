@@ -34,10 +34,20 @@ const User = require('./backend/models/users');
 const sessionStore = require('./backend/services/sessionStore');
 
 // Constants
+const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000,http://localhost:3001,http://localhost:3002,https://heron-proto.vercel.app,https://heronproto-1.onrender.com')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
+
 const CORS_OPTIONS = {
-  origin: ["http://localhost:3000", "http://localhost:3001","http://localhost:3002"],
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like curl/Postman) or if origin is explicitly allowed
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1) return callback(null, true);
+    return callback(new Error('CORS policy: origin not allowed'));
+  },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], // <-- Add 'PATCH' here
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: [
     'Content-Type',
     'Authorization',
@@ -54,10 +64,12 @@ const CORS_OPTIONS = {
   optionsSuccessStatus: 204
 };
 
-
-
 // Initialize Express and Server
 const app = express();
+
+// ensure preflight OPTIONS requests are handled using the same cors options
+app.options('*', cors(CORS_OPTIONS));
+
 const server = http.createServer(app);
 
 // Initialize Socket.IO with CORS
@@ -67,6 +79,10 @@ const io = new Server(server, {
 });
 
 app.set('io', io); // <-- ADD THIS LINE
+app.get("/" , (req, res) => {
+  res.send("API is running...");
+
+});
 
 // Socket.IO Authentication Middleware
 io.use(async (socket, next) => {
@@ -220,8 +236,11 @@ if (process.env.NODE_ENV === 'development') {
 
 // Static file serving
 app.use('/uploads', express.static(path.join(__dirname, 'backend/uploads'), {
-  setHeaders: (res, filePath) => {
-    res.setHeader('Access-Control-Allow-Origin', CORS_OPTIONS.origin);
+  setHeaders: (res, filePath, stat) => {
+    // reflect incoming origin if allowed, otherwise default to wildcard for static assets
+    const reqOrigin = res.req && res.req.headers && res.req.headers.origin;
+    const originToSet = (reqOrigin && allowedOrigins.includes(reqOrigin)) ? reqOrigin : '*';
+    res.setHeader('Access-Control-Allow-Origin', originToSet);
     res.setHeader('Access-Control-Allow-Methods', CORS_OPTIONS.methods.join(','));
     res.setHeader('Access-Control-Allow-Headers', CORS_OPTIONS.allowedHeaders.join(','));
     if (filePath.includes('profiles')) {

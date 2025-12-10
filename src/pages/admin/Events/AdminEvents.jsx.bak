@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+﻿import React, { useState, useCallback, useMemo } from 'react';
 import { useEvents } from '../../../context/EventsContext';
 import { 
   IconButton, 
@@ -217,10 +217,10 @@ const AdminEvents = () => {
   const [isSaving, setIsSaving] = useState(false);
   const navigate = useNavigate();
 
-  // newest-first by default — UI toggle below lets admin switch order
+  // newest-first by default â€” UI toggle below lets admin switch order
   const [newestFirst, setNewestFirst] = useState(true);
 
-  // minimum allowed datetime (local) — 3 days from today, used to disable picking earlier dates
+  // minimum allowed datetime (local) â€” 3 days from today, used to disable picking earlier dates
   const minDateTime = useMemo(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -367,7 +367,7 @@ const AdminEvents = () => {
          console.log('[AdminEvents] addEvent result:', result);
          toast.success('Event created successfully');
          // notify other admin UIs that an event was created
-         try { window.dispatchEvent(new CustomEvent('app:events:updated', { detail: { eventId: (result && result._id) || result.id } })); } catch (e) {}
+         try { window.dispatchEvent(new CustomEvent('app:events:updated', { detail: { eventId: result && result._id || result.id } })); } catch (e) {}
        }
        
        handleClose();
@@ -652,7 +652,7 @@ const AdminEvents = () => {
                 />
                 {event.eventType === EVENT_TYPES.WATCH_ONLY && event.ticketing?.isPaid && (
                   <Chip
-                    label={`₱${event.ticketing.price}`}
+                    label={`â‚±${event.ticketing.price}`}
                     color="success"
                     size="small"
                   />
@@ -840,7 +840,7 @@ const AdminEvents = () => {
                         label="Ticket Price"
                         type="number"
                         InputProps={{
-                          startAdornment: <InputAdornment position="start">₱</InputAdornment>
+                          startAdornment: <InputAdornment position="start">â‚±</InputAdornment>
                         }}
                         value={formData.ticketing.price}
                         onChange={(e) => setFormData({
@@ -1036,4 +1036,3 @@ const AdminEvents = () => {
 };
 
 export default AdminEvents;
-

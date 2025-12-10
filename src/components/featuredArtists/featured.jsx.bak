@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, memo } from "react";
+﻿import { useState, useEffect, useCallback, memo } from "react";
 import { Link } from "react-router-dom";
 import "./featured.scss";
 import axios from "axios";
@@ -126,7 +126,7 @@ const PostPreview = memo(({ post, artistName, index }) => {
                   }}
                 />
                 <div className="video-indicator">
-                  <span>▶️</span>
+                  <span>â–¶ï¸</span>
                 </div>
                 {error && (
                   <div className="error-overlay">
@@ -158,16 +158,16 @@ const PostPreview = memo(({ post, artistName, index }) => {
       )}
       <div className="post-stats-overlay">
         <div className="stats">
-          <span title="Likes">❤️ {post.likes?.toLocaleString() || 0}</span>
-          <span title="Comments">💬 {post.comments?.toLocaleString() || 0}</span>
+          <span title="Likes">â¤ï¸ {post.likes?.toLocaleString() || 0}</span>
+          <span title="Comments">ðŸ’¬ {post.comments?.toLocaleString() || 0}</span>
           {typeof post.views === "number" && (
-            <span title="Views">👁️ {post.views?.toLocaleString() || 0}</span>
+            <span title="Views">ðŸ‘ï¸ {post.views?.toLocaleString() || 0}</span>
           )}
           {typeof post.shares === "number" && (
-            <span title="Shares">🔄 {post.shares?.toLocaleString() || 0}</span>
+            <span title="Shares">ðŸ”„ {post.shares?.toLocaleString() || 0}</span>
           )}
           {isVideo && post.videoMetadata?.duration && (
-            <span title="Duration">⏱️ {Math.round(post.videoMetadata.duration)}s</span>
+            <span title="Duration">â±ï¸ {Math.round(post.videoMetadata.duration)}s</span>
           )}
         </div>
         <div className="date" title={`Posted on ${formatDate(post.createdAt)}`}>
@@ -245,22 +245,22 @@ const ArtistItem = memo(({ artist, rank }) => {
             <Link to={`/profile/${artist._id}`} className="name-link" aria-label={`${artist.name} profile`}>
               <span className="name">{artist.name}</span>
             </Link>
-            {artist.email && <span className="email">· {artist.email}</span>}
+            {artist.email && <span className="email">Â· {artist.email}</span>}
             <span className="username">@{artist.username}</span>
           </div>
         </div>
 
         <div className="compact-stats" aria-hidden="false">
           <span className="engagement" title="Engagement score">
-            <span className="icon" aria-hidden="true">🔥</span>
+            <span className="icon" aria-hidden="true">ðŸ”¥</span>
             <span className="count">{artist.engagement?.toLocaleString() || 0}</span>
           </span>
           <span className="likes" title="Total likes">
-            <span className="icon" aria-hidden="true">❤️</span>
+            <span className="icon" aria-hidden="true">â¤ï¸</span>
             <span className="count">{artist.totalLikes?.toLocaleString() || 0}</span>
           </span>
           <span className="followers" title="Followers">
-            <span className="icon" aria-hidden="true">👥</span>
+            <span className="icon" aria-hidden="true">ðŸ‘¥</span>
             <span className="count">{artist.followers?.toLocaleString() || 0}</span>
           </span>
         </div>
@@ -269,19 +269,19 @@ const ArtistItem = memo(({ artist, rank }) => {
 
         <div className="stats" aria-hidden="false">
           <span className="comments" title={`${artist.totalComments} total comments`}>
-            <span className="icon" aria-hidden="true">💬</span>
+            <span className="icon" aria-hidden="true">ðŸ’¬</span>
             <span className="count">{artist.totalComments?.toLocaleString() || 0}</span>
           </span>
           <span className="views" title={`${artist.totalViews} total views`}>
-            <span className="icon" aria-hidden="true">👁️</span>
+            <span className="icon" aria-hidden="true">ðŸ‘ï¸</span>
             <span className="count">{artist.totalViews?.toLocaleString() || 0}</span>
           </span>
           <span className="shares" title={`${artist.totalShares} total shares`}>
-            <span className="icon" aria-hidden="true">🔄</span>
+            <span className="icon" aria-hidden="true">ðŸ”„</span>
             <span className="count">{artist.totalShares?.toLocaleString() || 0}</span>
           </span>
           <span className="posts" title={`${artist.postCount} posts`}>
-            <span className="icon" aria-hidden="true">📝</span>
+            <span className="icon" aria-hidden="true">ðŸ“</span>
             <span className="count">{artist.postCount || 0}</span>
           </span>
         </div>
@@ -435,4 +435,3 @@ const Featured = () => {
 };
 
 export default memo(Featured);
-

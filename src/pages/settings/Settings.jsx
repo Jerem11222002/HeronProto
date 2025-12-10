@@ -3,7 +3,7 @@ import './Settings.scss';
 import { DarkModeContext } from '../../context/darkModeContext';
 
 // Backend base (use REACT_APP_API_BASE in .env or fallback)
-const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 const USER_INFO_ENDPOINT = `${API_BASE}/api/users/me`;
 const SETTINGS_ENDPOINT = `${API_BASE}/api/users/settings`;
 const DELETE_ACCOUNT_ENDPOINT = `${API_BASE}/api/users/delete-account`;

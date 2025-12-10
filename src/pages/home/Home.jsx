@@ -221,13 +221,16 @@ const Home = () => {
       setError(null);
 
       const promise = new Promise(async (resolve, reject) => {
-        if (!process.env.REACT_APP_API_BASE_URL) {
+        if (!process.env.REACT_APP_API_URL) {
           reject(new Error('API URL not configured'));
           return;
         }
 
+        const API_BASE = process.env.REACT_APP_API_URL;
+        console.debug('Home.fetchCombinedFeed using API_BASE:', API_BASE);
+
         const response = await fetch(
-          `${process.env.REACT_APP_API_BASE_URL}/api/posts/feed?${new URLSearchParams({
+          `${API_BASE}/api/posts/feed?${new URLSearchParams({
             userId: currentUser._id,
             sortBy,
             timeRange,

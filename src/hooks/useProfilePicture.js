@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
 import { useSocket } from '../context/SocketContext';
 import axios from 'axios';
 
@@ -23,7 +23,7 @@ export const useProfilePicture = (user, type = 'avatar') => {
   const getImageUrl = useCallback((imagePath) => {
     if (!imagePath) return null;
     if (imagePath.startsWith('http')) return imagePath;
-    return `${BASE_URL}/uploads/${imagePath.replace(/^\/+/, '')}`;
+    return `${BASE_URL}/uploads/${imagePath.replace(/^/+/, '')}`;
   }, []);
 
   const verifyImageUrl = useCallback(async (url) => {

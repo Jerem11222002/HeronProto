@@ -1,4 +1,4 @@
-const calculateEventScore = (userInterests, event, organizationCategories) => {
+﻿const calculateEventScore = (userInterests, event, organizationCategories) => {
   let score = 0;
   const orgInfo = organizationCategories[event.organization];
 

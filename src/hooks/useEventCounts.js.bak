@@ -16,7 +16,7 @@ export default function useEventCounts(eventIds = []) {
       try {
         // default to backend dev URL if env var not set
         const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-        const url = `${baseURL.replace(/\/$/,'')}/api/event-registrations/counts`;
+        const url = `${baseURL.replace(//$/,'')}/api/event-registrations/counts`;
         console.debug('useEventCounts: POST', url, { eventIds });
         const res = await axios.post(url, { eventIds });
         console.debug('useEventCounts response:', res?.data);
@@ -32,4 +32,3 @@ export default function useEventCounts(eventIds = []) {
 
   return counts;
 }
-

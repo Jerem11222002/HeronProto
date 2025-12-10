@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState, useCallback, useMemo } from "react";
+﻿import { useContext, useEffect, useState, useCallback, useMemo } from "react";
 import { useParams, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
@@ -51,7 +51,7 @@ const formatMediaUrl = (url) => {
   }
 
   // For just filenames, construct full path
-  const filename = url.split(/[\/\\]/).pop();
+  const filename = url.split(/[/\\]/).pop();
   return `${API_URL}/uploads/${filename}`;
 };
 
@@ -189,14 +189,14 @@ const Profile = () => {
       }
     };
 
-    console.log('🔍 Fetching profile data for userId:', resolvedUserId);
+    console.log('ðŸ” Fetching profile data for userId:', resolvedUserId);
 
     const [userResponse, postsResponse] = await Promise.all([
       axios.get(`${API_URL}/api/users/${resolvedUserId}`, config),
       axios.get(`${API_URL}/api/posts/user/${resolvedUserId}`, config)
     ]);
 
-    // backend returns { success: true, data: userData } — prefer .data.data but fallback to .data
+    // backend returns { success: true, data: userData } â€” prefer .data.data but fallback to .data
     const userPayload = userResponse?.data?.data ?? userResponse?.data;
     if (!userPayload) throw new Error('User not found');
 
@@ -223,7 +223,7 @@ const Profile = () => {
       setIsMutualFollow(isUserFollowing && isUserFollowed);
     }
 
-    console.log('📥 Received posts:', {
+    console.log('ðŸ“¥ Received posts:', {
       count: postsResponse?.data?.length ?? (postsResponse?.data?.count || 0),
       sample: Array.isArray(postsResponse?.data) ? postsResponse.data[0] : (postsResponse?.data?.sample || null)
     });
@@ -235,7 +235,7 @@ const Profile = () => {
       const getFileName = (path) => {
         if (!path) return null;
         if (path.startsWith('http')) return path;
-        return path.split(/[\/\\]/).pop();
+        return path.split(/[/\\]/).pop();
       };
 
       // Format media URLs
@@ -297,7 +297,7 @@ const Profile = () => {
     setUserData(userPayload);
     setUserPosts(sortedPosts);
 
-    // --- NEW: friendsData should contain ONLY mutual friends (followers ∩ following)
+    // --- NEW: friendsData should contain ONLY mutual friends (followers âˆ© following)
     try {
       const rawFollowers = Array.isArray(userPayload.followers) ? userPayload.followers : [];
       const rawFollowing = Array.isArray(userPayload.following) ? userPayload.following : [];
@@ -349,7 +349,7 @@ const Profile = () => {
     // --- END NEW
 
   } catch (error) {
-    console.error("❌ Profile fetch error:", error);
+    console.error("âŒ Profile fetch error:", error);
     setError(error.response?.data?.message || error.message || "Failed to load profile data");
   } finally {
     setLoading(false);
@@ -386,7 +386,7 @@ const Profile = () => {
 
     const handleFollowUpdate = async (data) => {
       if (data.followedId === resolvedUserId || data.followerId === currentUser?._id) {
-        console.log('📨 Follow update received:', data);
+        console.log('ðŸ“¨ Follow update received:', data);
         await Promise.all([
           fetchProfileData(),
           fetchUserRelationships(currentUser._id)
@@ -462,11 +462,11 @@ const Profile = () => {
       const endpointType = type === 'profilePic' ? 'profile-pic' : 'cover-pic';
       const endpoint = `${API_URL}/api/profile/upload/${endpointType}/${currentUser._id}`;
   
-      console.log('📤 Uploading to endpoint:', endpoint);
+      console.log('ðŸ“¤ Uploading to endpoint:', endpoint);
   
       const response = await axios.post(endpoint, formData, config);
   
-      console.log('📨 Upload response:', response.data);
+      console.log('ðŸ“¨ Upload response:', response.data);
   
       if (response.data.success) {
         const fieldName = type === 'profilePic' ? 'profilePic' : 'coverPic';
@@ -512,14 +512,14 @@ const Profile = () => {
         throw new Error(response.data.message || 'Upload failed');
       }
     } catch (error) {
-      console.error(`❌ ${type} update error:`, error);
+      console.error(`âŒ ${type} update error:`, error);
   
       if (error.response?.status === 401) {
-        console.log('🔄 Token expired, attempting refresh...');
+        console.log('ðŸ”„ Token expired, attempting refresh...');
         const refreshResult = await refreshUser();
         
         if (refreshResult) {
-          console.log('🔄 Token refreshed, retrying upload...');
+          console.log('ðŸ”„ Token refreshed, retrying upload...');
           return handleImageUpload(file, type);
         } else {
           setError('Session expired. Please log in again.');
@@ -619,7 +619,7 @@ const Profile = () => {
         ]);
       }
     } catch (error) {
-      console.error("❌ Follow error:", error);
+      console.error("âŒ Follow error:", error);
       setError(error.response?.data?.message || "Failed to update follow status");
     } finally {
       setFollowLoading(false);

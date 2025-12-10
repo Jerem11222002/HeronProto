@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import RegistrationConfirmation from '../../../components/registration/RegistrationConfirmation';
 import DynamicRegistrationForm from './DynamicRegistrationForm';
 import { toast } from 'react-toastify';

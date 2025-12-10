@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../context/authContext';
 import axios from 'axios';
 import { toast } from 'react-toastify';
@@ -177,12 +177,12 @@ const AdminDashboard = () => {
                     <div className="eventRight">
                       <div className="rowTop">
                         <h3 className="eventTitle">{event.title}</h3>
-                        <div className="participantsBadge">👥 {event.participantCount || 0}</div>
+                        <div className="participantsBadge">ðŸ‘¥ {event.participantCount || 0}</div>
                       </div>
                       <div className="metaRow">
-                        <span className="dateBadge">📅 {event.date ? new Date(event.date).toLocaleString() : 'TBA'}</span>
-                        {event.location || event.venue ? <span className="locationBadge">📍 {event.location || event.venue}</span> : null}
-                        {event.capacity ? <span className="capacityBadge">🏷️ {event.capacity}</span> : null}
+                        <span className="dateBadge">ðŸ“… {event.date ? new Date(event.date).toLocaleString() : 'TBA'}</span>
+                        {event.location || event.venue ? <span className="locationBadge">ðŸ“ {event.location || event.venue}</span> : null}
+                        {event.capacity ? <span className="capacityBadge">ðŸ·ï¸ {event.capacity}</span> : null}
                       </div>
                       <p className="eventDesc">{event.description || 'No description provided.'}</p>
                       <div className="rowActions">

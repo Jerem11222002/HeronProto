@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Token types for different user roles
  */
 export const TokenTypes = {
@@ -78,7 +78,7 @@ export const getUserData = (isAdmin = false) => {
     const userData = localStorage.getItem(isAdmin ? 'adminUser' : 'currentUser');
     return userData ? JSON.parse(userData) : null;
   } catch (error) {
-    console.error('❌ Error parsing user data:', error);
+    console.error('âŒ Error parsing user data:', error);
     return null;
   }
 };
@@ -102,7 +102,7 @@ export const isAuthenticated = (requireAdmin = false) => {
 
     return true;
   } catch (error) {
-    console.error('❌ Auth check error:', error);
+    console.error('âŒ Auth check error:', error);
     return false;
   }
 };
@@ -123,7 +123,7 @@ export const updateUserData = (userData, isAdmin = false) => {
     );
     return true;
   } catch (error) {
-    console.error('❌ Error updating user data:', error);
+    console.error('âŒ Error updating user data:', error);
     return false;
   }
 };

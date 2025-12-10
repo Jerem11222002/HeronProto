@@ -1,4 +1,4 @@
-import "./FeaturedTitle.scss"
+﻿import "./FeaturedTitle.scss"
 
 const FeaturedTitle = () => {
   return (

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/authContext';
 import { MdAdd, MdEdit, MdDelete, MdSearch, MdClose } from 'react-icons/md';
@@ -38,7 +38,7 @@ const AdminAccounts = () => {
   const modalRef = useRef(null);
   const searchRef = useRef(null);
 
-  // Media query for responsive design — MOVED BEFORE GUARD
+  // Media query for responsive design â€” MOVED BEFORE GUARD
   const [isNarrow, setIsNarrow] = useState(
     typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : false
   );
@@ -251,7 +251,7 @@ const AdminAccounts = () => {
           <h1>Admin Accounts</h1>
         </header>
         <div className="accessDenied" style={{ padding: 24 }}>
-          Access denied — Super admin role required.
+          Access denied â€” Super admin role required.
         </div>
       </div>
     );
@@ -275,7 +275,7 @@ const AdminAccounts = () => {
               onChange={e => setQuery(e.target.value)}
               aria-label="Search admin accounts"
             />
-            {query && <button className="clear" onClick={() => setQuery('')} aria-label="Clear search">×</button>}
+            {query && <button className="clear" onClick={() => setQuery('')} aria-label="Clear search">Ã—</button>}
           </div>
 
           <button className="btn primary" onClick={openCreate} aria-label="Create admin account">
@@ -292,7 +292,7 @@ const AdminAccounts = () => {
 
       <section className="accountsList" aria-live="polite">
         {loading ? (
-          <div className="muted">Loading admin accounts…</div>
+          <div className="muted">Loading admin accountsâ€¦</div>
         ) : filtered.length === 0 ? (
           <div className="emptyState">
             <div className="emptyTitle">No admin accounts found</div>
@@ -437,7 +437,7 @@ const AdminAccounts = () => {
             <div className="modalFooter">
               <button type="button" className="btn" onClick={() => setShowModal(false)} disabled={saving}>Cancel</button>
               <button type="submit" className="btn primary" disabled={saving}>
-                {saving ? 'Saving…' : (editing ? 'Update' : 'Create')}
+                {saving ? 'Savingâ€¦' : (editing ? 'Update' : 'Create')}
               </button>
             </div>
           </form>

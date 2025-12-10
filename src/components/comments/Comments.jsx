@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useRef, useState, memo } from "react";
+﻿import React, { useContext, useEffect, useRef, useState, memo } from "react";
 import axios from "axios";
 import { AuthContext } from "../../context/authContext";
 import { useSocket } from "../../context/SocketContext";
@@ -9,7 +9,7 @@ import FavoriteBorderOutlinedIcon from "@mui/icons-material/FavoriteBorderOutlin
 import FavoriteOutlinedIcon from "@mui/icons-material/FavoriteOutlined";
 
 function escapeHtml(text = '') {
-  return text.replace(/[&<>"'`=\/]/g, function (s) {
+  return text.replace(/[&<>"'`=/]/g, function (s) {
     return ({
       '&': '&amp;',
       '<': '&lt;',
@@ -689,7 +689,7 @@ const Comments = ({ postId, onCommentUpdate }) => {
               disabled={submitting || !newComment.trim()}
               aria-label="Post comment"
             >
-              {submitting ? 'Posting…' : 'Post'}
+              {submitting ? 'Postingâ€¦' : 'Post'}
             </button>
           </div>
         </div>
@@ -698,7 +698,7 @@ const Comments = ({ postId, onCommentUpdate }) => {
       {error && <div className="comment-error" role="alert">{error}</div>}
 
       <div ref={listRef} className="comments-list" role="list" aria-live="polite">
-        {comments.length === 0 && <div className="no-comments">No comments yet — be the first to comment.</div>}
+        {comments.length === 0 && <div className="no-comments">No comments yet â€” be the first to comment.</div>}
         {showPreview
           ? comments.slice(0, previewLimit).map((c) => {
             const cKey = String(c._id);
@@ -741,7 +741,7 @@ const Comments = ({ postId, onCommentUpdate }) => {
                       { (c.likeCount || 0) > 0 && <span className="like-count">{c.likeCount}</span> }
                     </button>
 
-                    {c.pending && <span className="muted">Sending…</span>}
+                    {c.pending && <span className="muted">Sendingâ€¦</span>}
                   </div>
 
                   {/* Reply input local to this top-level comment */}
@@ -817,7 +817,7 @@ const Comments = ({ postId, onCommentUpdate }) => {
                       { (c.likeCount || 0) > 0 && <span className="like-count">{c.likeCount}</span> }
                     </button>
 
-                    {c.pending && <span className="muted">Sending…</span>}
+                    {c.pending && <span className="muted">Sendingâ€¦</span>}
                   </div>
 
                   {/* Reply input local to this top-level comment */}

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Creates a debounced function that delays invoking func until after wait milliseconds
  * @param {Function} func - The function to debounce
  * @param {number} wait - The number of milliseconds to delay

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+﻿import React, { useEffect, useState, useCallback, useMemo } from "react";
 import ChatPopup from "../chat/ChatPopup";
 import { useSocket } from "../../context/SocketContext";
 import { useContext } from "react";
@@ -248,7 +248,7 @@ const RightBar = () => {
       ))
     ) : (
       <div className="no-users">
-        <span role="img" aria-label="no users" style={{fontSize: "2rem"}}>👥</span>
+        <span role="img" aria-label="no users" style={{fontSize: "2rem"}}>ðŸ‘¥</span>
         <div>{emptyMessage}</div>
       </div>
     );

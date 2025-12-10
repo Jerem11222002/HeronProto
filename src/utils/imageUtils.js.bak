@@ -38,7 +38,7 @@ export const getImageUrl = (imagePath, type = 'avatar') => {
   const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
   
   // Remove leading slash if present
-  const cleanPath = imagePath.replace(/^\/+/, '');
+  const cleanPath = imagePath.replace(/^/+/, '');
   
   // Check if path already contains uploads directory
   const finalPath = cleanPath.startsWith('uploads/') 

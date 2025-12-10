@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+﻿import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/authContext';
 import { useEvents } from '../../context/EventsContext';
@@ -499,7 +499,7 @@ const Events = () => {
                     type="number"
                     fullWidth
                     InputProps={{
-                      startAdornment: <InputAdornment position="start">₱</InputAdornment>
+                      startAdornment: <InputAdornment position="start">â‚±</InputAdornment>
                     }}
                     value={formData.ticketing.price}
                     onChange={e =>

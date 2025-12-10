@@ -1,4 +1,4 @@
-// src/components/chat/ChatPopup.jsx
+﻿// src/components/chat/ChatPopup.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import axios from 'axios';
@@ -126,7 +126,7 @@ const ChatPopup = ({ friend, onClose, style, messages: externalMessages }) => {
             <span className={`status-dot ${friend.isOnline ? "online" : "offline"}`}></span>
           </div>
         </div>
-        <button className="close-button" onClick={onClose} title="Close (Esc)">×</button>
+        <button className="close-button" onClick={onClose} title="Close (Esc)">Ã—</button>
       </div>
       <div className="messages">
         {loading ? (

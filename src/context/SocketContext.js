@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+﻿import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import io from 'socket.io-client';
 
 const SOCKET_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
@@ -54,7 +54,7 @@ const SocketProvider = ({ children }) => {
   
     const token = localStorage.getItem('token') || localStorage.getItem('adminToken');
     if (!token) {
-      console.warn('⚠️ No authentication token found');
+      console.warn('âš ï¸ No authentication token found');
       return;
     }
 
@@ -88,24 +88,24 @@ const SocketProvider = ({ children }) => {
 
     const handlers = {
       'connect': () => {
-        console.log('🔌 Socket connected');
+        console.log('ðŸ”Œ Socket connected');
         setIsConnected(true);
         setConnectionError(null);
         setRetryCount(0);
       },
       'authenticated': (data) => {
-        console.log('🔑 Socket authenticated', data);
+        console.log('ðŸ”‘ Socket authenticated', data);
         if (data?.onlineUsers) {
           setOnlineUsers(new Set(data.onlineUsers));
         }
       },
       'auth_error': (error) => {
-        console.error('❌ Socket authentication failed:', error);
+        console.error('âŒ Socket authentication failed:', error);
         setConnectionError('Authentication failed');
         cleanupSocket(newSocket);
       },
       'connect_error': (error) => {
-        console.error('❌ Socket connection error:', error);
+        console.error('âŒ Socket connection error:', error);
         setIsConnected(false);
         setConnectionError(error.message);
         
@@ -115,7 +115,7 @@ const SocketProvider = ({ children }) => {
         }
       },
       'disconnect': (reason) => {
-        console.log('🔌 Socket disconnected:', reason);
+        console.log('ðŸ”Œ Socket disconnected:', reason);
         setIsConnected(false);
         
         if (reason === 'io server disconnect' || reason === 'io client disconnect') {
@@ -133,19 +133,19 @@ const SocketProvider = ({ children }) => {
         });
       },
       'profile:update': (data) => {
-        console.log('📸 Profile update received:', data);
+        console.log('ðŸ“¸ Profile update received:', data);
         if (data.updates) {
           profileUpdateHandlersRef.current.forEach(handler => {
             try {
               handler(data);
             } catch (error) {
-              console.error('❌ Error in profile update handler:', error);
+              console.error('âŒ Error in profile update handler:', error);
             }
           });
         }
       },
       'profile:update:error': (error) => {
-        console.error('❌ Profile update error:', error);
+        console.error('âŒ Profile update error:', error);
       }
     };
 
@@ -173,34 +173,34 @@ const SocketProvider = ({ children }) => {
 
   const emitProfileUpdate = useCallback((data) => {
     if (!socketRef.current?.connected) {
-      console.warn('⚠️ Socket not connected, profile update not sent');
+      console.warn('âš ï¸ Socket not connected, profile update not sent');
       return false;
     }
 
     try {
-      console.log('📤 Emitting profile update:', data);
+      console.log('ðŸ“¤ Emitting profile update:', data);
       socketRef.current.emit('profile:update', {
         userId: data.userId,
         updates: data.updates
       });
       return true;
     } catch (error) {
-      console.error('❌ Error emitting profile update:', error);
+      console.error('âŒ Error emitting profile update:', error);
       return false;
     }
   }, []);
 
   const subscribeToProfileUpdates = useCallback((handler) => {
     if (typeof handler !== 'function') {
-      console.error('❌ Invalid handler provided to subscribeToProfileUpdates');
+      console.error('âŒ Invalid handler provided to subscribeToProfileUpdates');
       return () => {};
     }
 
-    console.log('👂 Adding profile update subscriber');
+    console.log('ðŸ‘‚ Adding profile update subscriber');
     profileUpdateHandlersRef.current.add(handler);
 
     return () => {
-      console.log('🔕 Removing profile update subscriber');
+      console.log('ðŸ”• Removing profile update subscriber');
       profileUpdateHandlersRef.current.delete(handler);
     };
   }, []);
@@ -212,20 +212,20 @@ const SocketProvider = ({ children }) => {
     onlineUsers: Array.from(onlineUsers),
     emit: useCallback((event, data) => {
       if (!socketRef.current?.connected) {
-        console.warn('⚠️ Socket not connected, event not sent:', event);
+        console.warn('âš ï¸ Socket not connected, event not sent:', event);
         return false;
       }
       try {
         socketRef.current.emit(event, data);
         return true;
       } catch (error) {
-        console.error('❌ Error emitting event:', error);
+        console.error('âŒ Error emitting event:', error);
         return false;
       }
     }, []),
     subscribe: useCallback((event, handler) => {
       if (!socketRef.current) {
-        console.warn('⚠️ Socket not initialized');
+        console.warn('âš ï¸ Socket not initialized');
         return () => {};
       }
       socketRef.current.on(event, handler);
@@ -234,7 +234,7 @@ const SocketProvider = ({ children }) => {
     connect: useCallback(() => {
       const token = localStorage.getItem('token');
       if (!token) {
-        console.warn('⚠️ Cannot connect: No authentication token');
+        console.warn('âš ï¸ Cannot connect: No authentication token');
         return;
       }
 

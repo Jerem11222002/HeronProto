@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import './errorBoundary.scss';
 
 class ErrorBoundary extends React.Component {

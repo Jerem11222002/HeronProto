@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from "react";
+﻿import React, { useState, useContext, useEffect } from "react";
 import { AuthContext } from "../../context/authContext";
 import { DarkModeContext } from "../../context/darkModeContext";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -206,7 +206,7 @@ useEffect(() => {
             >
               {!previewUrl && (
                 <div className="upload-overlay">
-                  <span className="icon">📸</span>
+                  <span className="icon">ðŸ“¸</span>
                   <h3>Add Photo</h3>
                   <p>Drag & Drop or Click to Upload</p>
                 </div>

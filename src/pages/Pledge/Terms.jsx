@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import "./terms.scss";
 
 const Terms = () => (
@@ -38,7 +38,7 @@ const Terms = () => (
         </li>
       </ul>
       <p>
-        By registering and using Heron Fusion, you acknowledge and agree to these terms. Let’s work together to maintain a safe, respectful, and inspiring community for everyone.
+        By registering and using Heron Fusion, you acknowledge and agree to these terms. Letâ€™s work together to maintain a safe, respectful, and inspiring community for everyone.
       </p>
     </div>
   </div>

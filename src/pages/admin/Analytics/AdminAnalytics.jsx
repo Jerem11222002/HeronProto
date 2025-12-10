@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import {
   Chart as ChartJS,
@@ -146,22 +146,22 @@ const AdminAnalytics = () => {
         <div className="statCard">
           <h3>Total Users</h3>
           <p className="statNumber">{overview.totalUsers.toLocaleString()}</p>
-          <span className="statChange positive">—</span>
+          <span className="statChange positive">â€”</span>
         </div>
         <div className="statCard">
           <h3>Active Events</h3>
           <p className="statNumber">{overview.activeEvents}</p>
-          <span className="statChange positive">—</span>
+          <span className="statChange positive">â€”</span>
         </div>
         <div className="statCard">
           <h3>Total Revenue</h3>
           <p className="statNumber">${overview.totalRevenue.toLocaleString()}</p>
-          <span className="statChange positive">—</span>
+          <span className="statChange positive">â€”</span>
         </div>
         <div className="statCard">
           <h3>Conversion Rate</h3>
           <p className="statNumber">{overview.conversionRate}%</p>
-          <span className="statChange negative">—</span>
+          <span className="statChange negative">â€”</span>
         </div>
       </div>
 

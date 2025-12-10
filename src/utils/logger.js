@@ -1,4 +1,4 @@
-const LEVELS = { debug: 10, info: 20, warn: 30, error: 40 };
+﻿const LEVELS = { debug: 10, info: 20, warn: 30, error: 40 };
 const LOG_LEVEL = (process.env.REACT_APP_LOG_LEVEL || (process.env.NODE_ENV === 'development' ? 'debug' : 'info')).toLowerCase();
 const MIN_LEVEL = LEVELS[LOG_LEVEL] || LEVELS.info;
 
@@ -31,19 +31,23 @@ function safeFormat(arg) {
   }
 }
 
-function wrapConsole(level, fn) {
+function makeLoggerMethod(level, consoleFn) {
   return (...args) => {
     if (MIN_LEVEL > LEVELS[level]) return;
     const key = args.map(a => (typeof a === 'string' ? a : safeFormat(a))).join(' ');
     if (!shouldLog(key)) return;
-    // small log payloads only - avoid huge objects
-    fn(`[${level.toUpperCase()}]`, ...args);
+    try {
+      consoleFn(`[${level.toUpperCase()}]`, ...args);
+    } catch {
+      // safe fallback
+      console.log(`[${level.toUpperCase()}]`, ...args);
+    }
   };
 }
 
 export default {
-  debug: wrapConsole('debug', console.debug.bind(console)),
-  info: wrapConsole('info', console.info.bind(console)),
-  warn: wrapConsole('warn', console.warn.bind(console)),
-  error: wrapConsole('error', console.error.bind(console))
+  debug: makeLoggerMethod('debug', console.debug ? console.debug.bind(console) : console.log),
+  info: makeLoggerMethod('info', console.info ? console.info.bind(console) : console.log),
+  warn: makeLoggerMethod('warn', console.warn ? console.warn.bind(console) : console.log),
+  error: makeLoggerMethod('error', console.error ? console.error.bind(console) : console.log),
 };

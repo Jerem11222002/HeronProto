@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import { CircularProgress } from "@mui/material";
@@ -90,15 +90,15 @@ const EventDetailPage = () => {
           />
           <div className="eventMeta">
             <div className="metaItem">
-              <span role="img" aria-label="calendar">📅</span>
+              <span role="img" aria-label="calendar">ðŸ“…</span>
               {event.date ? new Date(event.date).toLocaleString() : "No date"}
             </div>
             <div className="metaItem">
-              <span role="img" aria-label="location">📍</span>
+              <span role="img" aria-label="location">ðŸ“</span>
               {event.location || event.venue || "No location"}
             </div>
             <div className="metaItem">
-              <span role="img" aria-label="capacity">👥</span>
+              <span role="img" aria-label="capacity">ðŸ‘¥</span>
               {event.maxParticipants != null
                 ? event.maxParticipants
                 : event.ticketing?.availableSeats != null
@@ -106,18 +106,18 @@ const EventDetailPage = () => {
                   : "No capacity"}
             </div>
             <div className="metaItem">
-              <span role="img" aria-label="status">🟢</span>
+              <span role="img" aria-label="status">ðŸŸ¢</span>
               {event.status || "Active"}
             </div>
             {event.type && (
               <div className="metaItem">
-                <span role="img" aria-label="type">🏷️</span>
+                <span role="img" aria-label="type">ðŸ·ï¸</span>
                 {event.type}
               </div>
             )}
             {event.organizer && (
               <div className="metaItem">
-                <span role="img" aria-label="organizer">🧑‍💼</span>
+                <span role="img" aria-label="organizer">ðŸ§‘â€ðŸ’¼</span>
                 {event.organizer}
               </div>
             )}

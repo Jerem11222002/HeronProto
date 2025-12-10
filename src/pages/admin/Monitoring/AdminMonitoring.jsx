@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+﻿import React, { useState, useEffect, useRef, useMemo } from 'react';
 import axios from 'axios';
 import { io } from 'socket.io-client';
 import {
@@ -168,7 +168,7 @@ const AdminMonitoring = () => {
           <TableCell>{u.user || 'unknown'}</TableCell>
           <TableCell>{u.count}</TableCell>
           <TableCell>
-            <small>{u.sessions.slice(0,2).map(s => `${s.device} • ${s.duration}`).join(' · ')}</small>
+            <small>{u.sessions.slice(0,2).map(s => `${s.device} â€¢ ${s.duration}`).join(' Â· ')}</small>
           </TableCell>
           <TableCell>
             <Box className="actionButtons">

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Box, Paper, Card, CardHeader, CardContent, Button, IconButton, List, ListItem, ListItemText, Divider, Typography, Menu, MenuItem, Tooltip, Stack, Chip, TextField, FormControlLabel, Switch, Grid, FormHelperText } from '@mui/material';
 import { Add, ArrowUpward, ArrowDownward, Delete, Edit } from '@mui/icons-material';
 import DynamicRegistrationForm from '../../pre-registration/Forms/DynamicRegistrationForm';
@@ -322,7 +322,7 @@ export default function VisualFormBuilder({ value = [], onSave, onClose }) {
                   justifyContent: 'center'
                 }}
               >
-                {/* Wide centered form container — maximize space for preview */}
+                {/* Wide centered form container â€” maximize space for preview */}
                 <Box sx={{ width: '100%', maxWidth: 920 }}>
                   <DynamicRegistrationForm
                     schema={schema}

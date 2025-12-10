@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -67,15 +67,15 @@ const NotificationItem = ({ notification, onUpdate }) => {
   const getNotificationIcon = React.useCallback(() => {
     switch (notification.type) {
       case 'like':
-        return '❤️';
+        return 'â¤ï¸';
       case 'comment':
-        return '💬';
+        return 'ðŸ’¬';
       case 'follow':
-        return '👥';
+        return 'ðŸ‘¥';
       case 'message':
-        return '✉️';
+        return 'âœ‰ï¸';
       default:
-        return '🔔';
+        return 'ðŸ””';
     }
   }, [notification.type]);
 

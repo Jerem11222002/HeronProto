@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 
 /**
  * DynamicRegistrationForm
@@ -274,7 +274,7 @@ export default function DynamicRegistrationForm({
 
     setFieldErrors(newFieldErrors);
     if (Object.keys(newFieldErrors).length) {
-      // removed global message — display errors inline per-field only
+      // removed global message â€” display errors inline per-field only
       setError(null);
       // focus first invalid input
       const firstKey = Object.keys(newFieldErrors)[0];

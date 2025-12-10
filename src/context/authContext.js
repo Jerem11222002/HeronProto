@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect } from "react";
+﻿import { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { io } from "socket.io-client";
 import axios from 'axios';
 import { 
@@ -97,7 +97,7 @@ export const AuthContextProvider = ({ children }) => {
       const token = getAuthToken(isAdminFlag);
       return checkTokenValidity(token);
     } catch (error) {
-      console.error("🔑 Token validation error:", error.message);
+      console.error("ðŸ”‘ Token validation error:", error.message);
       return false;
     }
   }, []);
@@ -145,7 +145,7 @@ export const AuthContextProvider = ({ children }) => {
       setInitialized(true);
       return true;
     } catch (error) {
-      console.error('❌ Relationship fetch failed:', error);
+      console.error('âŒ Relationship fetch failed:', error);
       return false;
     }
   }, [BASE_URL]);
@@ -265,7 +265,7 @@ export const AuthContextProvider = ({ children }) => {
       };
 
     } catch (error) {
-      console.error("❌ Admin login failed:", error);
+      console.error("âŒ Admin login failed:", error);
       clearAuthData();
       setLoading(false);
       throw error;
@@ -282,7 +282,7 @@ export const AuthContextProvider = ({ children }) => {
         });
       }
     } catch (error) {
-      console.error("❌ Admin logout error:", error);
+      console.error("âŒ Admin logout error:", error);
     } finally {
       clearAuthState();
     }
@@ -301,7 +301,7 @@ export const AuthContextProvider = ({ children }) => {
         password
       });
   
-      console.log('📡 Login API response:', response);
+      console.log('ðŸ“¡ Login API response:', response);
   
       if (!response.data?.token || !response.data?.user) {
         throw new Error('Invalid response from server');
@@ -338,7 +338,7 @@ export const AuthContextProvider = ({ children }) => {
       };
   
     } catch (error) {
-      console.error("❌ Login failed:", error);
+      console.error("âŒ Login failed:", error);
       clearAuthData();
       setLoading(false);
       throw error;
@@ -354,7 +354,7 @@ export const AuthContextProvider = ({ children }) => {
         });
       }
     } catch (error) {
-      console.error("❌ Logout error:", error);
+      console.error("âŒ Logout error:", error);
     } finally {
       clearAuthState();
     }
@@ -390,7 +390,7 @@ export const AuthContextProvider = ({ children }) => {
       }
       return true;
     } catch (error) {
-      console.error("❌ User refresh failed:", error);
+      console.error("âŒ User refresh failed:", error);
       await logout();
       return false;
     }
@@ -417,7 +417,7 @@ export const AuthContextProvider = ({ children }) => {
       await fetchUserRelationships(currentUser._id);
       return { success: true, isMutualFollow: response.data.isMutualFollow };
     } catch (error) {
-      console.error("❌ Follow failed:", error);
+      console.error("âŒ Follow failed:", error);
       return { success: false, error: error.message };
     }
   }, [currentUser, BASE_URL, isTokenValid, fetchUserRelationships]);
@@ -438,7 +438,7 @@ export const AuthContextProvider = ({ children }) => {
       await fetchUserRelationships(currentUser._id);
       return { success: true };
     } catch (error) {
-      console.error("❌ Unfollow failed:", error);
+      console.error("âŒ Unfollow failed:", error);
       return { success: false, error: error.message };
     }
   }, [currentUser, BASE_URL, isTokenValid, fetchUserRelationships]);
@@ -447,7 +447,7 @@ export const AuthContextProvider = ({ children }) => {
   if (!currentUser?._id) return false;
 
   try {
-    // Immediately update local state and persist — backend update for arbitrary profile fields
+    // Immediately update local state and persist â€” backend update for arbitrary profile fields
     // is not implemented as a single PATCH route in the server, so keep this local and
     // let endpoints that modify specific fields (bio, images) handle persistence.
     setCurrentUser(prev => {
@@ -463,7 +463,7 @@ export const AuthContextProvider = ({ children }) => {
     // Return true to indicate success (caller already performed server-side update for images/bio)
     return true;
   } catch (error) {
-    console.error("❌ Profile update failed (local):", error);
+    console.error("âŒ Profile update failed (local):", error);
     // attempt to restore from storage if available
     try {
       const stored = JSON.parse(localStorage.getItem("currentUser") || "null");
@@ -487,7 +487,7 @@ export const AuthContextProvider = ({ children }) => {
 
       return true;
     } catch (error) {
-      console.error(`❌ ${type} update failed:`, error);
+      console.error(`âŒ ${type} update failed:`, error);
       return false;
     }
   }, [currentUser, normalizeUserData]);
@@ -559,11 +559,11 @@ export const AuthContextProvider = ({ children }) => {
     });
   
     socket.on('connect', () => {
-      console.log('🔌 Socket connected:', socket.id);
+      console.log('ðŸ”Œ Socket connected:', socket.id);
     });
   
     socket.on('connect_error', (error) => {
-      console.error('🔌 Socket connection error:', error.message);
+      console.error('ðŸ”Œ Socket connection error:', error.message);
     });
   
     socket.on('user:profileUpdate', async (data) => {
@@ -575,7 +575,7 @@ export const AuthContextProvider = ({ children }) => {
     return () => {
       if (socket.connected) {
         socket.disconnect();
-        console.log('🔌 Socket disconnected');
+        console.log('ðŸ”Œ Socket disconnected');
       }
     };
   }, [currentUser, refreshUser, BASE_URL]);

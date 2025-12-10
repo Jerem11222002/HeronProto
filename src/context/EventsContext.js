@@ -1,4 +1,4 @@
-import { createContext, useState, useContext, useEffect, useCallback, useMemo, useRef } from 'react';
+﻿import { createContext, useState, useContext, useEffect, useCallback, useMemo, useRef } from 'react';
 import axios from 'axios';
 import { useAuth } from './authContext';
 
@@ -298,7 +298,7 @@ export const EventsProvider = ({ children }) => {
       await fetchEvents(interestsChanged);
     };
 
-    // Admins don't need continuous polling here — they edit events and can refresh manually.
+    // Admins don't need continuous polling here â€” they edit events and can refresh manually.
     if (currentUser?._id) {
       fetchWithCheck();
       if (!isAdmin) {

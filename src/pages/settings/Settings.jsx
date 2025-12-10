@@ -1,4 +1,4 @@
-import React, { useState, useRef, useContext, useEffect } from 'react';
+﻿import React, { useState, useRef, useContext, useEffect } from 'react';
 import './Settings.scss';
 import { DarkModeContext } from '../../context/darkModeContext';
 
@@ -269,7 +269,7 @@ const Settings = () => {
   return (
     <div className="settings">
       <h1>
-        <span className="settings-icon" role="img" aria-label="settings">⚙️</span>
+        <span className="settings-icon" role="img" aria-label="settings">âš™ï¸</span>
         Account Settings
       </h1>
       {/* Modern Centered round profile photo */}
@@ -286,7 +286,7 @@ const Settings = () => {
               className="change-photo-btn"
               title="Change Profile Photo"
             >
-              <span role="img" aria-label="edit">✏️</span>
+              <span role="img" aria-label="edit">âœï¸</span>
             </button>
             <input
               type="file"

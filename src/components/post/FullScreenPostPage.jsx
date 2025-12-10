@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+﻿import React, { useEffect, useState, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import Post from "./Post";
 import Comments from "../comments/Comments";
@@ -147,7 +147,7 @@ export default function FullScreenPostPage() {
             <FullscreenIcon fontSize="small" />
           </button>
           <button className="icon-btn" onClick={downloadMedia} title="Download media" aria-label="Download media">
-            ⤓
+            â¤“
           </button>
           <button className="icon-btn" onClick={() => navigator.share ? navigator.share({ title: document.title, url: window.location.href }) : null} title="Share" aria-label="Share">
             <ShareOutlinedIcon fontSize="small" />

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+﻿import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { IconButton, Tooltip, Zoom } from '@mui/material';
 import { 
@@ -156,7 +156,7 @@ const EventCard = ({
       <div className="metric">
         {/* Seats */}
         <span className="metric-label">Seats</span>
-        <span className="metric-value">{maxParticipants ?? '—'}</span>
+        <span className="metric-value">{maxParticipants ?? 'â€”'}</span>
       </div>
       <div className="metric">
         {/* Participants */}
@@ -231,9 +231,9 @@ const EventCard = ({
       {event.eventType === 'watch-only' && (
         <div className="event-ticketing">
           <strong>Ticket:</strong>{' '}
-          {event.ticketing?.isPaid ? `₱${event.ticketing.price}` : 'Free'}
+          {event.ticketing?.isPaid ? `â‚±${event.ticketing.price}` : 'Free'}
           {event.ticketing?.availableSeats
-            ? ` • Seats: ${event.ticketing.availableSeats}`
+            ? ` â€¢ Seats: ${event.ticketing.availableSeats}`
             : ''}
         </div>
       )}
@@ -407,7 +407,7 @@ const EventCard = ({
 
         {!isHomePage && (
           <div className="event-actions">
-            <Tooltip title={isPastOrCompleted ? "Event already finished — view details" : "Join this event"} placement="top" TransitionComponent={Zoom}>
+            <Tooltip title={isPastOrCompleted ? "Event already finished â€” view details" : "Join this event"} placement="top" TransitionComponent={Zoom}>
               <span style={{ display: 'inline-flex' }}>
                 <button 
                   className={`join-button ${isPastOrCompleted ? 'disabled' : ''}`}

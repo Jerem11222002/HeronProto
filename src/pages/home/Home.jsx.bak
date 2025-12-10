@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+﻿import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from 'react-router-dom';
 import { useEvents } from "../../context/EventsContext";
 import FeaturedArtists from "../../components/featuredArtists/featured";
@@ -40,7 +40,7 @@ const DEFAULT_EVENT_TAGS = ['performance', 'music', 'cultural', 'visual-arts', '
 const normalizeMediaPath = (p) => {
   if (!p) return null;
   if (typeof p !== 'string') return null;
-  if (/^https?:\/\//i.test(p)) return p;
+  if (/^https?:///i.test(p)) return p;
   const base = process.env.REACT_APP_API_BASE_URL || process.env.REACT_APP_API_URL || 'http://localhost:5000';
   if (p.startsWith('/')) return `${base}${p}`;
   return `${base}/uploads/${p.split(/[/\\]/).pop()}`;
@@ -254,7 +254,7 @@ const Home = () => {
         setRequiresInterests(Boolean(postsData.requiresInterests));
         if (postsData.requiresInterests) {
           // keep content shown, but optionally log/debug
-          console.debug('Cold-start feed served — prompting user to set interests while showing fallback content.');
+          console.debug('Cold-start feed served â€” prompting user to set interests while showing fallback content.');
         }
 
         if (!postsData.items || !Array.isArray(postsData.items)) {
@@ -568,4 +568,3 @@ const Home = () => {
 };
 
 export default Home;
-

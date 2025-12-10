@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+﻿import { useState, useContext } from "react";
 import { AuthContext } from "../../context/authContext";
 import { useNavigate } from "react-router-dom";
 import { saveAuthData, clearAuthData } from "../../utils/tokenManager";
@@ -30,7 +30,7 @@ const Login = () => {
         throw new Error("Username and password are required");
       }
   
-      console.log('📝 Login attempt:', {
+      console.log('ðŸ“ Login attempt:', {
         isAdmin,
         username: trimmedUsername,
       });
@@ -40,11 +40,11 @@ const Login = () => {
         ? await adminLogin(trimmedUsername, password)
         : await login(trimmedUsername, password);
 
-      console.log('🔑 Raw login response:', response);
+      console.log('ðŸ”‘ Raw login response:', response);
 
       // Validate response structure
       if (!response?.data?.token || !response?.data?.user) {
-        console.error('❌ Invalid response structure:', response);
+        console.error('âŒ Invalid response structure:', response);
         throw new Error("Invalid server response");
       }
 
@@ -62,7 +62,7 @@ const Login = () => {
       const user = authData.user;
       setCurrentUser(user);
 
-      console.log('👤 User authenticated:', {
+      console.log('ðŸ‘¤ User authenticated:', {
         id: user._id,
         username: user.username,
         role: isAdmin ? user.adminRole : 'user'
@@ -85,7 +85,7 @@ const Login = () => {
       }
   
     } catch (err) {
-      console.error("🚨 Login error:", {
+      console.error("ðŸš¨ Login error:", {
         message: err?.message,
         status: err?.response?.status,
         responseData: err?.response?.data

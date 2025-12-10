@@ -1,4 +1,4 @@
-// Organization categories from backend
+﻿// Organization categories from backend
 export const ORGANIZATION_CATEGORIES = {
   'CAST': ['theatre', 'drama', 'performing-arts'],
   'CULTURA': ['cultural', 'traditional-arts', 'heritage'],

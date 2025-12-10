@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+﻿import React, { useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 import './MessageInput.scss'; // Ensure this path is correct
 

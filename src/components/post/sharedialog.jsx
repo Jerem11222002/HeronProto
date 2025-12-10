@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+﻿import React, { useState, useRef, useEffect } from "react";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
@@ -36,12 +36,12 @@ const ShareDialog = ({ open, onClose, post, onShare, currentUser }) => {
   }, [open]);
 
   const shareOptions = [
-    { label: "Your Story", icon: "🌞" },
-    { label: "Messenger", icon: "💬" },
-    { label: "WhatsApp", icon: "📱" },
-    { label: "Copy Link", icon: "🔗" },
-    { label: "Group", icon: "👥" },
-    { label: "Page", icon: "📄" },
+    { label: "Your Story", icon: "ðŸŒž" },
+    { label: "Messenger", icon: "ðŸ’¬" },
+    { label: "WhatsApp", icon: "ðŸ“±" },
+    { label: "Copy Link", icon: "ðŸ”—" },
+    { label: "Group", icon: "ðŸ‘¥" },
+    { label: "Page", icon: "ðŸ“„" },
   ];
 
   const handleShare = () => {

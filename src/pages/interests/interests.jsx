@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from "react";
+﻿import React, { useState, useContext, useEffect } from "react";
 import { AuthContext } from "../../context/authContext";
 import { useNavigate, useParams } from "react-router-dom";
 import "./interests.scss";
@@ -10,21 +10,21 @@ const MIN_INTERESTS = 1;
 
 // Update the interests array to match backend values and organization tags
 const interests = [
-  { id: 'music', name: "Music", icon: "🎵", description: "Music creation and performance", relatedTags: ['band','choir','vocal-arts','modern-music'] },
-  { id: 'dance', name: "Dance", icon: "💃", description: "Contemporary and traditional dance", relatedTags: ['modern-dance','choreography','performance'] },
-  { id: 'theatre', name: "Theatre", icon: "🎭", description: "Acting and stage performance", relatedTags: ['drama','acting','stage-performance','performance'] },
-  { id: 'cultural-arts', name: "Cultural Arts", icon: "🏺", description: "Traditional and cultural arts", relatedTags: ['traditional-arts','folk-dance','cultural'] },
-  { id: 'performance', name: "Performance", icon: "🎪", description: "Live performances and shows", relatedTags: ['stage-performance','concert','showcase'] },
-  { id: 'visual-arts', name: "Visual Arts", icon: "🎨", description: "Visual arts and technical production", relatedTags: ['technical-production','multimedia','digital-art'] },
+  { id: 'music', name: "Music", icon: "ðŸŽµ", description: "Music creation and performance", relatedTags: ['band','choir','vocal-arts','modern-music'] },
+  { id: 'dance', name: "Dance", icon: "ðŸ’ƒ", description: "Contemporary and traditional dance", relatedTags: ['modern-dance','choreography','performance'] },
+  { id: 'theatre', name: "Theatre", icon: "ðŸŽ­", description: "Acting and stage performance", relatedTags: ['drama','acting','stage-performance','performance'] },
+  { id: 'cultural-arts', name: "Cultural Arts", icon: "ðŸº", description: "Traditional and cultural arts", relatedTags: ['traditional-arts','folk-dance','cultural'] },
+  { id: 'performance', name: "Performance", icon: "ðŸŽª", description: "Live performances and shows", relatedTags: ['stage-performance','concert','showcase'] },
+  { id: 'visual-arts', name: "Visual Arts", icon: "ðŸŽ¨", description: "Visual arts and technical production", relatedTags: ['technical-production','multimedia','digital-art'] },
 
   // NEW additional interests to increase diversity
-  { id: 'photography', name: "Photography", icon: "📷", description: "Photography and image arts", relatedTags: ['visual-arts','digital-art','editing'] },
-  { id: 'film', name: "Film & Video", icon: "🎬", description: "Filmmaking and video production", relatedTags: ['video','multimedia','production'] },
-  { id: 'fashion', name: "Fashion", icon: "👗", description: "Costume, styling and fashion design", relatedTags: ['design','visual-arts'] },
-  { id: 'writing', name: "Creative Writing", icon: "✍️", description: "Poetry, prose and scriptwriting", relatedTags: ['literature','storytelling'] },
-  { id: 'sculpture', name: "Sculpture", icon: "🗿", description: "3D and tactile arts", relatedTags: ['visual-arts','artwork'] },
-  { id: 'animation', name: "Animation", icon: "🧩", description: "2D/3D animation and motion design", relatedTags: ['digital-art','multimedia'] },
-  { id: 'photogrammetry', name: "Digital Production", icon: "🖥️", description: "Technical production and multimedia", relatedTags: ['technical-production','multimedia'] }
+  { id: 'photography', name: "Photography", icon: "ðŸ“·", description: "Photography and image arts", relatedTags: ['visual-arts','digital-art','editing'] },
+  { id: 'film', name: "Film & Video", icon: "ðŸŽ¬", description: "Filmmaking and video production", relatedTags: ['video','multimedia','production'] },
+  { id: 'fashion', name: "Fashion", icon: "ðŸ‘—", description: "Costume, styling and fashion design", relatedTags: ['design','visual-arts'] },
+  { id: 'writing', name: "Creative Writing", icon: "âœï¸", description: "Poetry, prose and scriptwriting", relatedTags: ['literature','storytelling'] },
+  { id: 'sculpture', name: "Sculpture", icon: "ðŸ—¿", description: "3D and tactile arts", relatedTags: ['visual-arts','artwork'] },
+  { id: 'animation', name: "Animation", icon: "ðŸ§©", description: "2D/3D animation and motion design", relatedTags: ['digital-art','multimedia'] },
+  { id: 'photogrammetry', name: "Digital Production", icon: "ðŸ–¥ï¸", description: "Technical production and multimedia", relatedTags: ['technical-production','multimedia'] }
 ];
 
 const ProgressBar = ({ current }) => (
@@ -121,7 +121,7 @@ const Interests = () => {
       id: it.id,
       name: it.name,
       description: it.description || "",
-      icon: it.icon || "🎯",
+      icon: it.icon || "ðŸŽ¯",
       approved: true,
       pending: false
     }));
@@ -136,7 +136,7 @@ const Interests = () => {
           id: it.slug || it._id || it.id,
           name: it.name || (it.slug && it.slug.replace(/[-_]/g,' ')),
           description: it.description || "",
-          icon: it.icon || "🎯",
+          icon: it.icon || "ðŸŽ¯",
           approved: !!it.approved,
           pending: !it.approved
         });
@@ -206,7 +206,7 @@ const Interests = () => {
         id: interest.slug || interest._id,
         name: interest.name || name,
         description: interest.description || newInterestDesc || "",
-        icon: "✨",
+        icon: "âœ¨",
         approved: !!interest.approved,
         pending: !interest.approved
       };

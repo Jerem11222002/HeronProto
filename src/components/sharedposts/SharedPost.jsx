@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getDefaultAvatar, getImageUrl } from "../../utils/imageUtils";
 import "./sharedpost.scss";
@@ -25,7 +25,7 @@ const getMediaUrl = (media, img) => {
   const path = media || img;
   if (!path) return null;
   if (typeof path !== 'string') return null;
-  if (/^https?:\/\//i.test(path)) return path;
+  if (/^https?:///i.test(path)) return path;
   const base = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
   if (path.startsWith('/')) return `${base}${path}`;
   return `${base}/uploads/${path.split(/[/\\]/).pop()}`;

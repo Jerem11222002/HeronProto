@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from "react";
+﻿import React, { useState, useContext, useEffect } from "react";
 import "./share.scss";
 import Image from "../../assets/img.png";
 import { AuthContext } from "../../context/authContext";

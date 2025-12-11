@@ -34,8 +34,9 @@ const User = require('./backend/models/users');
 const sessionStore = require('./backend/services/sessionStore');
 
 // Constants
+const allowed = (process.env.CORS_ORIGINS || '').split(',').map(s => s.trim());
 const CORS_OPTIONS = {
-  origin: ["http://localhost:3000", "http://localhost:3001","http://localhost:3002"],
+  origin: (origin, cb) => cb(null, allowed.includes(origin) ? true : false),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], // <-- Add 'PATCH' here
   allowedHeaders: [
@@ -412,7 +413,7 @@ const startServer = async () => {
     
 
     const PORT = process.env.PORT || 5000;
-    server.listen(PORT, () => {
+    app.listen(PORT, () => {
       logger.info(`✅ Server running on http://localhost:${PORT}`);
       logger.info('🌍 Environment:', process.env.NODE_ENV || 'development');
     });

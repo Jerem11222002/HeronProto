@@ -67,6 +67,9 @@ const io = new Server(server, {
 });
 
 app.set('io', io); // <-- ADD THIS LINE
+app.get('/', (req, res) => {
+  res.send('Server is running');
+});
 
 // Socket.IO Authentication Middleware
 io.use(async (socket, next) => {

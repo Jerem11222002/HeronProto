@@ -165,7 +165,7 @@ const AdminParticipants = () => {
                   return;
                 }
           
-                const baseURL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+                const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
                 const apiUrl = `${baseURL}/api/admin/participants`;
                 
                 console.log('🌐 Fetching participants:', { url: apiUrl });
@@ -415,7 +415,7 @@ const AdminParticipants = () => {
         return;
       }
 
-      const baseURL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+      const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
       const response = await axios.patch(
         `${baseURL}/api/admin/participants/${participantId}/status`,
         {
@@ -499,7 +499,7 @@ const AdminParticipants = () => {
       }
 
       const id = participant.id || participant._id || participant._id || '';
-      const baseURL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+      const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
       const url = `${baseURL}/api/admin/participants/${id}/send-confirmation`;
 
       // send current adminNotes (from dialog input) so the email includes the admin message
@@ -541,7 +541,7 @@ const AdminParticipants = () => {
       if (!eventId) return [];
 
       const token = getAuthToken(true);
-      const baseURL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+      const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
       const res = await axios.get(`${baseURL}/api/events/${eventId}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });

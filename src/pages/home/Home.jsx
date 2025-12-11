@@ -41,7 +41,7 @@ const normalizeMediaPath = (p) => {
   if (!p) return null;
   if (typeof p !== 'string') return null;
   if (/^https?:\/\//i.test(p)) return p;
-  const base = process.env.REACT_APP_API_BASE_URL || process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  const base = process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:5000';
   if (p.startsWith('/')) return `${base}${p}`;
   return `${base}/uploads/${p.split(/[\/\\]/).pop()}`;
 };
@@ -221,13 +221,13 @@ const Home = () => {
       setError(null);
 
       const promise = new Promise(async (resolve, reject) => {
-        if (!process.env.REACT_APP_API_BASE_URL) {
+        if (!process.env.REACT_APP_API_URL) {
           reject(new Error('API URL not configured'));
           return;
         }
 
         const response = await fetch(
-          `${process.env.REACT_APP_API_BASE_URL}/api/posts/feed?${new URLSearchParams({
+          `${process.env.REACT_APP_API_URL}/api/posts/feed?${new URLSearchParams({
             userId: currentUser._id,
             sortBy,
             timeRange,

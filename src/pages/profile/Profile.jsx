@@ -40,7 +40,7 @@ import MuiAlert from "@mui/material/Alert";
 
 const formatMediaUrl = (url) => {
   if (!url) return null;
-  const API_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
   
   // If already a full URL, return as is
   if (url.startsWith('http')) return url;

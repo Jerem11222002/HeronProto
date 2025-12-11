@@ -22,7 +22,7 @@ const AdminEventsArchive = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const baseURL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+  const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
   const fetchArchive = async () => {
     setLoading(true);

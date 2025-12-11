@@ -5,7 +5,19 @@ const commentHandlers = require('./commentHandlers');
 const initializeSocket = (server) => {
   const io = socketIo(server, {
     cors: {
-      origin: process.env.CLIENT_URL || "http://localhost:3000",
+      origin: (origin, callback) => {
+        const allowed = [
+          "http://localhost:3000",
+          process.env.CLIENT_URL,
+          ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map(s => s.trim()) : [])
+        ].filter(Boolean);
+        
+        if (allowed.includes(origin) || !origin) {
+          callback(null, true);
+        } else {
+          callback(new Error('CORS not allowed for Socket.IO'));
+        }
+      },
       methods: ["GET", "POST"],
       credentials: true
     }

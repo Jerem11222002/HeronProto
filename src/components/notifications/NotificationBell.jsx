@@ -28,7 +28,7 @@ const NotificationBell = () => {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        baseURL: process.env.REACT_APP_API_BASE_URL // Use the existing env variable
+        baseURL: process.env.REACT_APP_API_URL // Use the existing env variable
       });
   
       if (response.data?.success) {

@@ -203,7 +203,7 @@ const SuggestedTags = ({ organization, onAddTag }) => {
   );
 };
 
-const BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 const AdminEvents = () => {
   const [isFormBuilderOpen, setIsFormBuilderOpen] = useState(false);
@@ -403,7 +403,7 @@ const AdminEvents = () => {
     }
 
     try {
-      const baseURL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+      const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
       const res = await axios.delete(`${baseURL}/api/events/${eventId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });

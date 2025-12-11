@@ -26,7 +26,7 @@ const getMediaUrl = (media, img) => {
   if (!path) return null;
   if (typeof path !== 'string') return null;
   if (/^https?:\/\//i.test(path)) return path;
-  const base = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+  const base = process.env.REACT_APP_API_URL || 'http://localhost:5000';
   if (path.startsWith('/')) return `${base}${path}`;
   return `${base}/uploads/${path.split(/[/\\]/).pop()}`;
 };

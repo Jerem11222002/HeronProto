@@ -43,7 +43,7 @@ export const useAuth = () => {
   return context;
 };
 
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 
 export const AuthContextProvider = ({ children }) => {
@@ -61,7 +61,7 @@ export const AuthContextProvider = ({ children }) => {
     mutualFriends: []
   });
   
-  const BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:5000";
+  const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
   // Fetch saved settings from server and apply/persist theme
   const fetchAndApplyUserSettings = useCallback(async (userId, token) => {

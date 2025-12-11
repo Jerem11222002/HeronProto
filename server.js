@@ -34,11 +34,42 @@ const User = require('./backend/models/users');
 const sessionStore = require('./backend/services/sessionStore');
 
 // Constants
-const allowed = (process.env.CORS_ORIGINS || '').split(',').map(s => s.trim());
 const CORS_OPTIONS = {
-  origin: (origin, cb) => cb(null, allowed.includes(origin) ? true : false),
+  origin: (origin, cb) => {
+    // allow if no origin (e.g., server-side requests / non-browser)
+    if (!origin) return cb(null, true);
+
+    // build allowlist from env
+    const envList = (process.env.CORS_ORIGINS || '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    const clientUrl = (process.env.CLIENT_URL || '').trim();
+    const frontendUrl = (process.env.FRONTEND_URL || '').trim();
+    if (clientUrl) envList.push(clientUrl);
+    if (frontendUrl) envList.push(frontendUrl);
+
+    // exact match check
+    if (envList.includes(origin)) {
+      return cb(null, true);
+    }
+
+    // allow any Vercel-hosted origin (preview + main)
+    try {
+      const host = new URL(origin).hostname;
+      if (host.endsWith('.vercel.app')) {
+        return cb(null, true);
+      }
+    } catch (e) {
+      // ignore URL parse errors
+    }
+
+    // still not matched
+    return cb(new Error('CORS not allowed'), false);
+  },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], // <-- Add 'PATCH' here
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: [
     'Content-Type',
     'Authorization',

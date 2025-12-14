@@ -99,8 +99,7 @@ const UserSchema = new mongoose.Schema({
     enum: ['male', 'female', 'prefer-not-to-say'],
     default: 'prefer-not-to-say',
     lowercase: true,
-    trim: true,
-    index: true
+    trim: true
   },
   genderHistory: [{
     value: { type: String, enum: ['male', 'female', 'prefer-not-to-say'] },
@@ -119,18 +118,15 @@ const UserSchema = new mongoose.Schema({
   },
   interestsSelected: { 
     type: Boolean, 
-    default: false,
-    index: true
+    default: false
   },
   interestsSkipped: {
     type: Boolean,
-    default: false,
-    index: true
+    default: false
   },
   profileSetup: {
     type: Boolean,
-    default: false,
-    index: true
+    default: false
   },
   implicitPreferences: {
     type: Object,

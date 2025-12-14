@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import axios from 'axios';
-import { io } from 'socket.io-client';
+import io from 'socket.io-client';
 import {
   Box,
   Card,
@@ -86,7 +86,7 @@ const AdminMonitoring = () => {
       return () => {};
     }
 
-    socketRef.current = io('/', {
+    socketRef.current = io(process.env.REACT_APP_API_URL || 'http://localhost:5000', {
       path: '/socket.io',
       auth: { token }
     });

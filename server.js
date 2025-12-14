@@ -1,7 +1,12 @@
 const logger = require('./backend/utils/logger');
 logger.info('🟢 Server.js starting...');
 
-require("dotenv").config();
+console.log('Loading dotenv...');
+require('dotenv').config();
+console.log('Env loaded, MONGO_URI:', process.env.MONGO_URI ? 'set' : 'not set');
+console.log('CORS_ORIGINS:', process.env.CORS_ORIGINS);
+console.log('REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
+
 const express = require("express");
 const cors = require("cors");
 const connectDB = require("./backend/config/db");
@@ -256,9 +261,9 @@ if (process.env.NODE_ENV === 'development') {
 // Static file serving
 app.use('/uploads', express.static(path.join(__dirname, 'backend/uploads'), {
   setHeaders: (res, filePath) => {
-    res.setHeader('Access-Control-Allow-Origin', CORS_OPTIONS.origin);
-    res.setHeader('Access-Control-Allow-Methods', CORS_OPTIONS.methods.join(','));
-    res.setHeader('Access-Control-Allow-Headers', CORS_OPTIONS.allowedHeaders.join(','));
+    res.setHeader('Access-Control-Allow-Origin', '*');  // ✅ Fixed: Use a valid string instead of the function
+    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Authorization, Cache-Control');
     if (filePath.includes('profiles')) {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
@@ -444,9 +449,9 @@ const startServer = async () => {
     
 
     const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => {
-      logger.info(`✅ Server running on http://localhost:${PORT}`);
-      logger.info('🌍 Environment:', process.env.NODE_ENV || 'development');
+    console.log('Starting server on port', PORT);
+    server.listen(PORT, () => {
+      console.log('Server is running on port', PORT);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);

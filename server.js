@@ -60,6 +60,11 @@ const CORS_OPTIONS = {
       return cb(null, true);
     }
 
+    // allow localhost:3000 for development (with startsWith for flexibility)
+    if (origin.startsWith('http://localhost:3000')) {
+      return cb(null, true);
+    }
+
     // allow any Vercel-hosted origin (preview + main)
     try {
       const host = new URL(origin).hostname;

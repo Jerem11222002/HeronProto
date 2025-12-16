@@ -10,14 +10,37 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  position: sticky;
-  top: 0;
   z-index: 100;
   @include transition(box-shadow);
   
-  &.scrolled {
+  .menuToggle {
+    display: none;
+    background: none;
+    border: none;
+    padding: 8px;
+    border-radius: 4px;
+    cursor: pointer;
     @include themify($themes) {
-      box-shadow: 0 2px 10px themed('shadow');
+      color: themed('textColorSoft');
+    }
+    @include transition(all);
+    
+    &:hover {
+      @include themify($themes) {
+        background-color: themed('bgHover');
+        color: themed('textColor');
+      }
+    }
+    
+    &:focus-visible {
+      @include themify($themes) {
+        outline: 2px solid themed('primary');
+        outline-offset: 2px;
+      }
+    }
+    
+    .menuIcon {
+      font-size: 24px;
     }
   }
 
@@ -176,6 +199,12 @@
 @include tablet {
   .adminTopBar {
     padding: 0 12px;
+
+    .menuToggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
     .searchBar {
       width: 160px;

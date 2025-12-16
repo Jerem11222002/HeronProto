@@ -16,7 +16,7 @@ import {
 } from 'react-icons/md';
 import { MdManageAccounts } from 'react-icons/md';
 
-const AdminSidebar = () => {
+const AdminSidebar = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, adminLogout } = useAuth();
@@ -87,7 +87,7 @@ const AdminSidebar = () => {
   };
 
   return (
-    <div className="adminSidebar">
+    <div className={`adminSidebar ${isOpen ? 'open' : ''}`}>
       <div className="logo">
         <h2>Heron Admin</h2>
       </div>
@@ -99,6 +99,7 @@ const AdminSidebar = () => {
             to={item.path}
             className={`menuItem ${location.pathname === item.path ? 'active' : ''}`}
             title={`Go to ${item.label}`}
+            onClick={onClose} // Close sidebar on navigation
           >
             <span className="menuIcon">{item.icon}</span>
             <span className="menuLabel">{item.label}</span>
@@ -108,7 +109,7 @@ const AdminSidebar = () => {
 
       <div className="bottomMenu">
         <button 
-          onClick={handleSwitchView} 
+          onClick={() => { handleSwitchView(); onClose(); }} 
           className="actionButton switchButton"
           title="Switch to user view"
         >
@@ -116,7 +117,7 @@ const AdminSidebar = () => {
           <span>Switch to User View</span>
         </button>
         <button 
-          onClick={handleLogout} 
+          onClick={() => { handleLogout(); onClose(); }} 
           className="actionButton logoutButton"
           title="Logout from admin panel"
         >

@@ -4,14 +4,110 @@
   min-height: 100vh;
   background-color: var(--bg-admin);
   
+  .adminSidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 250px;
+    height: 100vh;
+    background-color: var(--bg-admin);
+    border-right: 1px solid var(--border-color);
+    transition: transform 0.3s ease;
+    z-index: 1000;
+    
+    &.open {
+      transform: translateX(0);
+    }
+    
+    .logo {
+      padding: 1rem;
+      border-bottom: 1px solid var(--border-color);
+      
+      h2 {
+        margin: 0;
+        color: var(--text-primary);
+        font-size: 1.2rem;
+        font-weight: 600;
+      }
+    }
+    
+    .menuItems {
+      padding: 1rem 0;
+      
+      .menuItem {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        color: var(--text-secondary);
+        text-decoration: none;
+        transition: all 0.2s ease;
+        
+        &:hover, &.active {
+          background-color: var(--bg-hover);
+          color: var(--primary-color);
+        }
+        
+        .menuIcon {
+          margin-right: 0.75rem;
+          font-size: 1.2rem;
+        }
+        
+        .menuLabel {
+          font-size: 0.9rem;
+        }
+      }
+    }
+    
+    .bottomMenu {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      padding: 1rem;
+      
+      .actionButton {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.5rem;
+        background: none;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        
+        &:hover {
+          background-color: var(--bg-hover);
+          color: var(--primary-color);
+        }
+        
+        span {
+          margin-left: 0.75rem;
+          font-size: 0.9rem;
+        }
+      }
+    }
+  }
+  
   .adminContent {
     display: flex;
     flex-direction: column;
     overflow: hidden;
     
+    .adminTopBar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1001;
+      background-color: var(--bg-admin);
+    }
+    
     .mainContent {
       flex: 1;
       padding: clamp(1rem, 3vw, 2rem);
+      padding-top: 70px; // Account for fixed topbar height
       overflow-y: auto;
       background-color: var(--bg-admin);
       
@@ -56,6 +152,18 @@
   }
 }
 
+// Overlay for mobile sidebar
+.adminOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  display: none;
+}
+
 // Loading spinner component
 .loading-spinner {
   display: flex;
@@ -70,8 +178,14 @@
 .theme-dark .adminContainer {
   background-color: var(--bg-admin-dark);
   
-  .mainContent {
-    background-color: var(--bg-admin-dark);
+  .adminContent {
+    .adminTopBar {
+      background-color: var(--bg-admin-dark);
+    }
+    
+    .mainContent {
+      background-color: var(--bg-admin-dark);
+    }
   }
 }
 
@@ -80,17 +194,54 @@
   .adminContainer {
     grid-template-columns: 1fr;
     
+    .adminSidebar {
+      transform: translateX(-100%);
+      
+      &.open {
+        transform: translateX(0);
+      }
+    }
+    
     .adminContent {
+      margin-left: 0;
+      
       .mainContent {
         padding: 1rem;
+        padding-top: 70px;
       }
+    }
+  }
+  
+  .adminOverlay {
+    display: block;
+  }
+}
+
+// Desktop: show sidebar by default
+@media (min-width: 769px) {
+  .adminContainer {
+    .adminSidebar {
+      // Keep fixed position, remove relative
+      transform: translateX(0);
+    }
+    
+    .adminContent {
+      margin-left: 250px;
+      
+      .adminTopBar {
+        left: 250px;
+      }
+    }
+    
+    .adminOverlay {
+      display: none;
     }
   }
 }
 
 // Reduced motion
 @media (prefers-reduced-motion: reduce) {
-  .adminContainer .adminContent .mainContent {
-    scroll-behavior: auto;
+  .adminContainer .adminSidebar {
+    transition: none;
   }
 }

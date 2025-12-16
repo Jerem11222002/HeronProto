@@ -6,11 +6,12 @@ import { toast } from 'react-toastify';
 import { 
   Search as SearchIcon,
   Notifications as NotificationsIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
+  Menu as MenuIcon
 } from '@mui/icons-material';
 import "./adminTopBar.scss";
 
-const AdminTopBar = memo(() => {
+const AdminTopBar = memo(({ onToggleSidebar }) => {
   const navigate = useNavigate();
   const { currentUser, adminLogout } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,6 +31,14 @@ const AdminTopBar = memo(() => {
 
   return (
     <nav className="adminTopBar" role="navigation" aria-label="Admin navigation">
+      <button 
+        className="menuToggle"
+        onClick={onToggleSidebar}
+        aria-label="Toggle sidebar menu"
+      >
+        <MenuIcon className="menuIcon" />
+      </button>
+      
       <form className="searchBar" onSubmit={handleSearch} role="search">
         <SearchIcon className="searchIcon" aria-hidden="true" />
         <input 

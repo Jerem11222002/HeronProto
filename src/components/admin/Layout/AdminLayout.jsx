@@ -1,4 +1,4 @@
-import React, { Suspense, memo } from 'react';
+import React, { Suspense, memo, useState } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { useAuth } from '../../../context/authContext';
@@ -10,6 +10,7 @@ import "./adminLayout.scss";
 
 const AdminLayout = memo(() => {
   const { currentUser, loading } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Handle loading state
   if (loading) {
@@ -21,15 +22,20 @@ const AdminLayout = memo(() => {
     return <Navigate to="/login" replace />;
   }
 
+  const toggleSidebar = () => setSidebarOpen(prev => !prev);
+  const closeSidebar = () => setSidebarOpen(false);
+
   return (
     <div className="adminContainer" role="application">
       <ErrorBoundary fallback={<div>Error loading sidebar</div>}>
-        <AdminSidebar />
+        <AdminSidebar isOpen={sidebarOpen} onClose={closeSidebar} />
       </ErrorBoundary>
+      
+      {sidebarOpen && <div className="adminOverlay" onClick={closeSidebar} />}
       
       <div className="adminContent">
         <ErrorBoundary fallback={<div>Error loading top bar</div>}>
-          <AdminTopBar />
+          <AdminTopBar onToggleSidebar={toggleSidebar} />
         </ErrorBoundary>
         
         <main className="mainContent" role="main">

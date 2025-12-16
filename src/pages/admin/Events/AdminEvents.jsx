@@ -580,19 +580,9 @@ const AdminEvents = () => {
 
     return (
     <div className="admin-events">
-      <Box className="header" display="flex" justifyContent="space-between" alignItems="center">
+      <div className="header">
         <h1>Event Management</h1>
-        <Box display="flex" alignItems="center" gap={2}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={newestFirst}
-                onChange={(e) => setNewestFirst(Boolean(e.target.checked))}
-                color="primary"
-              />
-            }
-            label={newestFirst ? 'Newest first' : 'Oldest first'}
-          />
+        <div className="header-actions">
           <Button variant="contained" onClick={() => navigate('/admin/events/archive')} className="archiveBtn" startIcon={<ArchiveIcon />}>
             View Archive
           </Button>
@@ -603,8 +593,20 @@ const AdminEvents = () => {
           >
             Create New Event
           </Button>
-        </Box>
-      </Box>
+        </div>
+        <div className="header-sort">
+          <FormControlLabel
+            control={
+              <Switch
+                checked={newestFirst}
+                onChange={(e) => setNewestFirst(Boolean(e.target.checked))}
+                color="primary"
+              />
+            }
+            label={newestFirst ? 'Newest first' : 'Oldest first'}
+          />
+        </div>
+      </div>
   
       <div className="events-grid">
         {sortedEvents.map(event => (

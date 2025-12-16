@@ -109,6 +109,7 @@ $current-theme: null !default;
 // Breakpoints
 $breakpoints: (
   mobile: 480px,
+  small-tablet: 600px,
   tablet: 768px,
   laptop: 1024px,
   desktop: 1200px,
@@ -132,6 +133,12 @@ $breakpoints: (
   }
 }
 
+@mixin small-tablet {
+  @include responsive('small-tablet') {
+    @content;
+  }
+}
+
 @mixin tablet {
   @include responsive('tablet') {
     @content;
@@ -139,6 +146,12 @@ $breakpoints: (
 }
 
 @mixin laptop {
+  @include responsive('laptop') {
+    @content;
+  }
+}
+
+@mixin large-tablet {
   @include responsive('laptop') {
     @content;
   }

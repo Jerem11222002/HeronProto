@@ -40,12 +40,12 @@ const AdminAccounts = () => {
 
   // Media query for responsive design — MOVED BEFORE GUARD
   const [isNarrow, setIsNarrow] = useState(
-    typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : false
+    typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(max-width: 768px)').matches : false
   );
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return;
-    const mq = window.matchMedia('(max-width: 820px)');
+    const mq = window.matchMedia('(max-width: 768px)');
     const handler = (e) => setIsNarrow(e.matches);
     if (mq.addEventListener) mq.addEventListener('change', handler);
     else mq.addListener(handler);

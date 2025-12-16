@@ -96,8 +96,23 @@ const PreRegister = () => {
     }
   };
 
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
+  if (isLoading) return (
+    <div className="pre-register">
+      <div className="pre-register-loading">
+        <div className="loader"></div>
+        <p>Loading event details...</p>
+      </div>
+    </div>
+  );
+  if (error) return (
+    <div className="pre-register">
+      <div className="pre-register-error">
+        <h3>Oops! Something went wrong</h3>
+        <p>{error}</p>
+        <button onClick={() => window.location.reload()}>Try Again</button>
+      </div>
+    </div>
+  );
   if (!event) return <div>No event found</div>;
 
   const isEventFull = Boolean(
@@ -113,6 +128,11 @@ const PreRegister = () => {
   return (
     <div className="pre-register">
       <div className="pre-register-header">
+        <div className="header-actions">
+          <button onClick={() => navigate(-1)} className="back-button">
+            <i className="fas fa-arrow-left"></i> Back
+          </button>
+        </div>
         <h1>Event Registration</h1>
         <div className="event-details">
           <div className="event-header">
@@ -146,7 +166,7 @@ const PreRegister = () => {
                 </div>
                 <span>
                   {event.currentParticipants}/{event.maxParticipants} participants
-                  {isEventFull && <span className="full-badge">Event Full</span>}
+                  {isEventFull && <span className="full-badge">FULL</span>}
                 </span>
               </div>
             </div>

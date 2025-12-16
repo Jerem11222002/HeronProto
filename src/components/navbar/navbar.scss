@@ -49,8 +49,8 @@ $shadows: (
     top: 0;
     z-index: 999;
     @include flex-center;
-    justify-content: space-between;
-    padding: 0 24px;
+    justify-content: space-between; // Ensure even distribution
+    padding: 0 clamp(20px, 8vw, 80px); // Increased fluid padding for better space usage on wide screens
     background: linear-gradient(
       to bottom,
       rgba(themed('bg'), 0.95),
@@ -63,21 +63,23 @@ $shadows: (
     // Left Section
     .left {
       @include flex-center;
-      gap: 32px;
+      gap: clamp(24px, 4vw, 32px); // Fluid gap
+      flex: 1 1 auto; /* allow left section to grow on wide screens */
+      min-width: 0; /* allow children to shrink inside flex container */
 
       .logo {
-        font-size: 24px;
+        font-size: clamp(20px, 3vw, 24px); // Responsive font
         font-weight: 700;
         color: themed('primary');
       }
 
       .nav-links {
         @include flex-center;
-        gap: 24px;
+        gap: clamp(16px, 3vw, 24px);
 
         .nav-icon {
-          font-size: 22px;
-          padding: 10px;
+          font-size: clamp(18px, 2.5vw, 22px);
+          padding: clamp(8px, 1.5vw, 10px);
           border-radius: 12px;
           color: themed('textColorSoft');
           cursor: pointer;
@@ -92,15 +94,19 @@ $shadows: (
 
       .search-container {
         position: relative;
-        margin-left: 20px;
+        margin-left: clamp(15px, 3vw, 20px);
+        flex: 1 1 48%; /* allow search to take available space */
+        min-width: 0;
 
         .search-input-wrapper {
           @include flex-center;
           background: rgba(themed('bg'), 0.8);
           border: 1px solid rgba(themed('border'), 0.08);
           border-radius: 20px;
-          padding: 8px 16px;
-          min-width: 260px;
+          padding: clamp(6px, 1.5vw, 8px) clamp(12px, 3vw, 16px);
+          width: 100%;
+          max-width: 640px; /* cap width so center items don't become too big on ultra-wide screens */
+          min-width: 0;
           @include transition(all);
 
           &:focus-within {
@@ -111,8 +117,8 @@ $shadows: (
 
           .search-icon {
             color: themed('textColorSoft');
-            font-size: 20px;
-            margin-right: 12px;
+            font-size: clamp(16px, 2vw, 20px);
+            margin-right: clamp(8px, 2vw, 12px);
           }
 
           input {
@@ -120,12 +126,7 @@ $shadows: (
             background: none;
             outline: none;
             width: 100%;
-            font-size: 14px;
-            color: themed('textColor');
-
-            &::placeholder {
-              color: themed('textColorSoft');
-            }
+            font-size: clamp(14px, 2vw, 16px);
           }
         }
 
@@ -133,7 +134,8 @@ $shadows: (
           position: absolute;
           top: calc(100% + 8px);
           left: 0;
-          width: 320px;
+          width: 100%;
+          max-width: calc(min(900px, 100vw - 48px));
           max-height: 400px;
           background: rgba(themed('bg'), 0.98);
           border-radius: 16px;
@@ -141,46 +143,7 @@ $shadows: (
           overflow-y: auto;
           animation: slideIn 0.2s ease;
           border: 1px solid rgba(themed('border'), 0.08);
-
-          .search-loading {
-            @include flex-center;
-            padding: 32px;
-            color: themed('textColorSoft');
-          }
-
-          .search-result-item {
-            @include flex-center;
-            gap: 12px;
-            padding: 12px 16px;
-            text-decoration: none;
-            color: themed('textColor');
-            @include transition(all);
-
-            &:hover {
-              background: rgba(themed('primary'), 0.04);
-              transform: translateX(4px);
-            }
-
-            img {
-              width: 40px;
-              height: 40px;
-              border-radius: 50%;
-              object-fit: cover;
-            }
-
-            span {
-              font-size: 14px;
-              font-weight: 500;
-              color: themed('textColor');
-            }
-          }
-
-          .no-results {
-            padding: 24px;
-            text-align: center;
-            color: themed('textColorSoft');
-            font-size: 14px;
-          }
+          box-sizing: border-box;
         }
       }
     }
@@ -188,7 +151,8 @@ $shadows: (
     // Right Section
     .right {
       @include flex-center;
-      gap: 18px;
+      gap: clamp(12px, 3vw, 18px);
+      flex: 0 0 auto; /* keep right section compact */
 
       .nav-icon {
         color: themed('textColorSoft');
@@ -457,38 +421,23 @@ $shadows: (
   }
 
   // Responsive Styles
-  @include mobile {
+  @include small-tablet {
     @include themify($themes) {
-      padding: 0 16px;
+      padding: 0 20px;
 
       .left {
-        gap: 20px;
+        gap: 24px;
 
-        .search-container {
-          .search-input-wrapper {
-            min-width: 200px;
-          }
-
-          .search-results {
-            width: calc(100vw - 32px);
-            left: -16px;
-          }
+        .search-container .search-input-wrapper {
+          min-width: 240px;
         }
       }
 
       .right {
+        gap: 16px;
+
         .user span {
           display: none;
-        }
-
-        .dropdown-menu {
-          right: -16px;
-          width: 240px;
-        }
-        .friends-dropdown {
-          right: 0;
-          width: 100vw;
-          border-radius: 0 0 18px 18px;
         }
       }
     }
@@ -503,6 +452,149 @@ $shadows: (
 
         .search-container .search-input-wrapper {
           min-width: 220px;
+        }
+      }
+    }
+  }
+
+  @include large-tablet {
+    @include themify($themes) {
+      .left .search-container .search-input-wrapper {
+        min-width: 280px;
+      }
+    }
+  }
+
+  @include wide {
+    @include themify($themes) {
+      padding: 0 clamp(40px, 8vw, 100px); // More padding on ultra-wide
+      .left .search-container .search-input-wrapper {
+        max-width: 720px; // cap search width on ultra-wide displays
+      }
+      .right .dropdown-menu {
+        width: clamp(300px, 20vw, 400px);
+      }
+      .right .friends-dropdown {
+        width: clamp(400px, 25vw, 500px);
+      }
+    }
+  }
+
+  @include wide {
+    @include themify($themes) {
+      padding: 0 clamp(20px, 5vw, 60px); // Reduce padding on ultra-wide screens to avoid excessive spaces
+      .left .search-container .search-input-wrapper {
+        max-width: 720px; // allow larger but still capped
+        width: clamp(300px, 25vw, 400px);
+      }
+      .right .friends-dropdown {
+        width: clamp(350px, 30vw, 450px);
+      }
+    }
+  }
+
+  // Responsive fixes: prevent dropdowns from being clipped or placed off-screen
+  overflow: visible;
+  width: 100%;
+  box-sizing: border-box;
+
+  // Make left/right relative so absolute dropdowns are positioned correctly
+  .left, .right {
+    position: relative;
+    z-index: 1;
+  }
+
+  // Constrain dropdowns so they never overflow the viewport
+  .search-results,
+  .dropdown-menu,
+  .friends-dropdown {
+    left: auto;
+    right: 12px;
+    width: min(400px, 100%);
+    max-width: calc(100vw - 24px);
+    box-sizing: border-box;
+    z-index: 1002;
+  }
+
+  // Anchor search-results to the search container when there's room,
+  // but keep the max-width guard above to avoid clipping on small screens
+  .left .search-container .search-results {
+    left: 0;
+    right: auto;
+    width: min(400px, 100%);
+    max-width: calc(100vw - 24px);
+  }
+
+  // Ensure absolute dropdowns appear above other content
+  .right .dropdown-menu,
+  .right .friends-dropdown {
+    right: 12px;
+    left: auto;
+  }
+
+  // Mobile / very small screens: make dropdowns full-width and flow so nothing disappears
+  @include mobile {
+    .nav-links { display: none !important; } // hide desktop links
+    .hamburger { display: block; } // show if you have a hamburger trigger
+
+    .search-container {
+      width: 100%;
+      .search-input-wrapper { min-width: 100% !important; }
+      .search-results {
+        position: static;
+        width: 100%;
+        max-width: 100%;
+        margin-top: 8px;
+        box-shadow: none;
+      }
+    }
+
+    .right .dropdown-menu,
+    .right .friends-dropdown {
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      top: calc(#{$navbar-height} + 12px); // uses the local $navbar-height
+      width: auto;
+      max-width: calc(100vw - 24px);
+      border-radius: 12px;
+      z-index: 1200;
+    }
+  }
+
+  // For vertical monitors (portrait orientation): clean up navbar layout
+  @media (orientation: portrait) and (max-width: 1024px) {
+    @include themify($themes) {
+      padding: 0 10px; // Reduce padding for cleaner look
+      height: 60px; // Slightly shorter navbar
+
+      .left {
+        gap: 12px; // Tighter gaps
+
+        .logo {
+          font-size: 18px; // Smaller logo
+        }
+
+        .nav-links {
+          display: none; // Hide nav links in portrait
+        }
+
+        .search-container .search-input-wrapper {
+          min-width: 150px; // Smaller search
+          max-width: 300px;
+        }
+      }
+
+      .right {
+        gap: 8px; // Tighter gaps
+
+        .user span {
+          display: none; // Hide user name
+        }
+
+        .dropdown-menu,
+        .friends-dropdown {
+          top: calc(60px + 12px); // Adjust for shorter navbar height
         }
       }
     }

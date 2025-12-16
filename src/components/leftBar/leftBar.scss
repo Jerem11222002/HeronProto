@@ -6,19 +6,138 @@
     position: sticky;
     top: 70px;
     height: calc(100vh - 70px);
-    overflow: hidden;
+    /* allow leftbar to have a responsive width and be scrollable */
+    width: clamp(80px, 18vw, 280px);
+    min-width: 80px;
+    max-width: 320px;
+    overflow: auto;
     background-color: themed("bg");
     color: themed("textColor");
     border-right: 1px solid themed("border");
     transition: all 0.3s ease;
 
-    @include mobile {
-      display: none;
+    @include tablet {
+      flex: 1; // Narrower on tablet
+      &.collapsed {
+        flex: 0.5;
+      }
     }
+
+    @include large-tablet {
+      flex: 1.5; // Slightly wider on large tablet
+    }
+
+    @include wide {
+      flex: 2.5; // Wider on ultra-wide screens
+    }
+
+    @include mobile {
+      /* Show a compact icon-only leftbar on small / narrow screens instead of hiding it */
+      display: block;
+      position: relative;
+      width: 80px;
+      min-width: 80px;
+      max-width: 80px;
+
+      .container { padding: 10px; }
+
+      /* hide labels and extra info to make it icon-only */
+      .user-info, .label, .stat .label { display: none !important; }
+      .menu-item { justify-content: center; padding: 8px; }
+      .collapse-toggle { display: none; }
+
+      // Hide user stats on mobile
+      .user-stats { display: none !important; }
+
+      // Align user avatar with menu icons
+      .profile-section .user-link {
+        justify-content: center;
+        padding: 8px;
+
+        .user-avatar img {
+          width: 32px;
+          height: 32px;
+        }
+
+        .online-indicator {
+          width: 8px;
+          height: 8px;
+          bottom: 1px;
+          right: 1px;
+        }
+      }
+
+      /* hover (desktop) or long-press expands to reveal labels */
+      &:hover, &:focus-within {
+        width: clamp(160px, 40vw, 240px);
+        min-width: 160px;
+        .container { padding-left: 16px; }
+        .user-info, .label, .stat .label { display: block !important; }
+
+        // Show user stats on hover expand
+        .user-stats { display: flex !important; }
+
+        // Restore avatar size on expand
+        .profile-section .user-link {
+          justify-content: flex-start;
+          padding: 10px;
+
+          .user-avatar img {
+            width: 40px;
+            height: 40px;
+          }
+
+          .online-indicator {
+            width: 10px;
+            height: 10px;
+            bottom: 2px;
+            right: 2px;
+          }
+        }
+      }
+    }
+
+    // For vertical monitors (portrait orientation): ensure icon-only without toggle
+    @media (orientation: portrait) and (max-width: 1024px) {
+      display: block;
+      width: 80px;
+      min-width: 80px;
+      max-width: 80px;
+      .container { padding: 10px; }
+      .user-info, .label, .stat .label { display: none !important; }
+      .menu-item { justify-content: center; padding: 8px; }
+      .collapse-toggle { display: none !important; }
+
+      // Hide user stats on vertical screens
+      .user-stats { display: none !important; }
+
+      // Align user avatar with menu icons
+      .profile-section .user-link {
+        justify-content: center;
+        padding: 8px;
+
+        .user-avatar img {
+          width: 32px;
+          height: 32px;
+        }
+
+        .online-indicator {
+          width: 8px;
+          height: 8px;
+          bottom: 1px;
+          right: 1px;
+        }
+      }
+    }
+
+    // Add transition for flex changes
+    transition: flex 0.3s ease;
 
     &.collapsed {
       flex: 0.5;
       min-width: 80px;
+      flex: 0 0 80px;
+      width: 80px;
 
       .user-info, .label, .stat .label {
         display: none;
@@ -36,6 +155,7 @@
       flex-direction: column;
       gap: 20px;
       position: relative;
+      overflow-y: auto; /* allow inner scrolling when content overflows */
 
       .profile-section {
         .user-link {

@@ -17,6 +17,7 @@ import Home from "./pages/home/Home";
 import Profile from "./pages/profile/Profile";
 import Events from "./pages/events/events";
 import "./style.scss";
+import "./layout.scss";
 import { useContext } from "react";
 import { DarkModeContext, DarkModeContextProvider } from "./context/darkModeContext";
 import { AuthContext, AuthContextProvider } from "./context/authContext";
@@ -46,15 +47,19 @@ import ResetPassword from "./pages/reset-password/ResetPassword";
 
 // Layout Components
 const Layout = ({ darkMode }) => (
-  <div className={`theme-${darkMode ? "dark" : "light"}`}>
-    <Navbar />
-    <div style={{ display: "flex" }}>
+  <div className={`theme-${darkMode ? "dark" : "light"} app-layout`}>
+    <div className="navbar">
+      <Navbar />
+    </div>
+    <div className="leftbar">
       <LeftBar />
-      <div style={{ flex: 6 }}>
-        <ErrorBoundary>
-          <Outlet />
-        </ErrorBoundary>
-      </div>
+    </div>
+    <div className="main-content">
+      <ErrorBoundary>
+        <Outlet />
+      </ErrorBoundary>
+    </div>
+    <div className="rightbar">
       <RightBar />
     </div>
   </div>

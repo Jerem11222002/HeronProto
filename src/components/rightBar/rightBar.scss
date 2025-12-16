@@ -10,12 +10,42 @@
     background-color: themed("bgSoft");
     transition: background-color 0.3s ease;
 
-    @include mobile {
-      display: none;
+    @include large-tablet {
+      flex: 2.5; // Slightly narrower on large tablets
     }
+
+    @include wide {
+      flex: 3.5; // Wider on ultra-wide screens
+    }
+
     @include tablet {
       display: none;
     }
+
+    @include mobile {
+      display: none;
+    }
+
+    // For vertical monitors (portrait orientation): show only chatheads
+    @media (orientation: portrait) and (max-width: 1024px) {
+      display: block;
+      width: 80px;
+      min-width: 80px;
+      max-width: 80px;
+      .container {
+        padding: 10px;
+        .tabs { display: none !important; }
+        .connections-list .user {
+          padding: 8px;
+          .userInfo .user-details { display: none; }
+          .userInfo span { display: none; }
+          /* show only profile-image and status-indicator */
+        }
+      }
+    }
+
+    // Add transition for display changes (if using JS to toggle)
+    transition: opacity 0.3s ease, transform 0.3s ease;
 
     &::-webkit-scrollbar {
       display: none;

@@ -1,44 +1,72 @@
+@use '../../style.scss' as *;
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 .setup-profile {
   min-height: 100vh;
-  background: linear-gradient(to bottom, #6A9CE9, #8353CA, #A753CE, #EB98B6, #999999);
+  background: linear-gradient(135deg, #6A9CE9, #8353CA, #A753CE, #EB98B6, #999999);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem 0;
+  padding: clamp(1rem, 3vw, 2rem) 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
   .container {
-    max-width: 1200px;
+    max-width: min(90vw, 1200px);
     width: 90%;
     background-color: white;
-    padding: 2.5rem;
-    border-radius: 15px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+    padding: clamp(2rem, 4vw, 3rem);
+    border-radius: 20px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    position: relative;
+    overflow: hidden;
+
+    // Subtle background pattern
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at 20% 80%, rgba(106, 156, 233, 0.03) 0%, transparent 50%),
+                  radial-gradient(circle at 80% 20%, rgba(131, 83, 202, 0.03) 0%, transparent 50%);
+      pointer-events: none;
+    }
 
     h1 {
-      color: #333;
-      margin-bottom: 1rem;
-      font-size: 2.2rem;
+      color: #1a1a1a;
+      margin-bottom: clamp(0.5rem, 2vw, 1rem);
+      font-size: clamp(1.8rem, 4vw, 2.5rem);
       text-align: center;
-      font-weight: 600;
+      font-weight: 700;
     }
 
     .subtitle {
-      color: #666;
-      margin-bottom: 2rem;
+      color: #6c757d;
+      margin-bottom: clamp(1.5rem, 3vw, 2rem);
       text-align: center;
-      font-size: 1.1rem;
+      font-size: clamp(0.9rem, 2vw, 1.1rem);
+      line-height: 1.5;
     }
 
     .error {
-      background-color: #ffebe9;
-      border-radius: 8px;
-      padding: 12px;
-      margin-bottom: 20px;
+      background: linear-gradient(135deg, rgba(255, 75, 75, 0.1), rgba(255, 107, 107, 0.1));
+      border: 1px solid rgba(255, 75, 75, 0.2);
+      border-radius: 12px;
+      padding: clamp(0.75rem, 1.5vw, 1rem);
+      margin-bottom: clamp(1rem, 2vw, 1.5rem);
+      position: relative;
+      z-index: 1;
 
       p {
-        color: #ff4444;
+        color: #dc3545;
         text-align: center;
         margin: 0;
+        font-size: clamp(0.9rem, 1.8vw, 1rem);
+        font-weight: 500;
       }
     }
 
@@ -46,59 +74,77 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin-bottom: 2rem;
+      margin-bottom: clamp(2rem, 4vw, 3rem);
+      position: relative;
+      z-index: 1;
 
       .profile-card {
-        width: 200px;
-        height: 200px;
-        border-radius: 12px;
+        width: clamp(150px, 25vw, 200px);
+        height: clamp(150px, 25vw, 200px);
+        border-radius: 20px;
         background-size: cover;
         background-position: center;
-        background-color: #f5f5f5;
+        background-color: #f8f9fa;
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
         position: relative;
-        border: 2px solid #eee;
-        transition: all 0.3s ease;
+        border: 3px solid #e9ecef;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+
+        // Subtle inner shadow for depth
+        &::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.1);
+          pointer-events: none;
+        }
 
         &:hover {
-          transform: translateY(-5px);
+          transform: translateY(-6px) scale(1.02);
           border-color: #6A9CE9;
-          box-shadow: 0 5px 15px rgba(106, 156, 233, 0.2);
+          box-shadow: 0 12px 32px rgba(106, 156, 233, 0.2);
         }
 
         &.dragging {
           background: linear-gradient(135deg, #6A9CE9, #8353CA);
           border-color: transparent;
-          transform: translateY(-5px);
-          box-shadow: 0 8px 20px rgba(106, 156, 233, 0.3);
+          transform: translateY(-6px) scale(1.02);
+          box-shadow: 0 16px 40px rgba(106, 156, 233, 0.3);
+          animation: pulse 1.5s infinite;
         }
 
         .upload-overlay {
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 8px;
+          gap: clamp(0.5rem, 1vw, 0.75rem);
           text-align: center;
-          padding: 20px;
+          padding: clamp(1rem, 2vw, 1.5rem);
 
           .icon {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
+            font-size: clamp(2rem, 4vw, 2.5rem);
+            margin-bottom: clamp(0.5rem, 1vw, 0.75rem);
           }
 
           h3 {
-            margin: 0.5rem 0;
-            color: #333;
-            font-size: 1.2rem;
+            margin: 0;
+            color: #1a1a1a;
+            font-size: clamp(1rem, 2vw, 1.2rem);
+            font-weight: 600;
           }
 
           p {
-            color: #666;
-            font-size: 0.9rem;
+            color: #6c757d;
+            font-size: clamp(0.8rem, 1.5vw, 0.9rem);
             line-height: 1.4;
+            margin: 0;
           }
         }
 
@@ -112,96 +158,154 @@
       }
 
       .hint {
-        margin-top: 12px;
-        font-size: 0.9rem;
-        color: #666;
+        margin-top: clamp(0.75rem, 1.5vw, 1rem);
+        font-size: clamp(0.8rem, 1.5vw, 0.9rem);
+        color: #6c757d;
+        text-align: center;
       }
     }
 
     .form-section {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: clamp(1.5rem, 3vw, 2rem);
+      margin-bottom: clamp(2rem, 4vw, 3rem);
+      position: relative;
+      z-index: 1;
+
       .input-group {
-        margin-bottom: 1.5rem;
+        position: relative;
 
         label {
-          display: block;
-          margin-bottom: 8px;
-          color: #333;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin-bottom: clamp(0.5rem, 1vw, 0.75rem);
+          color: #1a1a1a;
           font-weight: 600;
-          font-size: 1.1rem;
+          font-size: clamp(0.95rem, 1.9vw, 1.1rem);
+
+          &::before {
+            content: '';
+            width: 4px;
+            height: 16px;
+            background: linear-gradient(135deg, #6A9CE9, #8353CA);
+            border-radius: 2px;
+          }
         }
 
         input, textarea {
           width: 100%;
-          padding: 1rem;
-          border: 2px solid #eee;
+          padding: clamp(0.875rem, 1.75vw, 1rem);
+          border: 2px solid #e9ecef;
           border-radius: 12px;
-          font-size: 1rem;
-          transition: all 0.3s ease;
+          font-size: clamp(0.9rem, 1.8vw, 1rem);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          font-family: inherit;
+          background-color: #ffffff;
+          position: relative;
 
           &:focus {
             outline: none;
             border-color: #6A9CE9;
-            box-shadow: 0 0 0 2px rgba(106, 156, 233, 0.2);
+            box-shadow: 0 0 0 4px rgba(106, 156, 233, 0.1);
+            background-color: #f8f9fa;
+            transform: translateY(-1px);
           }
 
           &::placeholder {
-            color: #999;
+            color: #adb5bd;
+            font-style: italic;
+          }
+
+          &:hover:not(:focus) {
+            border-color: #ced4da;
           }
         }
 
         textarea {
-          height: 120px;
-          resize: none;
+          height: clamp(100px, 15vw, 120px);
+          resize: vertical;
+          min-height: 80px;
         }
 
         .char-count {
-          float: right;
-          font-size: 0.9rem;
-          color: #666;
-          margin-top: 4px;
+          display: block;
+          text-align: right;
+          font-size: clamp(0.8rem, 1.5vw, 0.9rem);
+          color: #6c757d;
+          margin-top: clamp(0.25rem, 0.5vw, 0.5rem);
         }
       }
     }
 
     .button-group {
       display: flex;
-      gap: 1rem;
-      margin-top: 1.5rem;
+      gap: clamp(0.75rem, 2vw, 1rem);
+      margin-top: clamp(1rem, 2vw, 1.5rem);
       justify-content: center;
+      flex-wrap: wrap;
+      position: relative;
+      z-index: 1;
 
       .submit-button {
-        padding: 1rem 2.5rem;
-        font-size: 1.1rem;
+        padding: clamp(0.875rem, 1.75vw, 1rem) clamp(2rem, 4vw, 2.5rem);
+        font-size: clamp(1rem, 2vw, 1.1rem);
         font-weight: 600;
         background: linear-gradient(135deg, #6A9CE9, #8353CA);
         color: white;
         border: none;
-        border-radius: 8px;
+        border-radius: 12px;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 16px rgba(131, 83, 202, 0.2);
+        position: relative;
+        overflow: hidden;
+
+        // Shimmer effect
+        &::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+          transition: left 0.5s;
+        }
 
         &:hover:not(:disabled) {
-          transform: translateY(-2px);
-          box-shadow: 0 5px 15px rgba(106, 156, 233, 0.4);
+          transform: translateY(-3px);
+          box-shadow: 0 8px 24px rgba(131, 83, 202, 0.3);
+
+          &::before {
+            left: 100%;
+          }
+        }
+
+        &:focus-visible {
+          outline: 3px solid rgba(131, 83, 202, 0.3);
+          outline-offset: 2px;
         }
 
         &:disabled {
           opacity: 0.6;
           cursor: not-allowed;
+          transform: none;
         }
 
         &.loading {
-          position: relative;
-          padding-right: 3rem;
+          color: transparent;
 
-          .spinner {
+          &::after {
+            content: '';
             position: absolute;
-            right: 1rem;
+            left: 50%;
             top: 50%;
             width: 20px;
             height: 20px;
-            margin-top: -10px;
-            border: 3px solid white;
+            margin: -10px 0 0 -10px;
+            border: 2px solid white;
             border-top-color: transparent;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
@@ -210,43 +314,75 @@
       }
 
       .skip-button {
-        padding: 1rem 2.5rem;
-        font-size: 1.1rem;
+        padding: clamp(0.875rem, 1.75vw, 1rem) clamp(2rem, 4vw, 2.5rem);
+        font-size: clamp(1rem, 2vw, 1.1rem);
         font-weight: 600;
         background: transparent;
-        color: #666;
-        border: 2px solid #ddd;
-        border-radius: 8px;
+        color: #6c757d;
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
         cursor: pointer;
         transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
 
-        &:hover {
-          background: #f5f5f5;
-          border-color: #999;
+        &::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: linear-gradient(135deg, rgba(106, 156, 233, 0.05), rgba(131, 83, 202, 0.05));
+          opacity: 0;
+          transition: opacity 0.3s ease;
+        }
+
+        &:hover:not(:disabled) {
+          background: #f8f9fa;
+          border-color: #adb5bd;
           transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+
+          &::before {
+            opacity: 1;
+          }
+        }
+
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
         }
       }
     }
   }
 
+  // Dark mode styles
   &.dark {
-    background: linear-gradient(to bottom, #2C3E50, #3B2C50, #502C4A, #4A2C35, #2C2C2C);
-
     .container {
       background-color: #1a1a1a;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 
       h1 {
-        color: #fff;
+        color: #ffffff;
       }
 
       .subtitle {
-        color: #999;
+        color: #adb5bd;
+      }
+
+      .error {
+        background-color: rgba(255, 235, 233, 0.1);
+        border-color: rgba(255, 68, 68, 0.3);
+
+        p {
+          color: #ff6b6b;
+        }
       }
 
       .profile-card {
         background-color: #2a2a2a;
-        border-color: #333;
+        border-color: #404040;
 
         &:hover {
           border-color: #6A9CE9;
@@ -254,81 +390,113 @@
 
         .upload-overlay {
           h3 {
-            color: #fff;
+            color: #ffffff;
           }
 
           p {
-            color: #999;
+            color: #adb5bd;
           }
         }
       }
 
-      .input-group {
+      .hint {
+        color: #adb5bd;
+      }
+
+      .form-section .input-group {
         label {
-          color: #fff;
+          color: #ffffff;
         }
 
         input, textarea {
           background-color: #2a2a2a;
-          border-color: #333;
-          color: #fff;
-
-          &::placeholder {
-            color: #666;
-          }
+          border-color: #404040;
+          color: #ffffff;
 
           &:focus {
             border-color: #6A9CE9;
+            background-color: #333333;
+          }
+
+          &::placeholder {
+            color: #6c757d;
           }
         }
 
         .char-count {
-          color: #999;
+          color: #adb5bd;
         }
       }
 
-      .skip-button {
-        color: #999;
-        border-color: #333;
+      .button-group .skip-button {
+        color: #adb5bd;
+        border-color: #404040;
 
-        &:hover {
+        &:hover:not(:disabled) {
           background: #2a2a2a;
-          border-color: #666;
+          border-color: #6c757d;
         }
       }
     }
   }
-}
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-@media (max-width: 768px) {
-  .setup-profile {
-    padding: 1rem;
-
+  // Responsive styles using shared mixins
+  @include large-tablet {
     .container {
-      width: 100%;
-      padding: 1.5rem;
+      width: 95%;
+      padding: clamp(1.5rem, 3vw, 2.5rem);
 
       h1 {
-        font-size: 1.8rem;
+        font-size: clamp(1.6rem, 3.5vw, 2.2rem);
       }
 
       .subtitle {
-        font-size: 1rem;
+        font-size: clamp(0.95rem, 2.2vw, 1.1rem);
+        margin-bottom: clamp(1.25rem, 2.5vw, 1.75rem);
       }
 
-      .profile-card {
-        width: 180px;
-        height: 180px;
+      .profile-picture-section {
+        margin-bottom: clamp(1.75rem, 3.5vw, 2.5rem);
+      }
+
+      .form-section {
+        gap: clamp(1.25rem, 2.5vw, 1.75rem);
+        margin-bottom: clamp(1.75rem, 3.5vw, 2.5rem);
+      }
+
+      .button-group {
+        margin-top: clamp(0.875rem, 1.75vw, 1.25rem);
+      }
+    }
+  }
+
+  @include small-tablet {
+    .container {
+      width: 95%;
+      padding: clamp(1.25rem, 2.5vw, 2rem);
+
+      h1 {
+        font-size: clamp(1.5rem, 3vw, 2rem);
+      }
+
+      .subtitle {
+        font-size: clamp(0.9rem, 2vw, 1rem);
+        margin-bottom: clamp(1rem, 2vw, 1.5rem);
+      }
+
+      .profile-picture-section {
+        margin-bottom: clamp(1.5rem, 3vw, 2rem);
+      }
+
+      .form-section {
+        gap: clamp(1rem, 2vw, 1.5rem);
+        margin-bottom: clamp(1.5rem, 3vw, 2rem);
       }
 
       .button-group {
         flex-direction: column;
-        width: 100%;
+        gap: clamp(0.5rem, 1vw, 0.75rem);
+        margin-top: clamp(0.75rem, 1.5vw, 1rem);
 
         .submit-button, .skip-button {
           width: 100%;
@@ -336,4 +504,75 @@
       }
     }
   }
+
+  @include tablet {
+    .container {
+      width: 98%;
+      padding: clamp(1rem, 2vw, 1.5rem);
+
+      h1 {
+        font-size: clamp(1.4rem, 2.8vw, 1.8rem);
+      }
+
+      .subtitle {
+        font-size: clamp(0.85rem, 1.8vw, 0.95rem);
+        margin-bottom: clamp(0.875rem, 1.75vw, 1.25rem);
+      }
+
+      .profile-picture-section {
+        margin-bottom: clamp(1.25rem, 2.5vw, 1.75rem);
+      }
+
+      .form-section {
+        gap: clamp(0.875rem, 1.75vw, 1.25rem);
+        margin-bottom: clamp(1.25rem, 2.5vw, 1.75rem);
+      }
+
+      .button-group {
+        margin-top: clamp(0.625rem, 1.25vw, 0.875rem);
+      }
+    }
+  }
+
+  @include mobile {
+    padding: clamp(0.5rem, 1vw, 1rem) 0;
+
+    .container {
+      width: 95%;
+      padding: clamp(0.875rem, 1.75vw, 1.25rem);
+
+      h1 {
+        font-size: clamp(1.2rem, 2.5vw, 1.5rem);
+        margin-bottom: clamp(0.5rem, 1vw, 0.75rem);
+      }
+
+      .subtitle {
+        font-size: clamp(0.8rem, 1.6vw, 0.9rem);
+        margin-bottom: clamp(0.75rem, 1.5vw, 1rem);
+      }
+
+      .profile-picture-section {
+        margin-bottom: clamp(1rem, 2vw, 1.5rem);
+      }
+
+      .form-section {
+        gap: clamp(0.75rem, 1.5vw, 1rem);
+        margin-bottom: clamp(1rem, 2vw, 1.5rem);
+      }
+
+      .button-group {
+        margin-top: clamp(0.5rem, 1vw, 0.75rem);
+      }
+    }
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: translateY(-6px) scale(1.02); }
+  50% { transform: translateY(-8px) scale(1.04); }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }

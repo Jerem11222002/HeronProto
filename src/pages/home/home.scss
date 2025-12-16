@@ -14,6 +14,27 @@
       padding: 20px;
     }
 
+    // For vertical monitors (portrait)
+    @media (orientation: portrait) {
+      padding: clamp(10px, 2vw, 20px) clamp(10px, 5vw, 70px);
+      .home-container {
+        gap: clamp(10px, 2vw, 20px);
+        .left {
+          gap: clamp(16px, 3vw, 24px);
+          .feed-content {
+            gap: clamp(20px, 4vw, 40px);
+            .feed-item {
+              border-radius: clamp(8px, 2vw, 12px);
+
+              &:has(.event-card) .event-card.homepage .event-image {
+                height: clamp(180px, 20vh, 240px);
+              }
+            }
+          }
+        }
+      }
+    }
+
     .home-container {
       max-width: 1280px;
       margin: 0 auto;
@@ -84,12 +105,12 @@
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 2px 8px themed("shadow");
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: all 0.3s ease;
             border: 1px solid themed("border");
 
             &:hover {
-              transform: translateY(-2px);
-              box-shadow: 0 4px 12px themed("shadowHover");
+              transform: translateY(-4px);
+              box-shadow: 0 6px 16px themed("shadowHover");
             }
 
             // Event Card Specific Styles
@@ -127,13 +148,15 @@
 
             // Post Specific Styles
             &:has(.post) {
-              padding: 20px;
+              padding: clamp(16px, 3vw, 20px);
 
               .post {
                 margin: 0;
                 border: none;
                 box-shadow: none;
                 border-radius: 0;
+                font-size: clamp(14px, 2vw, 16px);
+                line-height: 1.5;
               }
             }
           }
@@ -142,14 +165,11 @@
           .error,
           .empty-feed {
             background-color: themed("bg");
-            padding: 40px 20px;
+            padding: clamp(20px, 5vw, 40px);
             text-align: center;
             border-radius: 12px;
             box-shadow: 0 2px 8px themed("shadow");
-          }
-
-          .loading {
-            color: themed("textColorSoft");
+            font-size: clamp(14px, 2vw, 16px);
 
             &::after {
               content: "";
@@ -250,37 +270,14 @@
   }
 }
 
-@media (max-width: 480px) {
-  .home {
-    padding: 0;
-    
-    .home-container {
-      .left {
-        gap: 16px;
+// Additional mobile/portrait tweaks
+@media (max-width: 768px) or (orientation: portrait) {
+  .home .home-container .left .feed-filters {
+    flex-direction: column;
+    align-items: stretch;
 
-        .feed-filters {
-          padding: 12px;
-          
-          .filter-select {
-            padding: 10px;
-            font-size: 13px;
-          }
-        }
-
-        .feed-content {
-          gap: 20px; // Increased gap between posts for mobile
-
-          .feed-item {
-            &:has(.event-card) {
-              .event-card.homepage {
-                .event-image {
-                  height: 200px;
-                }
-              }
-            }
-          }
-        }
-      }
+    .filter-select {
+      width: 100%;
     }
   }
 }

@@ -2,36 +2,64 @@
 
 .pre-register {
   @include themify($themes) {
-    max-width: 900px;
-    margin: 40px auto;
-    padding: 20px;
+    max-width: clamp(320px, 90vw, 900px);
+    margin: clamp(20px, 5vw, 40px) auto;
+    padding: clamp(16px, 3vw, 20px);
 
     // Slightly tighter layout for the header area
     .pre-register-header {
-      margin-bottom: 28px;
+      margin-bottom: clamp(20px, 4vw, 40px);
     }
 
      // Header Styles
      .pre-register-header {
-       margin-bottom: 40px;
+       margin-bottom: clamp(20px, 4vw, 40px);
        text-align: center;
+
+       .header-actions {
+         text-align: left;
+         margin-bottom: 16px;
+
+         .back-button {
+           display: inline-flex;
+           align-items: center;
+           gap: 8px;
+           padding: 8px 16px;
+           background: themed('buttonSoft');
+           color: themed('textColor');
+           border: 1px solid rgba(themed('border'), 0.2);
+           border-radius: 8px;
+           font-size: 14px;
+           cursor: pointer;
+           transition: all 0.2s ease;
+
+           &:hover {
+             background: themed('buttonSoftHover');
+             transform: translateX(-2px);
+           }
+
+           i {
+             font-size: 12px;
+           }
+         }
+       }
 
        h1 {
          color: themed('textColor');
-         font-size: 36px;
+         font-size: clamp(28px, 5vw, 36px);
          font-weight: bold;
-         margin-bottom: 24px;
+         margin-bottom: clamp(16px, 3vw, 24px);
        }
 
        .event-details {
          background: themed('bgSoft');
-         padding: 24px;
+         padding: clamp(16px, 3vw, 24px);
          border-radius: 16px;
          box-shadow: 0 6px 18px rgba(11,20,24,0.06);
 
          h2 {
            color: themed('primary');
-           font-size: 28px;
+           font-size: clamp(24px, 4vw, 28px);
            font-weight: bold;
            margin-bottom: 16px;
          }
@@ -39,7 +67,7 @@
          .event-meta {
            display: flex;
            justify-content: center;
-           gap: 24px;
+           gap: clamp(16px, 3vw, 24px);
            margin-bottom: 16px;
            color: themed('textColorSoft');
            flex-wrap: wrap;
@@ -66,7 +94,7 @@
            text-align: center;
 
            .capacity-bar {
-             height: 10px;
+             height: clamp(8px, 2vw, 10px);
              background: rgba(themed('border'), 0.2);
              border-radius: 5px;
              margin-bottom: 8px;
@@ -82,24 +110,37 @@
 
            span {
              color: themed('textColorSoft');
-             font-size: 14px;
+             font-size: clamp(12px, 2.5vw, 14px);
+
+             .full-badge {
+               display: inline-block;
+               margin-left: 8px;
+               padding: 2px 6px;
+               background: themed('error');
+               color: white;
+               font-size: 10px;
+               font-weight: bold;
+               border-radius: 4px;
+               text-transform: uppercase;
+               letter-spacing: 0.5px;
+             }
            }
          }
 
          .event-header {
            display: flex;
            align-items: flex-start;
-           gap: 1.5rem;
+           gap: clamp(1rem, 3vw, 1.5rem);
            margin-bottom: 1.5rem;
-           padding: 1rem;
+           padding: clamp(0.5rem, 2vw, 1rem);
            background: themed('bgSoft');
            border-radius: 8px;
            box-shadow: 0 2px 6px rgba(11,20,24,0.04);
 
            .organization-badge {
              flex-shrink: 0;
-             width: 100px;
-             height: 100px;
+             width: clamp(80px, 20vw, 120px);
+             height: clamp(80px, 20vw, 120px);
              border-radius: 50%;
              overflow: hidden;
              border: 3px solid themed('primary');
@@ -126,13 +167,13 @@
              h2 {
                margin: 0 0 0.5rem;
                color: themed('textColor');
-               font-size: 24px;
+               font-size: clamp(20px, 4vw, 24px);
                font-weight: bold;
              }
 
              .event-meta {
                display: flex;
-               gap: 1rem;
+               gap: clamp(0.5rem, 2vw, 1rem);
                margin-bottom: 0.5rem;
                color: themed('textColorSoft');
                flex-wrap: wrap;
@@ -143,7 +184,7 @@
                  gap: 0.5rem;
 
                  i {
-                   font-size: 0.9rem;
+                   font-size: clamp(0.8rem, 2vw, 0.9rem);
                    color: themed('primary');
                  }
                }
@@ -153,6 +194,7 @@
                font-weight: 500;
                color: themed('textColor');
                margin-bottom: 1rem;
+               font-size: clamp(14px, 2.5vw, 16px);
              }
            }
          }
@@ -162,16 +204,16 @@
     // Loading State
     .pre-register-loading {
       text-align: center;
-      padding: 40px;
+      padding: clamp(20px, 5vw, 40px);
       color: themed('textColorSoft');
 
       .loader {
-        width: 50px;
-        height: 50px;
+        width: clamp(40px, 10vw, 50px);
+        height: clamp(40px, 10vw, 50px);
         border: 4px solid rgba(themed('primary'), 0.2);
         border-top-color: themed('primary');
         border-radius: 50%;
-        margin: 0 auto 16px;
+        margin: 0 auto clamp(12px, 2vw, 16px);
         animation: spin 1s linear infinite;
       }
     }
@@ -179,17 +221,18 @@
     // Error State
     .pre-register-error {
       text-align: center;
-      padding: 40px;
+      padding: clamp(20px, 5vw, 40px);
       color: themed('error');
 
       button {
         margin-top: 16px;
-        padding: 12px 24px;
+        padding: clamp(10px, 2vw, 12px) clamp(16px, 3vw, 24px);
         background: themed('buttonSoft');
         color: themed('textColor');
         border: none;
         border-radius: 8px;
         cursor: pointer;
+        font-size: clamp(14px, 2.5vw, 16px);
 
         &:hover {
           background: themed('buttonSoftHover');
@@ -200,17 +243,17 @@
     // Form Styles
     .pre-register-form {
       background: themed('bgSoft');
-      padding: 24px;
+      padding: clamp(16px, 3vw, 24px);
       border-radius: 16px;
       box-shadow: 0 8px 28px rgba(11,20,24,0.04);
 
       // --- Differentiation for Audition and Watch Only forms ---
       &.audition-form {
-        border-left: 6px solid themed('primary');
+        border-left: clamp(4px, 1vw, 6px) solid themed('primary');
         background: linear-gradient(90deg, themed('bgSoft') 82%, rgba(themed('primary'), 0.04));
       }
       &.watchonly-form {
-        border-left: 6px solid themed('success');
+        border-left: clamp(4px, 1vw, 6px) solid themed('success');
       }
 
       .form-section {
@@ -551,6 +594,47 @@
       }
     }
 
+    // Event Full Message
+    .event-full-message {
+      text-align: center;
+      padding: clamp(20px, 5vw, 40px);
+      background: themed('bgSoft');
+      border-radius: 16px;
+      box-shadow: 0 8px 28px rgba(11,20,24,0.04);
+      margin-top: 20px;
+
+      h3 {
+        color: themed('error');
+        font-size: clamp(20px, 4vw, 24px);
+        font-weight: bold;
+        margin-bottom: 16px;
+      }
+
+      p {
+        color: themed('textColorSoft');
+        font-size: clamp(14px, 2.5vw, 16px);
+        margin-bottom: 20px;
+        line-height: 1.5;
+      }
+
+      button {
+        padding: clamp(10px, 2vw, 12px) clamp(16px, 3vw, 24px);
+        background: themed('primary');
+        color: themed('buttonText');
+        border: none;
+        border-radius: 8px;
+        font-size: clamp(14px, 2.5vw, 16px);
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: themed('primaryHover');
+          transform: translateY(-1px);
+        }
+      }
+    }
+
     // Animations
     @keyframes spin {
       to {
@@ -559,20 +643,107 @@
     }
 
     // Responsive Adjustments
-    @include mobile {
+    @media (max-width: 1024px) {
+      .pre-register {
+        .pre-register-header {
+          .event-details {
+            .event-header {
+              flex-direction: column;
+              align-items: center;
+              text-align: center;
+              gap: 1rem;
+
+              .organization-badge {
+                margin-bottom: 1rem;
+              }
+
+              .event-info {
+                .event-meta {
+                  justify-content: center;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    @media (max-width: 768px) {
       .pre-register {
         padding: 16px;
 
         .pre-register-header {
+          .header-actions {
+            .back-button {
+              font-size: 12px;
+              padding: 6px 12px;
+            }
+          }
+
           .event-meta {
             flex-direction: column;
             gap: 12px;
             align-items: center;
           }
+
+          .event-details {
+            padding: 16px;
+
+            .event-header {
+              padding: 0.5rem;
+            }
+          }
         }
 
         .pre-register-form {
+          padding: 16px;
+        }
+
+        .event-full-message {
           padding: 20px;
+
+          button {
+            width: 100%;
+            max-width: 200px;
+          }
+        }
+      }
+    }
+
+    @media (max-height: 600px) and (orientation: landscape) {
+      .pre-register {
+        margin: 10px auto;
+
+        .pre-register-header {
+          margin-bottom: 20px;
+
+          h1 {
+            font-size: clamp(24px, 4vw, 32px);
+            margin-bottom: 16px;
+          }
+
+          .event-details {
+            padding: 16px;
+
+            .event-header {
+              gap: 1rem;
+              margin-bottom: 1rem;
+              padding: 0.5rem;
+
+              .organization-badge {
+                width: clamp(60px, 15vw, 80px);
+                height: clamp(60px, 15vw, 80px);
+              }
+
+              .event-info h2 {
+                font-size: clamp(18px, 3vw, 20px);
+              }
+            }
+          }
+        }
+
+        .pre-register-form {
+          padding: 16px;
         }
       }
     }

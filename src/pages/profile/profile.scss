@@ -1,4 +1,4 @@
-@import "../../style.scss";
+@use '../../style.scss' as *;
 
 /* emergency: neutralize unexpected zoom/transform on profile page */
 :root, html, body {
@@ -59,7 +59,7 @@
 
     .images {
       width: 100%;
-      height: 350px;
+      height: clamp(250px, 30vw, 350px);
       position: relative;
       background-color: themed("bgSoft");
       overflow: visible;
@@ -123,11 +123,11 @@
       }
 
       .profile-pic-container {
-        width: 180px;
-        height: 180px;
+        width: clamp(140px, 20vw, 180px);
+        height: clamp(140px, 20vw, 180px);
         position: absolute;
-        left: 32px;
-        bottom: -30px;
+        left: clamp(16px, 4vw, 32px);
+        bottom: clamp(-20px, -4vw, -30px);
         border-radius: 50%;
         z-index: 3;
         background: rgba(themed("bg"), 0.95);
@@ -299,55 +299,55 @@
     .profileContainer {
       display: grid;
       grid-template-columns: 1fr minmax(auto, 1000px) 1fr;
-      gap: 40px;
+      gap: clamp(20px, 5vw, 40px);
       max-width: 1600px;
       margin: 0 auto;
-      padding: 60px 30px;
-      margin-top: 30px;
+      padding: clamp(30px, 8vw, 60px) clamp(15px, 4vw, 30px);
+      margin-top: clamp(20px, 4vw, 30px);
       
       .center {
         grid-column: 2;
         display: flex;
         flex-direction: column;
-        align-items: center; // Changed from flex-start
-        text-align: center; // Added for consistency
-        gap: 35px;
+        align-items: center;
+        text-align: center;
+        gap: clamp(20px, 4vw, 35px);
         background: rgba(themed("bg"), 0.8);
         backdrop-filter: blur(20px);
-        padding: 60px 40px;
-        border-radius: 40px;
+        padding: clamp(30px, 6vw, 60px) clamp(20px, 4vw, 40px);
+        border-radius: clamp(20px, 4vw, 40px);
         box-shadow: 
           0 20px 50px rgba(0, 0, 0, 0.1),
           0 10px 20px rgba(0, 0, 0, 0.05),
           inset 0 0 0 1px rgba(255, 255, 255, 0.15);
 
         .username {
-          font-size: 42px;
+          font-size: clamp(28px, 6vw, 42px);
           font-weight: 800;
           color: themed("textColor");
           margin-bottom: 10px;
           letter-spacing: -0.5px;
-          width: 100%; // Added for consistent width
-          text-align: center; // Ensure centered text
+          width: 100%;
+          text-align: center;
         }
 
         .bio {
           color: themed("textColorSoft");
-          font-size: 18px;
+          font-size: clamp(14px, 3vw, 18px);
           max-width: 600px;
           line-height: 1.6;
-          margin: 0 auto 20px; // Changed margin for centering
-          text-align: center; // Ensure centered text
+          margin: 0 auto 20px;
+          text-align: center;
         }
 
         .stats {
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 35px;
+          grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+          gap: clamp(15px, 3vw, 35px);
           width: 100%;
-          padding: 35px;
+          padding: clamp(20px, 4vw, 35px);
           background: rgba(themed("bgSoft"), 0.4);
-          border-radius: 35px;
+          border-radius: clamp(15px, 3vw, 35px);
           backdrop-filter: blur(12px);
 
           .stat-card {
@@ -822,32 +822,31 @@
         }
       }
     }
-  }
-}
 
-@media (max-width: 768px) {
-  .profile {
-    .images {
-      height: 250px;
+    // Responsive styles using shared mixins
+    @include tablet {
+      .images {
+        height: 250px;
 
-      .profile-pic-container {
-        width: 140px;
-        height: 140px;
-        left: 50%;
-        transform: translateX(-50%);
-        bottom: -25px;
+        .profile-pic-container {
+          width: 140px;
+          height: 140px;
+          left: 50%;
+          transform: translateX(-50%);
+          bottom: -25px;
 
-        .profile-upload {
-          bottom: 5px;
-          right: 5px;
+          .profile-upload {
+            bottom: 5px;
+            right: 5px;
+          }
         }
-      }
 
-      .upload-progress {
-        bottom: 20px;
-        padding: 15px;
-        min-width: 280px;
-        flex-wrap: wrap;
+        .upload-progress {
+          bottom: 20px;
+          padding: 15px;
+          min-width: 280px;
+          flex-wrap: wrap;
+  }
         justify-content: center;
         gap: 12px;
         
@@ -929,6 +928,59 @@
       h2 {
         font-size: 24px;
         margin-bottom: 20px;
+      }
+    }
+
+    @include mobile {
+      .images {
+        height: 180px;
+
+        .profile-pic-container {
+          width: 100px;
+          height: 100px;
+          left: 50%;
+          transform: translateX(-50%);
+          bottom: -15px;
+        }
+      }
+
+      .profileContainer {
+        padding: 15px 5px;
+        margin-top: 15px;
+
+        .center {
+          padding: 20px 10px;
+          border-radius: 15px;
+
+          .username {
+            font-size: 22px;
+          }
+
+          .bio {
+            font-size: 14px;
+          }
+
+          .stats {
+            grid-template-columns: repeat(3, 1fr);
+            padding: 15px;
+            gap: 10px;
+          }
+
+          .info {
+            flex-direction: column;
+            gap: 10px;
+            padding: 10px;
+          }
+        }
+      }
+
+      .userPosts {
+        padding: 15px 10px;
+        margin-top: 15px;
+
+        h2 {
+          font-size: 18px;
+        }
       }
     }
   }

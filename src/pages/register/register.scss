@@ -1,108 +1,134 @@
+@use '../../style.scss' as *;
+
 .register {
   height: 100vh;
   background: linear-gradient(to bottom, #6A9CE9, #8353CA, #A753CE, #EB98B6, #999999);
   display: flex;
   align-items: center;
   justify-content: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
   /* add page-top logo positioning */
   .school-logo {
     position: absolute;
-    top: 20px;
-    left: 20px;
-    width: 150px;
+    top: clamp(10px, 2vw, 20px);
+    left: clamp(10px, 2vw, 20px);
+    width: clamp(72px, 8vw, 150px);
     height: auto;
     z-index: 1200;
     pointer-events: none;
     background: transparent;
     display: block;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
   .card {
-    width: 50%;
-    display: flex;
-    flex-direction: row-reverse;
+    width: min(90vw, 1200px);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     background-color: white;
-    border-radius: 10px;
+    border-radius: 16px;
     min-height: 600px;
     overflow: hidden;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    gap: 0;
 
     .left {
-      flex: 1;
       background: linear-gradient(rgba(39, 11, 96, 0.5), rgba(39, 11, 96, 0.5)),
         url("../../assets/umak-picture.png") center / cover no-repeat;
       background-size: cover;
-      padding: 50px;
+      padding: clamp(30px, 5vw, 50px);
       display: flex;
       flex-direction: column;
-      gap: 30px;
+      gap: clamp(20px, 3vw, 30px);
       color: white;
+      justify-content: center;
 
       h1 {
-        font-size: 100px;
-        line-height: 100px;
+        font-size: clamp(2.5rem, 6vw, 5rem);
+        line-height: 1.1;
+        font-weight: 700;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        margin: 0;
       }
       
       p {
-        font-size: 14px;
+        font-size: clamp(0.9rem, 2vw, 1.1rem);
+        line-height: 1.6;
+        opacity: 0.9;
+        margin: 0;
       }
 
       span {
-        font-size: 14px;
+        font-size: clamp(0.8rem, 1.5vw, 0.9rem);
+        opacity: 0.8;
+        margin: 0;
       }
       
       button {
-        width: 50%;
-        padding: 10px;
-        border: none;
-        background-color: white;
-        color: rebeccapurple;
-        font-weight: bold;
+        width: clamp(150px, 30%, 200px);
+        padding: 12px 24px;
+        border: 2px solid white;
+        background-color: transparent;
+        color: white;
+        font-weight: 600;
         cursor: pointer;
-        border-radius: 5px;
-        transition: all 0.3s ease;
+        border-radius: 12px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: clamp(0.9rem, 1.5vw, 1rem);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 
         &:hover {
-          background-color: #f0f0f0;
+          background-color: white;
+          color: rebeccapurple;
           transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
         }
       }
     }
 
     .right {
-      flex: 1;
-      padding: 50px;
+      padding: clamp(30px, 5vw, 50px);
       display: flex;
       flex-direction: column;
-      gap: 50px;
+      gap: clamp(25px, 4vw, 40px);
       justify-content: center;
 
       h1 {
-        color: #555;
+        color: #1a1a1a;
+        font-size: clamp(1.8rem, 4vw, 2.5rem);
+        font-weight: 700;
+        margin: 0;
+        text-align: center;
       }
       
       form {
         display: flex;
         flex-direction: column;
-        gap: 30px;
+        gap: clamp(20px, 3vw, 30px);
         
         input, .gender-select {
           border: none;
-          border-bottom: 1px solid lightgray;
-          padding: 20px 10px;
+          border-bottom: 2px solid #e1e5e9;
+          padding: clamp(16px, 2.5vw, 20px) 12px;
           outline: none;
-          color: #555;
-          font-size: 16px;
+          color: #1a1a1a;
+          font-size: clamp(1rem, 1.5vw, 1.1rem);
           background: transparent;
           transition: all 0.3s ease;
+          border-radius: 8px 8px 0 0;
+          font-family: inherit;
 
           &:focus {
-            border-bottom-color: #938eef;
+            border-bottom-color: #8353CA;
+            background-color: #f8f9fa;
+            box-shadow: 0 2px 8px rgba(131, 83, 202, 0.1);
           }
 
           &::placeholder {
-            color: #999;
+            color: #6c757d;
+            font-weight: 400;
           }
         }
 
@@ -110,15 +136,15 @@
           cursor: pointer;
           appearance: none;
           -webkit-appearance: none;
-          background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+          background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236c757d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
           background-repeat: no-repeat;
-          background-position: right 10px center;
-          background-size: 1em;
-          transition: border-color 0.3s ease, background-image 0.3s ease;
-
-          /* ensure visible, high contrast text on white bg (override inline/theme) */
-          color: #111827 !important; /* dark text for normal/selected value */
-          background-color: #ffffff !important;
+          background-position: right 12px center;
+          background-size: 1.2em;
+          transition: all 0.3s ease;
+          color: #1a1a1a;
+          background-color: #ffffff;
+          border: 1px solid #e1e5e9;
+          border-radius: 8px;
 
           &:focus-visible {
             outline: 3px solid rgba(147,142,239,0.18);
@@ -126,102 +152,313 @@
           }
 
           &:invalid {
-            /* placeholder / empty selection: use darker gray that still reads on white */
-            color: #6b7280 !important; /* meets contrast on white */
+            color: #6c757d;
           }
 
           &:focus {
-            border-bottom-color: #938eef;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23938eef' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            border-color: #8353CA;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238353CA' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            box-shadow: 0 2px 8px rgba(131, 83, 202, 0.1);
           }
           
           option {
-            color: #111827; /* options should be dark for readability */
+            color: #1a1a1a;
             background: white;
-            padding: 10px;
-            font-size: 16px;
-
-            &:first-child {
-              color: #6b7280; /* placeholder option color readable on white */
+            padding: 12px;
+            font-size: clamp(1rem, 1.5vw, 1.1rem);
+            font-family: inherit;
+          }
+        }
+        
+        .terms-checkbox {
+          margin: 0;
+          
+          label {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            font-size: clamp(0.85rem, 1.2vw, 0.95rem);
+            line-height: 1.5;
+            color: #495057;
+            cursor: pointer;
+            
+            input[type="checkbox"] {
+              margin: 0;
+              width: 18px;
+              height: 18px;
+              accent-color: #8353CA;
+              cursor: pointer;
+            }
+            
+            span {
+              margin: 0;
+              
+              a {
+                color: #8353CA;
+                text-decoration: none;
+                font-weight: 500;
+                transition: color 0.2s ease;
+                
+                &:hover {
+                  color: #6A9CE9;
+                  text-decoration: underline;
+                }
+              }
             }
           }
         }
         
         .error {
-          color: #ff3333;
-          font-size: 12px;
-          margin-top: -20px;
+          color: #dc3545;
+          font-size: clamp(0.85rem, 1.2vw, 0.95rem);
+          margin: 0;
+          padding: 12px;
+          background-color: #f8d7da;
+          border: 1px solid #f5c6cb;
+          border-radius: 8px;
+          text-align: center;
           animation: errorShake 0.6s;
         }
         
         button {
-          width: 50%;
-          padding: 10px;
+          width: 100%;
+          padding: clamp(14px, 2vw, 16px);
           border: none;
-          /* darker purple for high contrast with white text */
-          background-color: #5b46b0 !important;
-          color: #ffffff !important;
-          font-weight: bold;
+          background: linear-gradient(135deg, #6A9CE9, #8353CA);
+          color: #ffffff;
+          font-weight: 600;
           cursor: pointer;
-          border-radius: 5px;
-          transition: transform 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
-          box-shadow: 0 6px 18px rgba(91,70,176,0.08);
+          border-radius: 12px;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          font-size: clamp(1rem, 1.5vw, 1.1rem);
+          box-shadow: 0 4px 16px rgba(131, 83, 202, 0.2);
+          position: relative;
+          overflow: hidden;
 
           &:hover:not(:disabled) {
-            background-color: #463291 !important;
             transform: translateY(-2px);
-            box-shadow: 0 10px 26px rgba(70,50,145,0.12);
+            box-shadow: 0 8px 24px rgba(131, 83, 202, 0.3);
           }
 
           &:focus-visible {
-            outline: 3px solid rgba(70,50,145,0.16);
+            outline: 3px solid rgba(131, 83, 202, 0.3);
             outline-offset: 2px;
           }
 
           &:disabled {
             opacity: 0.7;
             cursor: not-allowed;
+            transform: none;
           }
         }
       }
     }
   }
 
-  @keyframes errorShake {
+  // Responsive styles using shared mixins
+  @include large-tablet {
+    .card {
+      grid-template-columns: 1fr;
+      width: 85%;
+      gap: 2rem;
+
+      .left {
+        min-height: 300px;
+        padding: clamp(25px, 4vw, 40px);
+
+        h1 {
+          font-size: clamp(2.2rem, 5vw, 4rem);
+        }
+
+        p {
+          font-size: clamp(0.95rem, 2.2vw, 1.1rem);
+        }
+
+        button {
+          width: clamp(160px, 35%, 220px);
+        }
+      }
+
+      .right {
+        padding: clamp(25px, 4vw, 40px);
+
+        h1 {
+          font-size: clamp(1.6rem, 3.5vw, 2.2rem);
+        }
+
+        form {
+          gap: clamp(18px, 2.8vw, 28px);
+
+          input, .gender-select {
+            padding: clamp(14px, 2.2vw, 18px) 12px;
+          }
+
+          button {
+            width: 100%;
+          }
+        }
+      }
+    }
+
+    .school-logo {
+      top: clamp(12px, 2.2vw, 18px);
+      left: clamp(12px, 2.2vw, 18px);
+      width: clamp(80px, 7vw, 120px);
+    }
+  }
+
+  @include small-tablet {
+    .card {
+      width: 90%;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+
+      .left {
+        padding: clamp(20px, 3.5vw, 35px);
+        min-height: 280px;
+
+        h1 {
+          font-size: clamp(2rem, 4.5vw, 3.5rem);
+        }
+
+        p {
+          font-size: clamp(0.9rem, 2vw, 1rem);
+        }
+
+        button {
+          width: clamp(150px, 40%, 200px);
+        }
+      }
+
+      .right {
+        padding: clamp(20px, 3.5vw, 35px);
+
+        h1 {
+          font-size: clamp(1.5rem, 3vw, 2rem);
+        }
+
+        form {
+          gap: clamp(16px, 2.5vw, 25px);
+
+          input, .gender-select {
+            padding: clamp(12px, 2vw, 16px) 12px;
+          }
+
+          button {
+            width: 100%;
+          }
+        }
+      }
+    }
+
+    .school-logo {
+      top: clamp(10px, 2vw, 15px);
+      left: clamp(10px, 2vw, 15px);
+      width: clamp(70px, 6vw, 100px);
+    }
+  }
+
+  @include tablet {
+    .card {
+      width: 90%;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+
+      .left {
+        h1 {
+          font-size: clamp(1.8rem, 4vw, 3rem);
+        }
+      }
+    }
+
+    .school-logo {
+      top: clamp(8px, 1.8vw, 12px);
+      left: clamp(8px, 1.8vw, 12px);
+      width: clamp(65px, 5.5vw, 90px);
+    }
+  }
+
+  @include mobile {
+    .card {
+      width: 95%;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+
+      .left {
+        padding: clamp(15px, 3vw, 30px);
+        min-height: 250px;
+        h1 {
+          font-size: clamp(1.5rem, 3.5vw, 2.5rem);
+        }
+      }
+
+      .right {
+        padding: clamp(15px, 3vw, 30px);
+      }
+    }
+
+    .school-logo {
+      top: clamp(6px, 1.5vw, 10px);
+      left: clamp(6px, 1.5vw, 10px);
+      width: clamp(55px, 5vw, 72px);
+    }
+  }
+
+  /* Special handling for portrait orientation on larger screens */
+  @media (max-width: 1200px) and (orientation: portrait) {
+    .card {
+      width: 90%;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+
+      .left {
+        padding: clamp(20px, 4vw, 35px);
+        min-height: 300px;
+
+        h1 {
+          font-size: clamp(2rem, 5vw, 3.5rem);
+        }
+
+        p {
+          font-size: clamp(0.9rem, 2vw, 1rem);
+        }
+
+        button {
+          width: clamp(150px, 35%, 200px);
+        }
+      }
+
+      .right {
+        padding: clamp(20px, 4vw, 35px);
+
+        h1 {
+          font-size: clamp(1.5rem, 3.5vw, 2rem);
+        }
+
+        form {
+          gap: clamp(16px, 2.8vw, 25px);
+
+          input, .gender-select {
+            padding: clamp(14px, 2.2vw, 16px) 12px;
+          }
+
+          button {
+            width: 100%;
+          }
+        }
+      }
+    }
+
+    .school-logo {
+      top: clamp(10px, 2vw, 12px);
+      left: clamp(10px, 2vw, 12px);
+      width: clamp(70px, 6vw, 90px);
+    }
+  }
+}
+
+@keyframes errorShake {
     0%, 100% { transform: translateX(0); }
     25% { transform: translateX(-10px); }
     75% { transform: translateX(10px); }
   }
-
-  @media (max-width: 960px) {
-    .card {
-      width: 70%;
-      flex-direction: column;
-
-      .left {
-        h1 {
-          font-size: 60px;
-          line-height: 60px;
-        }
-      }
-    }
-  }
-
-  @media (max-width: 640px) {
-    .card {
-      width: 90%;
-      
-      .left {
-        padding: 30px;
-        h1 {
-          font-size: 40px;
-          line-height: 40px;
-        }
-      }
-      
-      .right {
-        padding: 30px;
-      }
-    }
-  }
-}

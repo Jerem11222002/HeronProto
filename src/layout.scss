@@ -1,0 +1,65 @@
+@import "./style.scss";
+
+.app-layout {
+  display: grid;
+  grid-template-columns: minmax(80px, 240px) 1fr minmax(240px, 360px); // LeftBar, Main, RightBar
+  grid-template-rows: auto 1fr;
+  grid-template-areas: 
+    "navbar navbar navbar"
+    "leftbar main rightbar";
+  min-height: 100vh;
+
+  @include themify($themes) {
+    background-color: themed('bgSoft');
+  }
+
+  @include mobile {
+    grid-template-columns: 1fr;
+    grid-template-areas: 
+      "navbar"
+      "main";
+  }
+
+  @include tablet {
+    grid-template-columns: minmax(80px, 200px) 1fr; // Hide RightBar, keep LeftBar narrower
+    grid-template-areas: 
+      "navbar navbar"
+      "leftbar main";
+  }
+
+  // For vertical monitors (portrait orientation)
+  @media (orientation: portrait) and (max-width: 1024px) {
+    /* Show compact leftbar (icon-only) and rightbar (chatheads only) */
+    grid-template-columns: 80px 1fr 80px;
+    grid-template-areas: 
+      "navbar navbar navbar"
+      "leftbar main rightbar";
+    .leftbar, .rightbar {
+      display: block;
+    }
+  }
+
+  .navbar {
+    grid-area: navbar;
+  }
+
+  .leftbar {
+    grid-area: leftbar;
+  }
+
+  .main-content {
+    grid-area: main;
+    padding: 20px;
+    overflow-y: auto;
+    max-width: 1200px; /* cap width to prevent stretching on ultra-wide screens */
+    margin: 0 auto; /* center the content */
+
+    @include mobile {
+      padding: 10px;
+    }
+  }
+
+  .rightbar {
+    grid-area: rightbar;
+  }
+}

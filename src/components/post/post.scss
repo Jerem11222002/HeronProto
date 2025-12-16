@@ -1,4 +1,4 @@
-@import "../../style.scss";
+@use '../../style.scss' as *;
 
 .post {
   @include themify($themes) {
@@ -372,7 +372,8 @@
       // Remove or comment out the old .show-full-post-btn-container styles
     }
 
-    @media (max-width: 768px) {
+    // Responsive styles using shared mixins
+    @include tablet {
       margin: 10px 0;
 
       .container {
@@ -474,7 +475,7 @@
     .container {
       padding: 32px 32px 18px 32px;
 
-      @media (max-width: 600px) {
+      @include mobile {
         padding: 16px 4vw 8px 4vw;
       }
     }

@@ -65,6 +65,16 @@ const CORS_OPTIONS = {
       return cb(null, true);
     }
 
+    // allow any localhost or 127.0.0.1 for development
+    try {
+      const url = new URL(origin);
+      if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+        return cb(null, true);
+      }
+    } catch (e) {
+      // ignore URL parse errors
+    }
+
     // allow any Vercel-hosted origin (preview + main)
     try {
       const host = new URL(origin).hostname;

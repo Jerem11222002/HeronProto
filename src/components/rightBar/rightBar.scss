@@ -26,20 +26,108 @@
       display: none;
     }
 
-    // For vertical monitors (portrait orientation): show only chatheads
+    // For vertical monitors (portrait orientation): compact icon-only tabs, keep icons visible
     @media (orientation: portrait) and (max-width: 1024px) {
       display: block;
-      width: 80px;
-      min-width: 80px;
-      max-width: 80px;
+      /* slightly larger to accommodate shadows and rounded pills */
+      width: 100px;
+      min-width: 100px;
+      max-width: 100px;
+      /* allow shadows / transformed icons to render outside children */
+      overflow: visible !important;
+
+      /* nudge the whole right column slightly left so avatars clear native scrollbar */
+      transform: translateX(-12px);
+
       .container {
-        padding: 10px;
-        .tabs { display: none !important; }
+      padding: 10px 12px;
+      /* leave extra right padding so avatars near the edge remain visible */
+      padding-right: 44px;
+
+        .tabs {
+          flex-direction: column;
+          gap: 12px;
+          margin-bottom: 16px;
+          padding: 8px;
+          align-items: center;
+
+          .tab {
+            flex-direction: column;
+            gap: 6px;
+            padding: 10px 6px;
+            min-height: 68px;
+            width: 68px; /* fixed square pills so icons center */
+            overflow: visible !important; /* ensure scaled icons and glows aren't clipped */
+            align-items: center;
+            justify-content: center;
+
+            .tab-label,
+            .tab-count {
+              display: none !important;
+              visibility: hidden !important;
+              height: 0 !important;
+              padding: 0 !important;
+              margin: 0 !important;
+            }
+
+            .tab-icon {
+              /* responsive icon sizing */
+              font-size: clamp(1.5rem, 5vw, 2rem) !important;
+              opacity: 1 !important;
+              line-height: 1;
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              z-index: 5; /* sit above any text or background */
+              position: relative;
+              /* emoji-friendly fonts */
+              font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", system-ui;
+              -webkit-font-smoothing: antialiased;
+              text-shadow: 0 1px 0 rgba(255,255,255,0.12);
+              svg { width: clamp(28px, 6vw, 40px); height: clamp(28px, 6vw, 40px); display:block; }
+            }
+          }
+        }
+
         .connections-list .user {
           padding: 8px;
+          /* extra inner right padding to nudge content left of the scrollbar */
+          padding-right: 12px;
           .userInfo .user-details { display: none; }
           .userInfo span { display: none; }
-          /* show only profile-image and status-indicator */
+          /* ensure avatar fits the narrow layout */
+          .profile-image { width: 48px; height: 48px; }
+          /* allow avatar shadows and transforms to be visible in narrow column */
+          overflow: visible !important;
+          /* make transforms expand leftwards so images don't overflow off-screen */
+          .profile-image {
+            position: relative;
+            /* expand inward (to the left) so hover/scale doesn't overflow off-screen */
+            transform-origin: right center !important;
+            margin-right: 6px;
+            will-change: transform;
+          }
+        }
+      }
+    }
+
+    // For smaller screens (tablets and below): show compact icon-only tabs
+    @media (max-width: 768px) and (orientation: landscape) {
+      .container {
+        .tabs {
+          .tab {
+            padding: 10px 12px;
+            .tab-label {
+              display: none;
+            }
+            .tab-count {
+              display: none;
+            }
+            .tab-icon {
+              font-size: 1.4rem;
+              opacity: 1;
+            }
+          }
         }
       }
     }
@@ -52,7 +140,28 @@
     }
 
     .container {
-      padding: 20px;
+      padding: 24px 20px;
+      background: linear-gradient(180deg,
+        rgba(255,255,255,0.02) 0%,
+        transparent 100%
+      );
+      border-radius: 0 0 24px 24px;
+      position: relative;
+
+      // Subtle top border gradient
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg,
+          transparent 0%,
+          rgba(255,255,255,0.1) 50%,
+          transparent 100%
+        );
+      }
 
       // Loading Skeleton styles
       &.loading {
@@ -148,131 +257,306 @@
         }
       }
 
-      // Tabs
+      // Modern Tabs Design
       .tabs {
         display: flex;
-        gap: 10px;
-        margin-bottom: 20px;
-        
+        gap: 8px;
+        margin-bottom: 24px;
+        padding: 6px;
+        background: linear-gradient(135deg, themed("bgSoft") 0%, rgba(255,255,255,0.02) 100%);
+        border-radius: 16px;
+        border: 1px solid rgba(255,255,255,0.08);
+        backdrop-filter: blur(10px);
+        box-shadow:
+          0 4px 20px rgba(0,0,0,0.08),
+          inset 0 1px 0 rgba(255,255,255,0.1);
+
         .tab {
           flex: 1;
-          padding: 8px 15px;
+          padding: 12px 20px;
           border: none;
-          border-radius: 20px;
+          border-radius: 12px;
           cursor: pointer;
-          background-color: themed("bgSoft");
-          color: themed("textColor");
-          font-weight: 500;
-          transition: all 0.3s ease;
+          background: transparent;
+          color: themed("textColorSoft");
+          font-weight: 600;
+          font-size: 0.95rem;
+          letter-spacing: 0.025em;
+          text-transform: capitalize;
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
           position: relative;
           overflow: hidden;
-          
-          &.active {
-            background-color: #0b3a75 !important; /* much darker blue for contrast */
-            color: #fff !important;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(24, 119, 242, 0.2);
-            font-weight: 600;
-            box-shadow: 0 4px 16px rgba(24,119,242,0.13);
-            border-bottom: 3px solid #0b3a75 !important;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          min-height: 44px;
+
+          // Icon styling
+          .tab-icon {
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            opacity: 0.8;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3; /* keep icon above label */
+            margin-right: 8px;
+            /* theme-aware color: use primary by default */
+            color: var(--primary);
+
+            svg {
+              width: 1.4rem;
+              height: 1.4rem;
+              display: block;
+              /* ensure SVG paths use currentColor */
+              color: inherit;
+            }
           }
 
+          /* prevent label text from overlapping icons */
+          .tab-label {
+            font-weight: 600;
+            letter-spacing: 0.025em;
+            display: inline-block;
+            vertical-align: middle;
+            max-width: calc(100% - 56px);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            z-index: 2;
+          }
+
+          .tab-count {
+            background: rgba(255,255,255,0.15);
+            color: themed("textColor");
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            min-width: 20px;
+            text-align: center;
+            backdrop-filter: blur(4px);
+            z-index: 2;
+            margin-left: 6px;
+          }
+
+          // Active state with modern gradient
+          &.active {
+            background: linear-gradient(135deg,
+              rgba(24, 119, 242, 0.9) 0%,
+              rgba(24, 119, 242, 0.8) 50%,
+              rgba(24, 119, 242, 0.9) 100%
+            );
+            color: #ffffff !important;
+            transform: translateY(-2px);
+            box-shadow:
+              0 8px 25px rgba(24, 119, 242, 0.3),
+              0 4px 12px rgba(24, 119, 242, 0.2),
+              inset 0 1px 0 rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.1);
+
+            .tab-icon {
+              opacity: 1;
+              transform: scale(1.1);
+              color: #ffffff !important; /* active icons become white */
+            }
+
+            .tab-count {
+              background: rgba(255,255,255,0.25);
+              color: #ffffff;
+            }
+
+            // Subtle glow effect
+            &::before {
+              content: '';
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              background: linear-gradient(135deg,
+                rgba(255,255,255,0.1) 0%,
+                transparent 50%,
+                rgba(255,255,255,0.05) 100%
+              );
+              border-radius: inherit;
+              pointer-events: none;
+            }
+          }
+
+          // Hover state with subtle effects
           &:hover:not(.active) {
-            background-color: rgba(24, 119, 242, 0.1);
+            background: rgba(24, 119, 242, 0.08);
+            color: themed("textColor");
             transform: translateY(-1px);
+            box-shadow:
+              0 6px 20px rgba(0,0,0,0.1),
+              0 2px 8px rgba(24, 119, 242, 0.1);
+
+            .tab-icon {
+              opacity: 0.9;
+              transform: scale(1.05);
+            }
+
+            .tab-count {
+              background: rgba(24, 119, 242, 0.15);
+            }
+          }
+
+          // Focus state for accessibility
+          &:focus {
+            outline: none;
+            box-shadow:
+              0 0 0 3px rgba(24, 119, 242, 0.3),
+              0 4px 12px rgba(24, 119, 242, 0.2);
+          }
+
+          // Active ripple effect
+          &.active::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: ripple 0.6s ease-out;
           }
         }
       }
 
-      // User List
+      // Modern User List
       .connections-list {
         .user {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          margin: 10px 0;
-          padding: 15px;
-          border-radius: 8px;
-          background-color: themed("bg");
-          transition: all 0.3s ease;
+          margin: 8px 0;
+          padding: 16px 18px;
+          border-radius: 16px;
+          background: linear-gradient(135deg,
+            themed("bg") 0%,
+            rgba(255,255,255,0.02) 100%
+          );
+          border: 1px solid rgba(255,255,255,0.08);
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
           cursor: pointer;
+          position: relative;
+          overflow: hidden;
+          backdrop-filter: blur(10px);
+
+          // Subtle inner shadow for depth
+          &::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg,
+              rgba(255,255,255,0.05) 0%,
+              transparent 50%,
+              rgba(0,0,0,0.02) 100%
+            );
+            border-radius: inherit;
+            pointer-events: none;
+          }
 
           &:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-3px) scale(1.02);
+            background-color: rgba(24, 119, 242, 0.08);
+            border-color: rgba(24, 119, 242, 0.3);
           }
 
           &.online .status-indicator {
-            background-color: #44b700;
-            box-shadow: 0 0 0 2px themed("bg"),
-                       0 0 0 4px rgba(68, 183, 0, 0.2);
+            background: linear-gradient(135deg, #44b700 0%, #4ade80 100%);
+            box-shadow:
+              0 0 0 2px themed("bg"),
+              0 0 0 4px rgba(68, 183, 0, 0.3),
+              0 0 8px rgba(68, 183, 0, 0.4);
+            animation: pulse 2s infinite;
           }
 
           &.offline .status-indicator {
-            background-color: #bbb;
+            background: linear-gradient(135deg, #bbb 0%, #999 100%);
+            box-shadow: 0 0 0 2px themed("bg");
           }
 
           .userInfo {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 16px;
             position: relative;
+            flex: 1;
 
             .profile-image {
-              width: 45px;
-              height: 45px;
+              width: 48px;
+              height: 48px;
               border-radius: 50%;
               object-fit: cover;
-              border: 2px solid themed("border");
-              transition: all 0.3s ease;
-              background-color: themed("bgSoft");
+              border: 2px solid rgba(255,255,255,0.1);
+              transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+              background: linear-gradient(135deg, themed("bgSoft") 0%, rgba(255,255,255,0.05) 100%);
+              box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 
               &.fallback {
                 object-fit: contain;
-                padding: 2px;
+                padding: 3px;
                 border-color: rgba(0, 0, 0, 0.1);
+                background: themed("bgSoft");
               }
 
               &:hover {
-                border-color: #1877f2;
-                transform: scale(1.05);
+                border-color: rgba(24, 119, 242, 0.4);
+                transform: scale(1.08);
+                box-shadow: 0 4px 16px rgba(24, 119, 242, 0.2);
               }
             }
 
             .status-indicator {
-              width: 12px;
-              height: 12px;
+              width: 14px;
+              height: 14px;
               border-radius: 50%;
               position: absolute;
-              bottom: 0;
-              left: 35px;
-              border: 2px solid themed("bg");
-              transition: all 0.3s ease;
-              z-index: 1;
+              bottom: 2px;
+              left: 36px;
+              border: 3px solid themed("bg");
+              transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+              z-index: 2;
             }
 
             .user-details {
               display: flex;
               flex-direction: column;
-              gap: 2px;
+              gap: 3px;
+              flex: 1;
+              min-width: 0; // Allow text truncation
 
               .user-name {
-                font-weight: 600;
-                font-size: 1.05rem;
+                font-weight: 700;
+                font-size: 1rem;
                 color: themed("textColor");
+                letter-spacing: 0.025em;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
-                max-width: 120px;
+                max-width: 140px;
+                line-height: 1.2;
               }
 
               .user-username {
-                font-size: 0.93rem;
-                color: #888;
+                font-size: 0.85rem;
+                color: themed("textColorSoft");
+                font-weight: 500;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
-                max-width: 120px;
+                max-width: 140px;
+                opacity: 0.8;
               }
             }
 
@@ -290,16 +574,54 @@
         .no-users {
           text-align: center;
           color: themed("textColorSoft");
-          padding: 30px;
-          background-color: themed("bg");
-          border-radius: 8px;
-          margin: 20px 0;
-          animation: fadeIn 0.3s ease;
+          padding: 40px 20px;
+          background: linear-gradient(135deg,
+            themed("bg") 0%,
+            rgba(255,255,255,0.02) 100%
+          );
+          border-radius: 20px;
+          margin: 24px 0;
+          border: 1px solid rgba(255,255,255,0.08);
+          backdrop-filter: blur(10px);
+          animation: fadeIn 0.5s ease;
+          position: relative;
+          overflow: hidden;
+
+          // Subtle background pattern
+          &::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+              radial-gradient(circle at 25% 25%, rgba(24, 119, 242, 0.03) 0%, transparent 50%),
+              radial-gradient(circle at 75% 75%, rgba(24, 119, 242, 0.03) 0%, transparent 50%);
+            border-radius: inherit;
+            pointer-events: none;
+          }
+
+          .no-users-icon {
+            display: block;
+            margin-bottom: 16px;
+            opacity: 0.6;
+            filter: grayscale(20%);
+            svg { width: 3.2rem; height: 3.2rem; display:block; }
+          }
+
+          div {
+            font-size: 1rem;
+            font-weight: 500;
+            color: themed("textColorSoft");
+            letter-spacing: 0.025em;
+          }
         }
       }
     }
   }
 }
+
 
 @keyframes shimmer {
   0% { background-position: 200% 0; }
@@ -314,4 +636,32 @@
 @keyframes scaleIn {
   from { transform: scale(0.95); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes ripple {
+  0% {
+    width: 0;
+    height: 0;
+    opacity: 1;
+  }
+  100% {
+    width: 120px;
+    height: 120px;
+    opacity: 0;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }

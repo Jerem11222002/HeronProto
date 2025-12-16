@@ -5,6 +5,10 @@ import { useContext } from "react";
 import { AuthContext } from "../../context/authContext";
 import "./rightBar.scss";
 
+import { ReactComponent as IconFriends } from './icons/friends.svg';
+import { ReactComponent as IconFollowing } from './icons/following.svg';
+import { ReactComponent as IconFollowers } from './icons/followers.svg';
+
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 const DEFAULT_AVATARS = {
@@ -14,9 +18,9 @@ const DEFAULT_AVATARS = {
 };
 
 const TABS = {
-  friends: { id: 'friends', label: 'Friends' },
-  following: { id: 'following', label: 'Following' },
-  followers: { id: 'followers', label: 'Followers' }
+  friends: { id: 'friends', label: 'Friends', icon: IconFriends },
+  following: { id: 'following', label: 'Following', icon: IconFollowing },
+  followers: { id: 'followers', label: 'Followers', icon: IconFollowers }
 };
 
 const MAX_CHAT_POPUPS = 3;
@@ -248,7 +252,7 @@ const RightBar = () => {
       ))
     ) : (
       <div className="no-users">
-        <span role="img" aria-label="no users" style={{fontSize: "2rem"}}>👥</span>
+        <span className="no-users-icon" aria-hidden="true"><IconFriends /></span>
         <div>{emptyMessage}</div>
       </div>
     );
@@ -278,19 +282,24 @@ const RightBar = () => {
     <div className="rightBar">
       <div className="container">
         <div className="tabs">
-          {Object.values(TABS).map(tab => (
-            <button 
-              key={tab.id}
-              className={`tab ${activeTab === tab.id ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              {tab.label} (
-                {tab.id === 'friends' ? counts.friends 
-                  : tab.id === 'following' ? counts.following 
-                  : counts.followers}
-              )
-            </button>
-          ))}
+              {Object.values(TABS).map(tab => {
+                const IconComp = tab.icon;
+                return (
+                  <button 
+                    key={tab.id}
+                    className={`tab ${activeTab === tab.id ? 'active' : ''}`}
+                    onClick={() => setActiveTab(tab.id)}
+                  >
+                    <span className="tab-icon"><IconComp /></span>
+                    <span className="tab-label">{tab.label}</span>
+                    <span className="tab-count">
+                      {tab.id === 'friends' ? counts.friends 
+                        : tab.id === 'following' ? counts.following 
+                        : counts.followers}
+                    </span>
+                  </button>
+                );
+              })}
         </div>
 
         <div className="connections-list">

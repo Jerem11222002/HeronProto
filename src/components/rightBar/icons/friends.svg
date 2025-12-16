@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+  <!-- Primary person (blue) -->
+  <path fill="#5271ff" d="M16.5 11a2.5 2.5 0 1 0-2.5-2.5A2.5 2.5 0 0 0 16.5 11z" />
+  <!-- Secondary person (dark) -->
+  <path fill="#2f2f2f" d="M7.5 11A2.5 2.5 0 1 0 7.5 6A2.5 2.5 0 0 0 7.5 11z" />
+  <!-- Bodies (muted) -->
+  <path fill="#6b7280" d="M4 17.5C4 15 6.5 13 9 13s5 2 5 4.5V19H4v-1.5z" />
+  <path fill="#6b7280" d="M15 13c2.5 0 5 2 5 4.5V19h-7v-1.5C13 15 14.5 13 15 13z" />
+</svg>

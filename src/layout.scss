@@ -1,55 +1,20 @@
 @import "./style.scss";
 
 .app-layout {
+  /* Mobile-first: single column by default */
   display: grid;
-  grid-template-columns: minmax(80px, 240px) 1fr minmax(240px, 360px); // LeftBar, Main, RightBar
+  grid-template-columns: 1fr;
   grid-template-rows: auto 1fr;
-  grid-template-areas: 
-    "navbar navbar navbar"
-    "leftbar main rightbar";
+  grid-template-areas:
+    "navbar"
+    "main";
   min-height: 100vh;
 
   @include themify($themes) {
     background-color: themed('bgSoft');
   }
 
-  @include mobile {
-    grid-template-columns: 1fr;
-    grid-template-areas: 
-      "navbar"
-      "main";
-  }
-
-  @include tablet {
-    grid-template-columns: minmax(80px, 200px) 1fr; // Hide RightBar, keep LeftBar narrower
-    grid-template-areas: 
-      "navbar navbar"
-      "leftbar main";
-  }
-
-  // For vertical monitors (portrait orientation)
-  @media (orientation: portrait) and (max-width: 1024px) and (min-width: 769px) {
-    /* Show compact leftbar (icon-only) and rightbar (chatheads only) */
-    grid-template-columns: 80px 1fr 80px;
-    grid-template-areas: 
-      "navbar navbar navbar"
-      "leftbar main rightbar";
-    .leftbar, .rightbar {
-      display: block;
-    }
-  }
-
-  // For very small screens, hide sidebars
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-    grid-template-areas: 
-      "navbar"
-      "main";
-    .leftbar, .rightbar {
-      display: none;
-    }
-  }
-
+  /* Navbar styles */
   .navbar {
     grid-area: navbar;
     position: sticky;
@@ -61,27 +26,76 @@
     }
   }
 
-  .leftbar {
-    grid-area: leftbar;
+  /* Left and right sidebars are hidden by default on small screens.
+     Use the .mobile-hidden helper in components to ensure they collapse. */
+  .leftbar,
+  .rightbar {
+    display: none;
   }
 
   .main-content {
     grid-area: main;
-    padding: 20px;
+    padding: 12px;
     overflow-y: auto;
-    max-width: 1200px; /* cap width to prevent stretching on ultra-wide screens */
-    margin: 0 auto; /* center the content */
+    overflow-x: hidden; /* prevent horizontal scroll from children */
+    width: 100%;
+    box-sizing: border-box;
+    max-width: 100%;
+    margin: 0 auto;
+  }
 
-    @include mobile {
-      padding: 10px;
+  /* Tablet: show compact leftbar */
+  @media (min-width: 768px) {
+    grid-template-columns: 80px 1fr;
+    grid-template-areas:
+      "navbar navbar"
+      "leftbar main";
+
+    .leftbar {
+      display: block;
     }
 
-    @media (max-width: 480px) {
-      padding: 5px;
+    .main-content {
+      padding: 16px;
+      max-width: 100%;
     }
   }
 
-  .rightbar {
-    grid-area: rightbar;
+  /* Desktop: show both sidebars */
+  @media (min-width: 1024px) {
+    grid-template-columns: minmax(80px, 240px) 1fr minmax(240px, 360px);
+    grid-template-areas:
+      "navbar navbar navbar"
+      "leftbar main rightbar";
+
+    .leftbar,
+    .rightbar {
+      display: block;
+    }
+
+    .main-content {
+      padding: 20px;
+      max-width: 1200px;
+    }
+  }
+
+  /* Portrait special case: keep layout stable */
+  @media (orientation: portrait) and (min-width: 769px) and (max-width: 1024px) {
+    grid-template-columns: 80px 1fr 80px;
+    grid-template-areas:
+      "navbar navbar navbar"
+      "leftbar main rightbar";
   }
 }
+
+/* Small helper to explicitly hide components on mobile when needed */
+.mobile-hidden {
+  display: none !important;
+}
+
+@media (min-width: 768px) {
+  .mobile-hidden {
+    display: block !important;
+  }
+}
+

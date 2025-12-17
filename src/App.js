@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext, useEffect } from 'react';
 import Login from "./pages/login/Login";
 import Register from "./pages/register/Register";
 import Settings from "./pages/settings/Settings";
@@ -18,13 +18,11 @@ import Profile from "./pages/profile/Profile";
 import Events from "./pages/events/events";
 import "./style.scss";
 import "./layout.scss";
-import { useContext } from "react";
 import { DarkModeContext, DarkModeContextProvider } from "./context/darkModeContext";
 import { AuthContext, AuthContextProvider } from "./context/authContext";
 import Interests from "./pages/interests/interests";
 import { SocketProvider } from './context/SocketContext';
 import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
-import { useEffect } from 'react';
 import { EventsProvider } from "./context/EventsContext";
 import FullScreenPostPage from "./components/post/FullScreenPostPage"; // <-- add this import
 import EventDetailPage from "./pages/admin/Dashboard/EventDetailPage";
@@ -51,15 +49,18 @@ const Layout = ({ darkMode }) => (
     <div className="navbar">
       <Navbar />
     </div>
-    <div className="leftbar">
+    {/* leftbar: add class to allow hiding on small screens via CSS (.mobile-hidden) */}
+    <div className="leftbar mobile-hidden">
       <LeftBar />
     </div>
+    {/* main-content should be flexible and take remaining space */}
     <div className="main-content">
       <ErrorBoundary>
         <Outlet />
       </ErrorBoundary>
     </div>
-    <div className="rightbar">
+    {/* rightbar: add class to allow hiding on small screens */}
+    <div className="rightbar mobile-hidden">
       <RightBar />
     </div>
   </div>
@@ -248,6 +249,35 @@ function AppContent() {
       element: <ResetPassword />
     }
   ]);
+
+  // DEV: runtime scan for CSS rules using fixed px units — logs warnings to console
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'development') return;
+    try {
+      const results = [];
+      for (const sheet of Array.from(document.styleSheets)) {
+        let rules;
+        try { rules = sheet.cssRules; } catch (e) { continue; }
+        if (!rules) continue;
+        for (const r of Array.from(rules)) {
+          const txt = r.cssText || '';
+          // skip common 0px or border-left etc? we simply flag px usage for review
+          if (txt.includes('px')) {
+            results.push({ href: sheet.href || '<inline>', rule: txt.replace(/\s+/g, ' ').slice(0, 200) });
+            if (results.length >= 50) break;
+          }
+        }
+        if (results.length >= 50) break;
+      }
+      if (results.length) {
+        console.warn(`CSS fixed-size scan: found ${results.length} rules using 'px' — consider using rem/%/vw or responsive utilities. Sample:`, results.slice(0, 10));
+      } else {
+        console.info('CSS fixed-size scan: no px usage found in loaded stylesheets.');
+      }
+    } catch (err) {
+      console.debug('CSS scan failed', err);
+    }
+  }, []);
 
   return <RouterProvider router={router} />;
 }

@@ -162,11 +162,14 @@
           border: none;
           border-bottom: 2px solid #e1e5e9;
           padding: clamp(16px, 2.5vw, 20px) 12px;
-          font-size: clamp(1rem, 1.5vw, 1.1rem);
+          /* ensure iOS does not auto-zoom on focus by keeping font-size >= 16px */
+          font-size: clamp(16px, 1.5vw, 18px);
           transition: all 0.3s ease;
           border-radius: 8px 8px 0 0;
           font-family: inherit;
           background: transparent;
+
+          -webkit-text-size-adjust: 100%;
 
           &:focus {
             outline: none;
@@ -495,7 +498,9 @@
 
           input {
             padding: clamp(12px, 2vw, 15px) 10px;
-            font-size: clamp(0.95rem, 1.4vw, 1rem);
+            /* keep minimum 16px on small screens to avoid iOS zoom */
+            font-size: clamp(16px, 1.4vw, 18px);
+            -webkit-text-size-adjust: 100%;
           }
 
           button {

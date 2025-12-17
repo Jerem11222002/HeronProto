@@ -299,3 +299,18 @@ $breakpoints: (
     #{$theme-name}-theme: true;
   }
 }
+
+/* Prevent horizontal panning/overscroll on mobile devices so UI stays locked
+   to the viewport (allows vertical scroll only). */
+html, body, #root {
+  overflow-x: hidden;
+  touch-action: pan-y; /* allow vertical panning only */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+/* Additional safeguard for elements that might accidentally overflow */
+* {
+  max-width: 100%;
+  box-sizing: border-box;
+}

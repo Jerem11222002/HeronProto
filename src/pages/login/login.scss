@@ -511,9 +511,10 @@
     }
 
     .school-logo {
-      top: clamp(6px, 1.5vw, 10px);
-      left: clamp(6px, 1.5vw, 10px);
-      width: clamp(55px, 5vw, 72px);
+      top: -60px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: clamp(50px, 4vw, 60px);
     }
   }
 

@@ -28,7 +28,7 @@
   }
 
   // For vertical monitors (portrait orientation)
-  @media (orientation: portrait) and (max-width: 1024px) {
+  @media (orientation: portrait) and (max-width: 1024px) and (min-width: 769px) {
     /* Show compact leftbar (icon-only) and rightbar (chatheads only) */
     grid-template-columns: 80px 1fr 80px;
     grid-template-areas: 
@@ -39,8 +39,26 @@
     }
   }
 
+  // For very small screens, hide sidebars
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    grid-template-areas: 
+      "navbar"
+      "main";
+    .leftbar, .rightbar {
+      display: none;
+    }
+  }
+
   .navbar {
     grid-area: navbar;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    @include themify($themes) {
+      background-color: themed('bg');
+      border-bottom: 1px solid themed('border');
+    }
   }
 
   .leftbar {
@@ -56,6 +74,10 @@
 
     @include mobile {
       padding: 10px;
+    }
+
+    @media (max-width: 480px) {
+      padding: 5px;
     }
   }
 

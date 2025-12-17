@@ -248,6 +248,47 @@ $breakpoints: (
   }
 }
 
+// Responsive Typography and Spacing
+@media (max-width: 768px) {
+  body {
+    font-size: 15px;
+  }
+  
+  h1 { font-size: 1.75rem; }
+  h2 { font-size: 1.5rem; }
+  h3 { font-size: 1.25rem; }
+  h4 { font-size: 1.1rem; }
+  
+  button, input, textarea, select {
+    font-size: 16px; // Prevent zoom on iOS
+  }
+  
+  button, .button {
+    min-height: 44px;
+    padding: 10px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    font-size: 14px;
+  }
+  
+  h1 { font-size: 1.5rem; }
+  h2 { font-size: 1.25rem; }
+  h3 { font-size: 1.1rem; }
+  h4 { font-size: 1rem; }
+  
+  .app-layout .main-content {
+    padding: 5px;
+  }
+  
+  button, .button {
+    min-height: 40px;
+    padding: 8px 12px;
+  }
+}
+
 // Export variables for JavaScript usage
 :export {
   @each $name, $value in $breakpoints {

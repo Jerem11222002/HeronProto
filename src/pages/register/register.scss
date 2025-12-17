@@ -383,6 +383,7 @@
       width: 95%;
       grid-template-columns: 1fr;
       gap: 1rem;
+      padding-top: 80px;
 
       .left {
         padding: clamp(15px, 3vw, 30px);
@@ -398,8 +399,9 @@
     }
 
     .school-logo {
-      top: clamp(6px, 1.5vw, 10px);
-      left: clamp(6px, 1.5vw, 10px);
+      top: -60px;
+      left: 50%;
+      transform: translateX(-50%);
       width: clamp(55px, 5vw, 72px);
     }
   }

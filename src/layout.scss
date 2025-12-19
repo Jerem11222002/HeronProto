@@ -1,7 +1,14 @@
 @import "./style.scss";
 
+/* ========================================
+   RESPONSIVE LAYOUT STRATEGY:
+   - Mobile first (single column, no sidebars)
+   - Tablet (768px+): Show compact left sidebar
+   - Desktop (1024px+): Show both sidebars
+   - Tall Portrait (portrait AND min 768px): Adjust sidebar widths for clarity
+   ======================================== */
+
 .app-layout {
-  /* Mobile-first: single column by default */
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: auto 1fr;
@@ -9,12 +16,13 @@
     "navbar"
     "main";
   min-height: 100vh;
+  height: 100vh;
 
   @include themify($themes) {
     background-color: themed('bgSoft');
   }
 
-  /* Navbar styles */
+  // === NAVBAR: Always sticky at top ===
   .navbar {
     grid-area: navbar;
     position: sticky;
@@ -26,8 +34,7 @@
     }
   }
 
-  /* Left and right sidebars are hidden by default on small screens.
-     Use the .mobile-hidden helper in components to ensure they collapse. */
+  // === DEFAULT (MOBILE) ===
   .leftbar,
   .rightbar {
     display: none;
@@ -37,22 +44,50 @@
     grid-area: main;
     padding: 12px;
     overflow-y: auto;
-    overflow-x: hidden; /* prevent horizontal scroll from children */
+    overflow-x: hidden;
     width: 100%;
     box-sizing: border-box;
     max-width: 100%;
-    margin: 0 auto;
+
+    /* hide scrollbar while keeping scrolling */
+    -ms-overflow-style: none; /* IE/Edge */
+    scrollbar-width: none; /* Firefox */
+    &::-webkit-scrollbar { display: none; } /* WebKit */
+
+    /* optional: show thin scrollbar on hover for discoverability
+       uncomment the following if you prefer hover-to-show */
+    /*
+    &:hover {
+      -ms-overflow-style: auto;
+      scrollbar-width: thin;
+    }
+    &:hover::-webkit-scrollbar { display: block; height: 8px; width: 8px; }
+    */
   }
 
-  /* Tablet: show compact leftbar */
+  // ========================================
+  // TABLET & UP (768px+)
+  // Show left sidebar (compact icon-only)
+  // ========================================
   @media (min-width: 768px) {
-    grid-template-columns: 80px 1fr;
+    grid-template-columns: auto 1fr;
     grid-template-areas:
       "navbar navbar"
       "leftbar main";
 
     .leftbar {
       display: block;
+      grid-area: leftbar;
+      position: sticky;
+      top: 65px;
+      height: calc(100vh - 65px);
+      align-self: start;
+      overflow-y: auto;
+      overflow-x: hidden;
+      width: 80px;
+      min-width: 80px;
+      max-width: 80px;
+      z-index: 50;
     }
 
     .main-content {
@@ -61,9 +96,12 @@
     }
   }
 
-  /* Desktop: show both sidebars */
+  // ========================================
+  // DESKTOP (1024px+)
+  // Show both sidebars with proper widths
+  // ========================================
   @media (min-width: 1024px) {
-    grid-template-columns: minmax(80px, 240px) 1fr minmax(240px, 360px);
+    grid-template-columns: minmax(100px, 240px) 1fr minmax(240px, 360px);
     grid-template-areas:
       "navbar navbar navbar"
       "leftbar main rightbar";
@@ -71,24 +109,111 @@
     .leftbar,
     .rightbar {
       display: block;
+      position: sticky;
+      top: 65px;
+      height: calc(100vh - 65px);
+      align-self: start;
+      overflow-y: auto;
+      overflow-x: hidden;
+      z-index: 50;
+    }
+
+    .leftbar {
+      grid-area: leftbar;
+      min-width: 100px;
+      max-width: 240px;
+      width: 100%;
+    }
+
+    .rightbar {
+      grid-area: rightbar;
+      min-width: 240px;
+      max-width: 360px;
+      width: 100%;
     }
 
     .main-content {
       padding: 20px;
-      max-width: 1200px;
+      max-width: 100%;
     }
   }
 
-  /* Portrait special case: keep layout stable */
-  @media (orientation: portrait) and (min-width: 769px) and (max-width: 1024px) {
-    grid-template-columns: 80px 1fr 80px;
+  // ========================================
+  // TALL PORTRAIT SCREENS (portrait + width 768-1024px)
+  // Show both sidebars but at reduced widths
+  // Prevents "thin and flat" icon appearance
+  // ========================================
+  @media (orientation: portrait) and (min-width: 768px) and (max-width: 1023px) {
+    grid-template-columns: auto 1fr auto;
     grid-template-areas:
       "navbar navbar navbar"
       "leftbar main rightbar";
+
+    .leftbar,
+    .rightbar {
+      display: block;
+      position: sticky;
+      top: 65px;
+      height: calc(100vh - 65px);
+      align-self: start;
+      overflow-y: auto;
+      overflow-x: hidden;
+      z-index: 50;
+      width: 80px;
+      min-width: 80px;
+      max-width: 80px;
+    }
+
+    .main-content {
+      padding: 12px;
+      max-width: 100%;
+    }
+  }
+
+  // ========================================
+  // WIDE LANDSCAPE (landscape + min 1024px)
+  // Ensure sidebars have clear, visible widths
+  // ========================================
+  @media (orientation: landscape) and (min-width: 1024px) {
+    grid-template-columns: minmax(120px, 260px) 1fr minmax(240px, 360px);
+    
+    .leftbar {
+      min-width: 120px;
+      max-width: 260px;
+      width: auto;
+    }
+
+    .rightbar {
+      min-width: 240px;
+      max-width: 360px;
+      width: auto;
+    }
+  }
+
+  // ========================================
+  // ULTRA-WIDE SCREENS (1440px+)
+  // Allow sidebars to expand comfortably
+  // ========================================
+  @media (min-width: 1440px) {
+    grid-template-columns: minmax(120px, 280px) 1fr minmax(260px, 400px);
+
+    .leftbar {
+      min-width: 120px;
+      max-width: 280px;
+      width: 100%;
+    }
+
+    .rightbar {
+      min-width: 260px;
+      max-width: 400px;
+      width: 100%;
+    }
   }
 }
 
-/* Small helper to explicitly hide components on mobile when needed */
+// ========================================
+// UTILITY CLASSES
+// ========================================
 .mobile-hidden {
   display: none !important;
 }

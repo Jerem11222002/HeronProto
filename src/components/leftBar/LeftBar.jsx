@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/authContext";
 import Tooltip from '@mui/material/Tooltip';
@@ -90,8 +90,46 @@ const LeftBar = () => {
   const { currentUser, userRelationships } = useContext(AuthContext);
   const location = useLocation();
   const navigate = useNavigate();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  // manual collapse state (user toggle)
+  const [manualCollapsed, setManualCollapsed] = useState(false);
+  // forced collapse due to small/narrow viewport
+  const [forcedCollapsed, setForcedCollapsed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // derived collapsed state used everywhere
+  const isCollapsed = manualCollapsed || forcedCollapsed;
+
+  // responsive breakpoint: adjust as needed
+  const COLLAPSE_MATCH = '(max-width: 900px), (orientation: portrait) and (max-width: 1200px)';
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+
+    const mq = window.matchMedia(COLLAPSE_MATCH);
+
+    // set initial forced state
+    setForcedCollapsed(mq.matches);
+
+    const handler = (e) => {
+      setForcedCollapsed(e.matches);
+    };
+
+    // modern API
+    if (mq.addEventListener) {
+      mq.addEventListener('change', handler);
+    } else {
+      // fallback for older browsers
+      mq.addListener(handler);
+    }
+
+    return () => {
+      if (mq.removeEventListener) {
+        mq.removeEventListener('change', handler);
+      } else {
+        mq.removeListener(handler);
+      }
+    };
+  }, []);
 
   const menuItems = [
     { id: 'home', icon: HomeIcon, label: 'Home', path: '/', badge: 0 },
@@ -133,7 +171,6 @@ const LeftBar = () => {
     }
   };
 
-  // This is the important part: pass state to indicate gallery button was used
   const handleGalleryClick = () => {
     if (!currentUser?._id) return;
     navigate(`/profile/${currentUser._id}?tab=gallery`, { state: { fromGalleryButton: true } });
@@ -197,10 +234,12 @@ const LeftBar = () => {
 
         {/* Collapse Toggle */}
         <Tooltip title={isCollapsed ? "Expand" : "Collapse"}>
-          <button 
+          <button
             className="collapse-toggle"
-            onClick={() => setIsCollapsed(prev => !prev)}
+            onClick={() => setManualCollapsed(prev => !prev)}
             disabled={isLoading}
+            aria-pressed={isCollapsed}
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {isCollapsed ? <KeyboardArrowRightIcon /> : <KeyboardArrowLeftIcon />}
           </button>

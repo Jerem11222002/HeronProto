@@ -2,666 +2,253 @@
 
 .rightBar {
   @include themify($themes) {
-    flex: 3;
-    position: sticky;
-    top: 70px;
-    height: calc(100vh - 70px);
-    overflow: scroll;
-    background-color: themed("bgSoft");
-    transition: background-color 0.3s ease;
-
-    @include large-tablet {
-      flex: 2.5; // Slightly narrower on large tablets
-    }
-
-    @include wide {
-      flex: 3.5; // Wider on ultra-wide screens
-    }
-
-    @include tablet {
-      display: none;
-    }
-
-    @include mobile {
-      display: none;
-    }
-
-    // For vertical monitors (portrait orientation): compact icon-only tabs, keep icons visible
-    @media (orientation: portrait) and (max-width: 1024px) {
-      display: block;
-      /* slightly larger to accommodate shadows and rounded pills */
-      width: 100px;
-      min-width: 100px;
-      max-width: 100px;
-      /* allow shadows / transformed icons to render outside children */
-      overflow: visible !important;
-
-      /* nudge the whole right column slightly left so avatars clear native scrollbar */
-      transform: translateX(-12px);
-
-      .container {
-      padding: 10px 12px;
-      /* leave extra right padding so avatars near the edge remain visible */
-      padding-right: 44px;
-
-        .tabs {
-          flex-direction: column;
-          gap: 12px;
-          margin-bottom: 16px;
-          padding: 8px;
-          align-items: center;
-
-          .tab {
-            flex-direction: column;
-            gap: 6px;
-            padding: 10px 6px;
-            min-height: 68px;
-            width: 68px; /* fixed square pills so icons center */
-            overflow: visible !important; /* ensure scaled icons and glows aren't clipped */
-            align-items: center;
-            justify-content: center;
-
-            .tab-label,
-            .tab-count {
-              display: none !important;
-              visibility: hidden !important;
-              height: 0 !important;
-              padding: 0 !important;
-              margin: 0 !important;
-            }
-
-            .tab-icon {
-              /* responsive icon sizing */
-              font-size: clamp(1.5rem, 5vw, 2rem) !important;
-              opacity: 1 !important;
-              line-height: 1;
-              display: inline-flex;
-              align-items: center;
-              justify-content: center;
-              z-index: 5; /* sit above any text or background */
-              position: relative;
-              /* emoji-friendly fonts */
-              font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", system-ui;
-              -webkit-font-smoothing: antialiased;
-              text-shadow: 0 1px 0 rgba(255,255,255,0.12);
-              svg { width: clamp(28px, 6vw, 40px); height: clamp(28px, 6vw, 40px); display:block; }
-            }
-          }
-        }
-
-        .connections-list .user {
-          padding: 8px;
-          /* extra inner right padding to nudge content left of the scrollbar */
-          padding-right: 12px;
-          .userInfo .user-details { display: none; }
-          .userInfo span { display: none; }
-          /* ensure avatar fits the narrow layout */
-          .profile-image { width: 48px; height: 48px; }
-          /* allow avatar shadows and transforms to be visible in narrow column */
-          overflow: visible !important;
-          /* make transforms expand leftwards so images don't overflow off-screen */
-          .profile-image {
-            position: relative;
-            /* expand inward (to the left) so hover/scale doesn't overflow off-screen */
-            transform-origin: right center !important;
-            margin-right: 6px;
-            will-change: transform;
-          }
-        }
-      }
-    }
-
-    // For smaller screens (tablets and below): show compact icon-only tabs
-    @media (max-width: 768px) and (orientation: landscape) {
-      .container {
-        .tabs {
-          .tab {
-            padding: 10px 12px;
-            .tab-label {
-              display: none;
-            }
-            .tab-count {
-              display: none;
-            }
-            .tab-icon {
-              font-size: 1.4rem;
-              opacity: 1;
-            }
-          }
-        }
-      }
-    }
-
-    // Add transition for display changes (if using JS to toggle)
-    transition: opacity 0.3s ease, transform 0.3s ease;
-
-    &::-webkit-scrollbar {
-      display: none;
-    }
+    background: themed("bgSoft");
+    height: 100%;
+    overflow: hidden;
 
     .container {
-      padding: 24px 20px;
-      background: linear-gradient(180deg,
-        rgba(255,255,255,0.02) 0%,
-        transparent 100%
-      );
-      border-radius: 0 0 24px 24px;
-      position: relative;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
 
-      // Subtle top border gradient
-      &::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 1px;
-        background: linear-gradient(90deg,
-          transparent 0%,
-          rgba(255,255,255,0.1) 50%,
-          transparent 100%
-        );
-      }
+    /* ---------------- Tabs ---------------- */
 
-      // Loading Skeleton styles
-      &.loading {
-        .tabs-skeleton {
-          display: flex;
-          gap: 10px;
-          margin-bottom: 20px;
+    .tabs {
+      display: flex;
+      gap: 6px;
+      padding: 6px;
+      background: themed("bg");
+      border-radius: 12px;
+      border: 1px solid rgba(themed("border"), 0.06);
 
-          .tab-skeleton {
-            flex: 1;
-            height: 36px;
-            background: linear-gradient(
-              90deg,
-              themed("bgSoft") 25%,
-              themed("bg") 50%,
-              themed("bgSoft") 75%
-            );
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-            border-radius: 20px;
-          }
-        }
-
-        .users-skeleton {
-          .user-skeleton {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 15px;
-            margin: 10px 0;
-            background: themed("bg");
-            border-radius: 8px;
-
-            .avatar-skeleton {
-              width: 45px;
-              height: 45px;
-              border-radius: 50%;
-              background: linear-gradient(
-                90deg,
-                themed("bgSoft") 25%,
-                themed("bg") 50%,
-                themed("bgSoft") 75%
-              );
-              background-size: 200% 100%;
-              animation: shimmer 1.5s infinite;
-            }
-
-            .name-skeleton {
-              flex: 1;
-              height: 20px;
-              background: linear-gradient(
-                90deg,
-                themed("bgSoft") 25%,
-                themed("bg") 50%,
-                themed("bgSoft") 75%
-              );
-              background-size: 200% 100%;
-              animation: shimmer 1.5s infinite;
-              border-radius: 4px;
-            }
-          }
-        }
-      }
-
-      // Error State
-      .error-container {
-        text-align: center;
-        padding: 30px;
-        background-color: themed("bg");
-        border-radius: 8px;
-        margin: 20px 0;
-        border: 1px solid rgba(240, 84, 79, 0.2);
-        animation: fadeIn 0.3s ease;
-
-        p {
-          color: #f0544f;
-          margin-bottom: 15px;
-        }
-
-        button {
-          padding: 8px 16px;
-          background-color: #1877f2;
-          color: white;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-          transition: all 0.3s ease;
-
-          &:hover {
-            background-color: darken(#1877f2, 10%);
-            transform: translateY(-1px);
-          }
-        }
-      }
-
-      // Modern Tabs Design
-      .tabs {
+      .tab {
+        flex: 1;
         display: flex;
-        gap: 8px;
-        margin-bottom: 24px;
-        padding: 6px;
-        background: linear-gradient(135deg, themed("bgSoft") 0%, rgba(255,255,255,0.02) 100%);
-        border-radius: 16px;
-        border: 1px solid rgba(255,255,255,0.08);
-        backdrop-filter: blur(10px);
-        box-shadow:
-          0 4px 20px rgba(0,0,0,0.08),
-          inset 0 1px 0 rgba(255,255,255,0.1);
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 8px;
+        border-radius: 10px;
+        border: none;
+        background: transparent;
+        color: themed("textColorSoft");
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 160ms ease, color 160ms ease;
 
-        .tab {
-          flex: 1;
-          padding: 12px 20px;
-          border: none;
-          border-radius: 12px;
-          cursor: pointer;
-          background: transparent;
-          color: themed("textColorSoft");
-          font-weight: 600;
-          font-size: 0.95rem;
-          letter-spacing: 0.025em;
-          text-transform: capitalize;
-          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-          position: relative;
-          overflow: hidden;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          min-height: 44px;
-
-          // Icon styling
-          .tab-icon {
-            font-size: 1.2rem;
-            transition: all 0.3s ease;
-            opacity: 0.8;
-            line-height: 1;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 3; /* keep icon above label */
-            margin-right: 8px;
-            /* theme-aware color: use primary by default */
-            color: var(--primary);
-
-            svg {
-              width: 1.4rem;
-              height: 1.4rem;
-              display: block;
-              /* ensure SVG paths use currentColor */
-              color: inherit;
-            }
-          }
-
-          /* prevent label text from overlapping icons */
-          .tab-label {
-            font-weight: 600;
-            letter-spacing: 0.025em;
-            display: inline-block;
-            vertical-align: middle;
-            max-width: calc(100% - 56px);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            z-index: 2;
-          }
-
-          .tab-count {
-            background: rgba(255,255,255,0.15);
-            color: themed("textColor");
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            min-width: 20px;
-            text-align: center;
-            backdrop-filter: blur(4px);
-            z-index: 2;
-            margin-left: 6px;
-          }
-
-          // Active state with modern gradient
-          &.active {
-            background: linear-gradient(135deg,
-              rgba(24, 119, 242, 0.9) 0%,
-              rgba(24, 119, 242, 0.8) 50%,
-              rgba(24, 119, 242, 0.9) 100%
-            );
-            color: #ffffff !important;
-            transform: translateY(-2px);
-            box-shadow:
-              0 8px 25px rgba(24, 119, 242, 0.3),
-              0 4px 12px rgba(24, 119, 242, 0.2),
-              inset 0 1px 0 rgba(255,255,255,0.2);
-            border: 1px solid rgba(255,255,255,0.1);
-
-            .tab-icon {
-              opacity: 1;
-              transform: scale(1.1);
-              color: #ffffff !important; /* active icons become white */
-            }
-
-            .tab-count {
-              background: rgba(255,255,255,0.25);
-              color: #ffffff;
-            }
-
-            // Subtle glow effect
-            &::before {
-              content: '';
-              position: absolute;
-              top: 0;
-              left: 0;
-              right: 0;
-              bottom: 0;
-              background: linear-gradient(135deg,
-                rgba(255,255,255,0.1) 0%,
-                transparent 50%,
-                rgba(255,255,255,0.05) 100%
-              );
-              border-radius: inherit;
-              pointer-events: none;
-            }
-          }
-
-          // Hover state with subtle effects
-          &:hover:not(.active) {
-            background: rgba(24, 119, 242, 0.08);
-            color: themed("textColor");
-            transform: translateY(-1px);
-            box-shadow:
-              0 6px 20px rgba(0,0,0,0.1),
-              0 2px 8px rgba(24, 119, 242, 0.1);
-
-            .tab-icon {
-              opacity: 0.9;
-              transform: scale(1.05);
-            }
-
-            .tab-count {
-              background: rgba(24, 119, 242, 0.15);
-            }
-          }
-
-          // Focus state for accessibility
-          &:focus {
-            outline: none;
-            box-shadow:
-              0 0 0 3px rgba(24, 119, 242, 0.3),
-              0 4px 12px rgba(24, 119, 242, 0.2);
-          }
-
-          // Active ripple effect
-          &.active::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            animation: ripple 0.6s ease-out;
-          }
-        }
-      }
-
-      // Modern User List
-      .connections-list {
-        .user {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          margin: 8px 0;
-          padding: 16px 18px;
-          border-radius: 16px;
-          background: linear-gradient(135deg,
-            themed("bg") 0%,
-            rgba(255,255,255,0.02) 100%
-          );
-          border: 1px solid rgba(255,255,255,0.08);
-          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-          cursor: pointer;
-          position: relative;
-          overflow: hidden;
-          backdrop-filter: blur(10px);
-
-          // Subtle inner shadow for depth
-          &::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg,
-              rgba(255,255,255,0.05) 0%,
-              transparent 50%,
-              rgba(0,0,0,0.02) 100%
-            );
-            border-radius: inherit;
-            pointer-events: none;
-          }
-
-          &:hover {
-            transform: translateY(-3px) scale(1.02);
-            background-color: rgba(24, 119, 242, 0.08);
-            border-color: rgba(24, 119, 242, 0.3);
-          }
-
-          &.online .status-indicator {
-            background: linear-gradient(135deg, #44b700 0%, #4ade80 100%);
-            box-shadow:
-              0 0 0 2px themed("bg"),
-              0 0 0 4px rgba(68, 183, 0, 0.3),
-              0 0 8px rgba(68, 183, 0, 0.4);
-            animation: pulse 2s infinite;
-          }
-
-          &.offline .status-indicator {
-            background: linear-gradient(135deg, #bbb 0%, #999 100%);
-            box-shadow: 0 0 0 2px themed("bg");
-          }
-
-          .userInfo {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            position: relative;
-            flex: 1;
-
-            .profile-image {
-              width: 48px;
-              height: 48px;
-              border-radius: 50%;
-              object-fit: cover;
-              border: 2px solid rgba(255,255,255,0.1);
-              transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-              background: linear-gradient(135deg, themed("bgSoft") 0%, rgba(255,255,255,0.05) 100%);
-              box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-
-              &.fallback {
-                object-fit: contain;
-                padding: 3px;
-                border-color: rgba(0, 0, 0, 0.1);
-                background: themed("bgSoft");
-              }
-
-              &:hover {
-                border-color: rgba(24, 119, 242, 0.4);
-                transform: scale(1.08);
-                box-shadow: 0 4px 16px rgba(24, 119, 242, 0.2);
-              }
-            }
-
-            .status-indicator {
-              width: 14px;
-              height: 14px;
-              border-radius: 50%;
-              position: absolute;
-              bottom: 2px;
-              left: 36px;
-              border: 3px solid themed("bg");
-              transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-              z-index: 2;
-            }
-
-            .user-details {
-              display: flex;
-              flex-direction: column;
-              gap: 3px;
-              flex: 1;
-              min-width: 0; // Allow text truncation
-
-              .user-name {
-                font-weight: 700;
-                font-size: 1rem;
-                color: themed("textColor");
-                letter-spacing: 0.025em;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                max-width: 140px;
-                line-height: 1.2;
-              }
-
-              .user-username {
-                font-size: 0.85rem;
-                color: themed("textColorSoft");
-                font-weight: 500;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                max-width: 140px;
-                opacity: 0.8;
-              }
-            }
-
-            span {
-              font-weight: 500;
-              color: themed("textColor");
-              flex: 1;
-              white-space: nowrap;
-              overflow: hidden;
-              text-overflow: ellipsis;
-            }
-          }
+        svg {
+          width: 18px;
+          height: 18px;
         }
 
-        .no-users {
-          text-align: center;
-          color: themed("textColorSoft");
-          padding: 40px 20px;
-          background: linear-gradient(135deg,
-            themed("bg") 0%,
-            rgba(255,255,255,0.02) 100%
-          );
-          border-radius: 20px;
-          margin: 24px 0;
-          border: 1px solid rgba(255,255,255,0.08);
-          backdrop-filter: blur(10px);
-          animation: fadeIn 0.5s ease;
-          position: relative;
-          overflow: hidden;
+        .count {
+          font-size: 0.75rem;
+          background: rgba(themed("primary"), 0.12);
+          padding: 2px 8px;
+          border-radius: 999px;
+        }
 
-          // Subtle background pattern
-          &::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-image:
-              radial-gradient(circle at 25% 25%, rgba(24, 119, 242, 0.03) 0%, transparent 50%),
-              radial-gradient(circle at 75% 75%, rgba(24, 119, 242, 0.03) 0%, transparent 50%);
-            border-radius: inherit;
-            pointer-events: none;
-          }
+        &:hover {
+          background: rgba(themed("primary"), 0.06);
+        }
 
-          .no-users-icon {
-            display: block;
-            margin-bottom: 16px;
-            opacity: 0.6;
-            filter: grayscale(20%);
-            svg { width: 3.2rem; height: 3.2rem; display:block; }
-          }
+        &.active {
+          color: themed("primary");
+          background: rgba(themed("primary"), 0.1);
+        }
 
-          div {
-            font-size: 1rem;
-            font-weight: 500;
-            color: themed("textColorSoft");
-            letter-spacing: 0.025em;
-          }
+        &:active {
+          transform: scale(0.96);
         }
       }
     }
-  }
-}
 
+    /* ---------------- User List ---------------- */
 
-@keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
+    .user-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+    .user-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      position: relative;
+      transition: background 140ms ease, transform 140ms ease;
 
-@keyframes scaleIn {
-  from { transform: scale(0.95); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
+      &:hover {
+        background: rgba(themed("primary"), 0.05);
+        transform: translateY(-2px);
+      }
 
-@keyframes ripple {
-  0% {
-    width: 0;
-    height: 0;
-    opacity: 1;
-  }
-  100% {
-    width: 120px;
-    height: 120px;
-    opacity: 0;
-  }
-}
+      &.active {
+        background: rgba(themed("primary"), 0.08);
+        border-left: 3px solid themed("primary");
+      }
 
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.2);
-    opacity: 0.7;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
+      &.offline {
+        opacity: 0.55;
+      }
+
+      .avatar-wrap {
+        position: relative;
+
+        img {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          object-fit: cover;
+        }
+
+        .presence-dot {
+          position: absolute;
+          bottom: -1px;
+          right: -1px;
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          border: 2px solid themed("bg");
+          background: #ccc;
+        }
+      }
+
+      &.online .presence-dot {
+        background: #22c55e;
+      }
+
+      .user-meta {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+
+        .name {
+          font-weight: 600;
+          font-size: 0.9rem;
+          color: themed("textColor");
+        }
+
+        .username {
+          font-size: 0.75rem;
+          color: themed("textColorSoft");
+        }
+      }
+
+      .chat-hint {
+        margin-left: auto;
+        font-size: 0.7rem;
+        opacity: 0;
+        transition: opacity 120ms ease;
+      }
+
+      &:hover .chat-hint {
+        opacity: 0.6;
+      }
+
+      /* tooltip for compact mode */
+      &[data-tooltip]::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        left: 110%;
+        top: 50%;
+        transform: translateY(-50%);
+        background: themed("bg");
+        padding: 6px 8px;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      &:hover[data-tooltip]::after {
+        opacity: 1;
+      }
+    }
+
+    .empty {
+      text-align: center;
+      padding: 20px;
+      color: themed("textColorSoft");
+    }
+
+    /* ---------------- Compact Mode ---------------- */
+
+    @media (max-width: 768px) {
+      .user-row {
+        flex-direction: column;
+        padding: 8px;
+
+        .user-meta {
+          font-size: 0.7rem;
+          text-align: center;
+        }
+
+        .chat-hint {
+          display: none;
+        }
+      }
+
+      .tabs .label,
+      .tabs .count {
+        display: none;
+      }
+    }
+
+    /* JS-driven compact mode (mirrors media-query styles) */
+    &.compact {
+      .tabs .label,
+      .tabs .count { display: none !important; }
+
+      .user-row {
+        flex-direction: column;
+        padding: 8px;
+
+        .user-meta { display: none; }
+        .chat-hint { display: none; }
+
+        /* tooltip for compact mode stays handled by data-tooltip */
+      }
+    }
+
+    /* Portrait: vertical tabs — STICKY inside the rightBar (no fixed overlay) */
+    @media (orientation: portrait) and (max-width: 1200px) {
+      .tabs {
+        position: sticky;
+        align-self: flex-start;
+        top: 12px;
+        right: auto;
+        z-index: 1200;
+        flex-direction: column;
+        gap: 8px;
+        width: 56px;
+        padding: 8px;
+        border-radius: 12px;
+        background: themed("bg");
+        border: 1px solid rgba(themed("border"), 0.06);
+        box-shadow: 0 8px 24px rgba(16,24,40,0.06);
+
+        .tab {
+          width: 48px;
+          height: 48px;
+          padding: 6px;
+          justify-content: center;
+          .label, .count { display: none !important; }
+          svg { width: 22px; height: 22px; }
+        }
+      }
+
+      /* keep user-list content visible — no large padding needed */
+      .user-list {
+        margin-top: 8px;
+        padding-right: 0;
+      }
+    }
   }
 }

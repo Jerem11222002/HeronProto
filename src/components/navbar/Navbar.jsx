@@ -377,8 +377,22 @@ const Navbar = () => {
             <span className="heron-text">Heron</span>
           </button>
 
-          <HomeOutlinedIcon />
-          <GridViewOutlinedIcon />
+          <HomeOutlinedIcon
+            onClick={() => navigate("/")}
+            className="nav-icon"
+            title="Home"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate("/"); }}
+          />
+          <GridViewOutlinedIcon
+            onClick={() => navigate("/events")}
+            className="nav-icon"
+            title="Events"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate("/events"); }}
+          />
           <div className="search-container">
             <div className="search-input-wrapper">
               <SearchIcon className="search-icon" />

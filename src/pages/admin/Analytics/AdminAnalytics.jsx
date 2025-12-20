@@ -34,10 +34,15 @@ const formatDate = (d) => {
 
 const AdminAnalytics = () => {
   const [isLoading, setIsLoading] = useState(true);
-  const [overview, setOverview] = useState(null);
-  const [visitorSeries, setVisitorSeries] = useState(null);
-  const [eventDist, setEventDist] = useState(null);
-  const [participantSeries, setParticipantSeries] = useState(null);
+  const [overview, setOverview] = useState({
+    totalUsers: 0,
+    activeEvents: 0,
+    totalRevenue: 0,
+    conversionRate: 0
+  });
+  const [visitorSeries, setVisitorSeries] = useState({ labels: [], values: [] });
+  const [eventDist, setEventDist] = useState({ labels: [], values: [] });
+  const [participantSeries, setParticipantSeries] = useState({ labels: [], values: [] });
   const [from, setFrom] = useState(() => {
     const d = new Date(); d.setMonth(d.getMonth() - 5); return formatDate(d);
   });
@@ -145,22 +150,22 @@ const AdminAnalytics = () => {
       <div className="statsGrid">
         <div className="statCard">
           <h3>Total Users</h3>
-          <p className="statNumber">{overview.totalUsers.toLocaleString()}</p>
+          <p className="statNumber">{(overview?.totalUsers ?? 0).toLocaleString()}</p>
           <span className="statChange positive">—</span>
         </div>
         <div className="statCard">
           <h3>Active Events</h3>
-          <p className="statNumber">{overview.activeEvents}</p>
+          <p className="statNumber">{overview?.activeEvents ?? 0}</p>
           <span className="statChange positive">—</span>
         </div>
         <div className="statCard">
           <h3>Total Revenue</h3>
-          <p className="statNumber">${overview.totalRevenue.toLocaleString()}</p>
+          <p className="statNumber">${(overview?.totalRevenue ?? 0).toLocaleString()}</p>
           <span className="statChange positive">—</span>
         </div>
         <div className="statCard">
           <h3>Conversion Rate</h3>
-          <p className="statNumber">{overview.conversionRate}%</p>
+          <p className="statNumber">{overview?.conversionRate ?? 0}%</p>
           <span className="statChange negative">—</span>
         </div>
       </div>
@@ -171,10 +176,10 @@ const AdminAnalytics = () => {
           <div className="chartContainer">
             <Line
               data={{
-                labels: visitorSeries.labels,
+                labels: visitorSeries?.labels || [],
                 datasets: [{
                   label: 'Visitors',
-                  data: visitorSeries.values,
+                  data: visitorSeries?.values || [],
                   borderColor: 'rgb(75, 192, 192)',
                   tension: 0.3,
                   fill: false
@@ -190,8 +195,8 @@ const AdminAnalytics = () => {
           <div className="chartContainer">
             <Doughnut
               data={{
-                labels: eventDist.labels,
-                datasets: [{ data: eventDist.values, backgroundColor: ['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF'] }]
+                labels: eventDist?.labels || [],
+                datasets: [{ data: eventDist?.values || [], backgroundColor: ['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF'] }]
               }}
               options={{ responsive: true, maintainAspectRatio: false }}
             />
@@ -203,8 +208,8 @@ const AdminAnalytics = () => {
           <div className="chartContainer">
             <Bar
               data={{
-                labels: participantSeries.labels,
-                datasets: [{ label: 'Participants', data: participantSeries.values, backgroundColor: 'rgba(54, 162, 235, 0.5)'}]
+                labels: participantSeries?.labels || [],
+                datasets: [{ label: 'Participants', data: participantSeries?.values || [], backgroundColor: 'rgba(54, 162, 235, 0.5)'}]
               }}
               options={{ responsive: true, maintainAspectRatio: false }}
             />

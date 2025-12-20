@@ -12,6 +12,18 @@ const DEFAULT_PERMISSIONS = {
   canManageSettings: false
 };
 
+const API = process.env.REACT_APP_API_URL || '';
+
+const parseJSONorThrow = async (res) => {
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    const snippet = text ? text.slice(0, 200).replace(/\s+/g, ' ') : '';
+    throw new Error(`Unexpected non-JSON response (status ${res.status}): ${snippet}`);
+  }
+};
+
 const AdminAccounts = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
@@ -38,7 +50,6 @@ const AdminAccounts = () => {
   const modalRef = useRef(null);
   const searchRef = useRef(null);
 
-  // Media query for responsive design — MOVED BEFORE GUARD
   const [isNarrow, setIsNarrow] = useState(
     typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(max-width: 768px)').matches : false
   );
@@ -61,7 +72,7 @@ const AdminAccounts = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch('/api/admin/accounts', {
+      const response = await fetch(`${API}/api/admin/accounts`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('adminToken') || ''}`,
           'Content-Type': 'application/json'
@@ -73,10 +84,11 @@ const AdminAccounts = () => {
           navigate('/admin/login');
           return;
         }
-        throw new Error(`Failed to fetch accounts: ${response.statusText}`);
+        const body = await parseJSONorThrow(response).catch(err => { throw new Error(err.message); });
+        throw new Error(body.message || `Failed to fetch accounts (status ${response.status})`);
       }
 
-      const data = await response.json();
+      const data = await parseJSONorThrow(response);
       setList(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err.message);
@@ -112,7 +124,7 @@ const AdminAccounts = () => {
   const filtered = useMemo(() => {
     if (!query) return list;
     const q = query.toLowerCase();
-    return list.filter(u => (u.username + u.email + (u.name||'')).toLowerCase().includes(q));
+    return list.filter(u => ((u.username || '') + (u.email || '') + (u.name || '')).toLowerCase().includes(q));
   }, [list, query]);
 
   const openCreate = () => {
@@ -149,9 +161,12 @@ const AdminAccounts = () => {
     e?.preventDefault();
     setFormError(null);
 
-    // Validation
-    if (!form.username.trim() || !form.email.trim() || !form.name.trim()) {
-      setFormError('Username, email, and name are required.');
+    if (!form.username.trim() && !editing) {
+      setFormError('Username is required for new accounts.');
+      return;
+    }
+    if (!form.email.trim() || !form.name.trim()) {
+      setFormError('Email and name are required.');
       return;
     }
     if (!editing && !form.password.trim()) {
@@ -162,10 +177,9 @@ const AdminAccounts = () => {
     try {
       setSaving(true);
       const token = localStorage.getItem('adminToken') || '';
-      const url = editing ? `/api/admin/accounts/${editing._id}` : '/api/admin/accounts';
+      const url = editing ? `${API}/api/admin/accounts/${editing._id}` : `${API}/api/admin/accounts`;
       const method = editing ? 'PUT' : 'POST';
 
-      // Build request body
       const body = {
         email: form.email,
         name: form.name,
@@ -173,7 +187,6 @@ const AdminAccounts = () => {
         adminPermissions: form.adminPermissions
       };
 
-      // Only include username and password for new accounts
       if (!editing) {
         body.username = form.username;
         body.password = form.password;
@@ -189,12 +202,15 @@ const AdminAccounts = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Failed to ${editing ? 'update' : 'create'} account`);
+        if (response.status === 401) {
+          navigate('/admin/login');
+          return;
+        }
+        const errBody = await parseJSONorThrow(response).catch(err => { throw new Error(err.message); });
+        throw new Error(errBody.message || `Failed to ${editing ? 'update' : 'create'} account`);
       }
 
-      const savedAdmin = await response.json();
-
+      const savedAdmin = await parseJSONorThrow(response);
       if (editing) {
         setList(prev => prev.map(p => (p._id === editing._id ? savedAdmin.admin : p)));
       } else {
@@ -219,7 +235,7 @@ const AdminAccounts = () => {
 
     try {
       const token = localStorage.getItem('adminToken') || '';
-      const response = await fetch(`/api/admin/accounts/${id}`, {
+      const response = await fetch(`${API}/api/admin/accounts/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -228,8 +244,12 @@ const AdminAccounts = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete account');
+        if (response.status === 401) {
+          navigate('/admin/login');
+          return;
+        }
+        const errBody = await parseJSONorThrow(response).catch(err => { throw new Error(err.message); });
+        throw new Error(errBody.message || 'Failed to delete account');
       }
 
       setList(prev => prev.filter(p => p._id !== id));

@@ -7,6 +7,9 @@
     background-color: themed("bg");
     border-radius: 10px;
     min-height: calc(100vh - 70px);
+    /* Constrain page width and center on wide screens */
+    max-width: 1200px;
+    margin: 0 auto;
 
     /* Filter bar visual improvements */
     &-header {
@@ -18,7 +21,7 @@
 
           /* Search input with subtle icon-like styling */
           input {
-            min-width: 260px;
+            min-width: clamp(160px, 22vw, 320px);
             padding-left: 2.25rem;
             background-image: linear-gradient(90deg, transparent 0 0);
             box-shadow: none;
@@ -116,7 +119,7 @@
             padding: 0.5rem;
             border: 1px solid themed("border");
             border-radius: 4px;
-            min-width: 200px;
+            min-width: clamp(140px, 18vw, 300px);
             background-color: themed("bgSoft");
             color: themed("textColor");
             transition: border-color 0.2s ease, background-color 0.2s ease;
@@ -141,7 +144,7 @@
 
     .events-container {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
       gap: 20px;
       margin-bottom: 2rem;
 
@@ -565,5 +568,12 @@
   .MuiDialog-paper {
     margin: 16px !important;
     max-height: calc(100% - 32px) !important;
+  }
+}
+
+/* Reduce page width on ultra-wide screens to avoid overly stretched layouts */
+@media (min-width: 1600px) {
+  .events {
+    max-width: 1100px;
   }
 }

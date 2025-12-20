@@ -8,6 +8,8 @@ import logger from '../../../utils/logger';
 import { Link } from "react-router-dom";
 import { useSocket } from '../../../context/SocketContext';
 
+const API = process.env.REACT_APP_API_URL || '';
+
 const AdminDashboard = () => {
   const { currentUser } = useAuth();
   const socket = useSocket();
@@ -53,8 +55,8 @@ const AdminDashboard = () => {
       logger.info('admin.dashboard.fetch.start', { timestamp: new Date().toISOString() });
 
       const [statsRes, eventsRes] = await Promise.all([
-        axios.get('/api/admin/stats', config),
-        axios.get('/api/admin/events/upcoming', config)
+        axios.get(`${API}/api/admin/stats`, config),
+        axios.get(`${API}/api/admin/events/upcoming`, config)
       ]);
 
       if (!mounted) return;

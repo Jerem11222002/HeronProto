@@ -32,6 +32,8 @@ const formatDate = (d) => {
   return dt.toISOString().slice(0, 10);
 };
 
+const API = process.env.REACT_APP_API_URL || '';
+
 const AdminAnalytics = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [overview, setOverview] = useState({
@@ -53,16 +55,17 @@ const AdminAnalytics = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // try real endpoints; fallback to mock data if server returns non-OK
       const qs = `?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+      const token = localStorage.getItem('adminToken') || localStorage.getItem('token') || '';
+      const cfg = { headers: { Authorization: token ? `Bearer ${token}` : undefined } };
+
       const [ovRes, visRes, evtRes, partRes] = await Promise.allSettled([
-        axios.get(`/api/admin/analytics/overview${qs}`),
-        axios.get(`/api/admin/analytics/visitors${qs}`),
-        axios.get(`/api/admin/analytics/events-distribution${qs}`),
-        axios.get(`/api/admin/analytics/participants${qs}`)
+        axios.get(`${API}/api/admin/analytics/overview${qs}`, cfg),
+        axios.get(`${API}/api/admin/analytics/visitors${qs}`, cfg),
+        axios.get(`${API}/api/admin/analytics/events-distribution${qs}`, cfg),
+        axios.get(`${API}/api/admin/analytics/participants${qs}`, cfg)
       ]);
 
-      // helper to unwrap or null
       const unwrap = (r) => (r.status === 'fulfilled' && r.value && r.value.data) ? r.value.data : null;
 
       const ov = unwrap(ovRes);
@@ -70,7 +73,10 @@ const AdminAnalytics = () => {
       const evt = unwrap(evtRes);
       const part = unwrap(partRes);
 
-      // fallback to local mock if any piece is missing
+      if (!ov || !vis || !evt || !part) {
+        setError('Some analytics endpoints failed or returned invalid data; showing fallback values.');
+      }
+
       setOverview(ov || {
         totalUsers: 4521, activeEvents: 27, totalRevenue: 24500, conversionRate: 3.2
       });
@@ -100,7 +106,6 @@ const AdminAnalytics = () => {
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
   const exportCSV = useCallback(() => {
-    // export visitor & participant series as CSV
     const rows = [];
     const labels = visitorSeries?.labels || [];
     rows.push(['date', 'visitors', 'participants'].join(','));

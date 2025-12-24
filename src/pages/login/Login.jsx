@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useRef, useEffect } from "react";
 import { AuthContext } from "../../context/authContext";
 import { useNavigate } from "react-router-dom";
 import { saveAuthData, clearAuthData } from "../../utils/tokenManager";
@@ -13,6 +13,7 @@ const Login = () => {
   const [error, setError] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
+  const usernameRef = useRef(null);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -119,9 +120,27 @@ const Login = () => {
     setPassword("");
   };
 
+  // keyboard shortcuts: Ctrl/Cmd+Shift+A => toggle admin mode; Ctrl/Cmd+Shift+S => go to register
+  useEffect(() => {
+    const onKey = (e) => {
+      const meta = e.ctrlKey || e.metaKey;
+      if (!meta || !e.shiftKey) return;
+      if (e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        setIsAdmin(true);
+        setTimeout(() => usernameRef.current?.focus(), 50);
+      }
+      if (e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        navigate('/register');
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [navigate]);
+
   return (
     <div className="login">
-      <img src={umakLogo} alt="UMak Logo" className="school-logo" /> 
       <div className="card">
         <div className="left">
           <h1>Heron Fusion</h1>
@@ -148,12 +167,14 @@ const Login = () => {
           )}
         </div>
         <div className="right">
+          <img src={umakLogo} alt="UMak Logo" className="school-logo" />
           <h1>{isAdmin ? 'Admin Login' : 'Login'}</h1>
           <form onSubmit={handleLogin}>
             {error && <div className="error-message">{error}</div>}
             <input
               type="text"
               placeholder="Username"
+              ref={usernameRef}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
@@ -179,6 +200,15 @@ const Login = () => {
             <p className="forgot-password-link">
               <a href="/forgot-password">Forgot your password?</a>
             </p>
+
+            <div className="shortcuts">
+              <button type="button" className="link" onClick={() => { setIsAdmin(true); setTimeout(() => usernameRef.current?.focus(), 50); }}>
+                Quick admin login
+              </button>
+              <button type="button" className="link" onClick={() => navigate('/register')}>
+                Quick signup
+              </button>
+            </div>
           </form>
         </div>
       </div>

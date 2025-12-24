@@ -97,7 +97,6 @@ const Register = () => {
   
   return (
     <div className="register">
-      <img src={umakLogo} alt="UMak Logo" className="school-logo" /> {/* <-- new element */}
       <div className="card">
         <div className="left">
           <h1>Heron Fusion</h1>
@@ -106,6 +105,13 @@ const Register = () => {
           <button onClick={() => navigate("/login")}>Login</button>
         </div>
         <div className="right">
+          {/* panel logo centered above the heading */}
+          <img src={umakLogo} alt="UMak Logo" className="school-logo panel-logo" />
+          {/* UI shortcut for users who already have an account */}
+          <div className="panel-quick">
+            <span>Already have an account?</span>
+            <button type="button" className="quick-login" onClick={() => navigate('/login')}>Login</button>
+          </div>
           <h1>Register</h1>
           <form onSubmit={handleRegister}>
             <label htmlFor="usernameInput" className="sr-only">Username</label>

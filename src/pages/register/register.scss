@@ -1,7 +1,11 @@
 @use '../../style.scss' as *;
 
 .register {
-  height: 100vh;
+  min-height: 100vh;
+  height: auto;
+  overflow-y: auto;
+  /* prevent horizontal shifting/movement */
+  overflow-x: hidden;
   background: linear-gradient(to bottom, #6A9CE9, #8353CA, #A753CE, #EB98B6, #999999);
   display: flex;
   align-items: center;
@@ -24,13 +28,17 @@
   }
 
   .card {
-    width: min(90vw, 1200px);
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+  width: min(90vw, 1200px);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
     background-color: white;
     border-radius: 16px;
     min-height: 600px;
-    overflow: hidden;
+  overflow: hidden;
+  /* allow internal scrolling when viewport is constrained */
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  margin: 0 auto;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
     gap: 0;
 
@@ -95,6 +103,48 @@
       gap: clamp(25px, 4vw, 40px);
       justify-content: center;
 
+      /* override when logo is rendered inside the panel */
+      .school-logo {
+        position: relative;
+        top: auto;
+        left: auto;
+        transform: none;
+        margin: 0 auto clamp(12px, 2.5vw, 18px);
+        width: clamp(64px, 10vw, 110px);
+        height: auto;
+        pointer-events: none;
+        box-shadow: none;
+        display: block;
+      }
+
+      .panel-quick {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: clamp(6px, 1.5vw, 12px);
+
+        span {
+          color: #6c757d;
+          font-size: clamp(0.9rem, 1.3vw, 1rem);
+        }
+
+        .quick-login {
+          background: transparent;
+          border: none;
+          color: #8353CA;
+          font-weight: 700;
+          cursor: pointer;
+          text-decoration: underline;
+          padding: 4px 8px;
+          border-radius: 6px;
+
+          &:hover {
+            color: #6A9CE9;
+          }
+        }
+      }
+
       h1 {
         color: #1a1a1a;
         font-size: clamp(1.8rem, 4vw, 2.5rem);
@@ -119,6 +169,10 @@
           transition: all 0.3s ease;
           border-radius: 8px 8px 0 0;
           font-family: inherit;
+
+          /* ensure inputs take full available width */
+          width: 100%;
+          box-sizing: border-box;
 
           &:focus {
             border-bottom-color: #8353CA;
@@ -386,23 +440,29 @@
       padding-top: 80px;
 
       .left {
-        padding: clamp(15px, 3vw, 30px);
-        min-height: 250px;
-        h1 {
-          font-size: clamp(1.5rem, 3.5vw, 2.5rem);
-        }
+        /* hide the left/marketing column on small devices for focus */
+        display: none;
       }
 
       .right {
         padding: clamp(15px, 3vw, 30px);
+        /* make form centered and comfortable on small screens */
+        width: 100%;
+
+        form {
+          width: 100%;
+          max-width: 560px;
+          margin: 0 auto;
+        }
       }
     }
 
     .school-logo {
-      top: -60px;
+      /* place logo above the card, centered on mobile */
+      top: 12px;
       left: 50%;
       transform: translateX(-50%);
-      width: clamp(55px, 5vw, 72px);
+      width: clamp(55px, 12vw, 72px);
     }
   }
 

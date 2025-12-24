@@ -1,7 +1,9 @@
 @use '../../style.scss' as *;
 
 .login {
-  height: 100vh;
+  min-height: 100vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   background: linear-gradient(to bottom, #6A9CE9, #8353CA, #A753CE, #EB98B6, #999999);
   display: flex;
   align-items: center;
@@ -254,6 +256,22 @@
             }
           }
         }
+        .shortcuts {
+          display: flex;
+          justify-content: center;
+          gap: 12px;
+          margin-top: 6px;
+
+          .link {
+            background: transparent;
+            border: none;
+            color: var(--primary, #8353CA);
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-decoration: underline;
+            padding: 4px 8px;
+          }
+        }
       }
     }
   }
@@ -338,6 +356,10 @@
       .left {
         padding: clamp(20px, 3.5vw, 35px);
         min-height: 280px;
+
+          /* center left panel content on narrower screens */
+          align-items: center;
+          text-align: center;
 
         h1 {
           font-size: clamp(2rem, 4.5vw, 3.5rem);
@@ -461,6 +483,13 @@
 
         h1 { font-size: 1.4rem; }
 
+        /* center the logo inside the right panel and align with the heading */
+        .school-logo {
+          display: block;
+          margin: 0 auto 8px auto;
+          width: clamp(64px, 10vw, 96px);
+        }
+
         form {
           gap: 12px;
 
@@ -500,6 +529,17 @@
       transform: translateX(-50%);
     }
   }
+
+/* Ensure logo inside right panel is centered on larger breakpoints too */
+.login .card .right .school-logo {
+  display: block;
+  margin: 0 auto 12px auto;
+  width: clamp(64px, 8vw, 100px);
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
+  transform: none !important;
+}
 
   /* Special handling for portrait orientation on larger screens */
   @media (max-width: 1200px) and (orientation: portrait) {
@@ -568,4 +608,31 @@
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-10px); }
   75% { transform: translateX(10px); }
+}
+
+/* Force-hide left panel and ensure full-width form on very small devices */
+@media (max-width: 600px) {
+  .login .card {
+    grid-template-columns: 1fr !important;
+  }
+
+  .login .card .left {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .login .card .right {
+    padding: 14px !important;
+  }
+
+  .login .school-logo {
+    position: relative !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    margin-bottom: 12px !important;
+  }
 }

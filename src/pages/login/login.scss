@@ -450,76 +450,54 @@
       gap: 1rem;
       min-height: auto;
 
+      /* On small screens we hide the decorative left panel to reduce clutter
+         and let the right (form) panel occupy the full width. */
       .left {
-        padding: clamp(15px, 3vw, 20px);
-        min-height: 300px;
-
-        h1 {
-          font-size: clamp(1.5rem, 3.5vw, 2.5rem);
-        }
-
-        p {
-          font-size: clamp(0.8rem, 1.6vw, 0.9rem);
-        }
-
-        .loginTypeSwitch {
-          margin: clamp(12px, 2vw, 15px) 0;
-
-          button {
-            padding: clamp(7px, 1.2vw, 8px);
-            font-size: clamp(0.8rem, 1.3vw, 0.9rem);
-          }
-        }
-
-        span {
-          font-size: clamp(0.75rem, 1.3vw, 0.85rem);
-        }
-
-        button:not(.loginTypeSwitch button) {
-          width: clamp(130px, 45%, 160px);
-          padding: clamp(9px, 1.6vw, 10px);
-        }
+        display: none;
       }
 
       .right {
-        padding: clamp(15px, 3vw, 20px);
+        padding: 18px 16px; /* tighter padding for small screens */
 
-        h1 {
-          font-size: clamp(1.3rem, 2.5vw, 1.6rem);
-        }
+        h1 { font-size: 1.4rem; }
 
         form {
-          gap: clamp(12px, 2vw, 18px);
+          gap: 12px;
 
           .error-message {
-            padding: clamp(8px, 1.4vw, 10px);
-            font-size: clamp(0.8rem, 1.2vw, 0.9rem);
+            padding: 10px;
+            font-size: 0.9rem;
           }
 
           input {
-            padding: clamp(12px, 2vw, 15px) 10px;
-            /* keep minimum 16px on small screens to avoid iOS zoom */
-            font-size: clamp(16px, 1.4vw, 18px);
-            -webkit-text-size-adjust: 100%;
+            padding: 12px 10px;
+            font-size: 18px; /* avoid iOS zoom and improve tap targets */
+            width: 100%;
+            box-sizing: border-box;
           }
 
           button {
             width: 100%;
-            padding: clamp(12px, 1.8vw, 14px);
+            padding: 12px 14px;
+            font-size: 1rem;
           }
 
-          .forgot-password-link {
-            font-size: clamp(0.8rem, 1.2vw, 0.9rem);
-          }
+          .forgot-password-link { font-size: 0.9rem; }
         }
       }
     }
 
+    /* Center the site logo on mobile above the card and remove overlap */
     .school-logo {
-      top: -60px;
+      position: relative;
+      top: auto;
+      left: auto;
+      transform: none;
+      margin: 0 0 12px auto;
+      display: block;
+      width: clamp(60px, 8vw, 100px);
       left: 50%;
       transform: translateX(-50%);
-      width: clamp(50px, 4vw, 60px);
     }
   }
 

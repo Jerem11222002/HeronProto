@@ -26,6 +26,7 @@ import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
 import { EventsProvider } from "./context/EventsContext";
 import FullScreenPostPage from "./components/post/FullScreenPostPage"; // <-- add this import
 import EventDetailPage from "./pages/admin/Dashboard/EventDetailPage";
+import Landing from "./pages/Landing/Landing";
 
 // Admin imports - standard format
 import AdminLayout from "./components/admin/Layout/AdminLayout";
@@ -105,37 +106,23 @@ function AppContent() {
   console.log('adminPermissions', currentUser?.adminPermissions);
 
   const router = createBrowserRouter([
-    // User Routes
+    // User Routes: show Landing for anonymous visitors, app layout for authenticated users
     {
       path: "/",
-      element: <ProtectedRoute><Layout darkMode={darkMode} /></ProtectedRoute>,
-      children: [
+      element: currentUser ? <ProtectedRoute><Layout darkMode={darkMode} /></ProtectedRoute> : <Landing />,
+      children: currentUser ? [
         {
           index: true,
-          element: currentUser ? (
-            isAdmin ? <Navigate to="/admin/dashboard" replace /> :
-            !currentUser.interestsSelected ? <Navigate to={`/interests/${currentUser.id}`} /> :
-            !currentUser.profileSetup ? <Navigate to="/setup-profile" /> :
-            <Home />
-          ) : <Navigate to="/login" />
+          element: isAdmin ? <Navigate to="/admin/dashboard" replace /> :
+                   !currentUser.interestsSelected ? <Navigate to={`/interests/${currentUser.id}`} /> :
+                   !currentUser.profileSetup ? <Navigate to="/setup-profile" /> :
+                   <Home />
         },
-        {
-          path: "profile/:userId",
-          element: isAdmin ? <Navigate to="/admin/dashboard" replace /> : <Profile />
-        },
-        {
-          path: "settings",
-          element: isAdmin ? <Navigate to="/admin/settings" replace /> : <Settings />
-        },
-        {
-          path: "events",
-          element: isAdmin ? <Navigate to="/admin/events" replace /> : <Events />
-        },
-        {
-          path: "pre-registration/:eventId",  // Changed to match the folder structure
-          element: isAdmin ? <Navigate to="/admin/events" replace /> : <PreRegister />
-        }
-      ],
+        { path: "profile/:userId", element: isAdmin ? <Navigate to="/admin/dashboard" replace /> : <Profile /> },
+        { path: "settings", element: isAdmin ? <Navigate to="/admin/settings" replace /> : <Settings /> },
+        { path: "events", element: isAdmin ? <Navigate to="/admin/events" replace /> : <Events /> },
+        { path: "pre-registration/:eventId", element: isAdmin ? <Navigate to="/admin/events" replace /> : <PreRegister /> }
+      ] : []
     },
     // Admin Routes
     {
@@ -247,6 +234,10 @@ function AppContent() {
     {
       path: '/reset-password',
       element: <ResetPassword />
+    },
+    {
+      path: "/landing",
+      element: <Landing />
     }
   ]);
 

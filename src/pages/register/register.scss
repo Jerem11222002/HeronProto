@@ -34,66 +34,63 @@
     background-color: white;
     border-radius: 16px;
     min-height: 600px;
-  overflow: hidden;
-  /* allow internal scrolling when viewport is constrained */
-  max-height: calc(100vh - 80px);
-  overflow-y: auto;
-  margin: 0 auto;
+    /* ensure the card has a definite height so grid children can constrain and scroll */
+    height: calc(100vh - 80px);
+    /* bound the card to the viewport so internal panels can scroll independently */
+    max-height: calc(100vh - 80px);
+    overflow: hidden; /* prevent the card itself from scrolling */
+    margin: 0 auto;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
     gap: 0;
+    align-items: start;
 
     .left {
       background: linear-gradient(rgba(39, 11, 96, 0.5), rgba(39, 11, 96, 0.5)),
         url("../../assets/umak-picture.png") center / cover no-repeat;
       background-size: cover;
       padding: clamp(30px, 5vw, 50px);
+      /* keep left panel anchored while right panel scrolls */
+      position: sticky;
+      top: clamp(28px, 3.5vh, 48px);
+      height: 100%;
+      align-self: stretch;
       display: flex;
       flex-direction: column;
       gap: clamp(20px, 3vw, 30px);
       color: white;
       justify-content: center;
 
+      /* anchor the heading & subheading so they don't shift while scrolling */
       h1 {
+        position: absolute;
+        top: 38%; /* responsive vertical placement to match login */
+        left: clamp(28px, 4vw, 48px);
+        right: clamp(28px, 4vw, 48px);
+        transform: translateY(-50%);
         font-size: clamp(2.5rem, 6vw, 5rem);
         line-height: 1.1;
         font-weight: 700;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
         margin: 0;
+        z-index: 2;
+        max-height: 40vh;
+        overflow-wrap: break-word;
       }
-      
+
       p {
+        position: absolute;
+        top: 52%; /* sits just below the heading */
+        left: clamp(28px, 4vw, 48px);
+        right: clamp(28px, 4vw, 48px);
+        transform: translateY(-10%);
         font-size: clamp(0.9rem, 2vw, 1.1rem);
         line-height: 1.6;
-        opacity: 0.9;
         margin: 0;
-      }
-
-      span {
-        font-size: clamp(0.8rem, 1.5vw, 0.9rem);
-        opacity: 0.8;
-        margin: 0;
+        z-index: 2;
+        max-width: 46ch;
+        opacity: 0.95;
       }
       
-      button {
-        width: clamp(150px, 30%, 200px);
-        padding: 12px 24px;
-        border: 2px solid white;
-        background-color: transparent;
-        color: white;
-        font-weight: 600;
-        cursor: pointer;
-        border-radius: 12px;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        font-size: clamp(0.9rem, 1.5vw, 1rem);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-
-        &:hover {
-          background-color: white;
-          color: rebeccapurple;
-          transform: translateY(-2px);
-          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-        }
-      }
     }
 
     .right {
@@ -101,7 +98,10 @@
       display: flex;
       flex-direction: column;
       gap: clamp(25px, 4vw, 40px);
-      justify-content: center;
+      justify-content: flex-start;
+      /* keep header/logo fixed; allow inner form to scroll */
+      min-height: 0; /* allow child to shrink so overflow works */
+      max-height: 100%;
 
       /* override when logo is rendered inside the panel */
       .school-logo {
@@ -129,19 +129,33 @@
           font-size: clamp(0.9rem, 1.3vw, 1rem);
         }
 
-        .quick-login {
+        .link,
+        .quick-login,
+        .quick-signup {
           background: transparent;
           border: none;
           color: #8353CA;
           font-weight: 700;
           cursor: pointer;
           text-decoration: underline;
-          padding: 4px 8px;
+          padding: 6px 10px;
           border-radius: 6px;
+          font-size: clamp(0.9rem, 1.2vw, 1rem);
+          transition: color 0.18s ease, transform 0.12s ease;
+        }
 
-          &:hover {
-            color: #6A9CE9;
-          }
+        .link:hover,
+        .quick-login:hover,
+        .quick-signup:hover {
+          color: #6A9CE9;
+          transform: translateY(-1px);
+        }
+
+        /* make quick-signup visually distinct on narrow screens if needed */
+        .quick-signup {
+          text-decoration: none;
+          background: rgba(131,83,202,0.06);
+          padding: 6px 12px;
         }
       }
 
@@ -153,7 +167,19 @@
         text-align: center;
       }
       
+      /* make only the form scrollable so logo + heading stay fixed */
       form {
+        flex: 1 1 auto;
+        min-height: 0; /* required for flex child scrolling */
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch; /* momentum scrolling on iOS */
+        overscroll-behavior: contain; /* prevent page scroll bleed */
+          /* ensure last form controls (submit button) can scroll fully into view
+            Keep the actual padding small to avoid large blank area at the end
+            but use `scroll-padding-bottom` to provide space when programmatically
+            scrolling into view. */
+          padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+          scroll-padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 96px);
         display: flex;
         flex-direction: column;
         gap: clamp(20px, 3vw, 30px);
@@ -288,6 +314,10 @@
           box-shadow: 0 4px 16px rgba(131, 83, 202, 0.2);
           position: relative;
           overflow: hidden;
+          flex-shrink: 0; /* prevent flex layout from shrinking the button */
+          margin-bottom: 8px; /* small breathing room without creating big blank area */
+          min-height: 44px;
+          z-index: 2;
 
           &:hover:not(:disabled) {
             transform: translateY(-2px);
@@ -307,6 +337,11 @@
         }
       }
     }
+  }
+
+  /* helpers: show some controls only on narrow screens where left panel is hidden */
+  .mobile-only {
+    display: none !important;
   }
 
   // Responsive styles using shared mixins
@@ -463,6 +498,14 @@
       left: 50%;
       transform: translateX(-50%);
       width: clamp(55px, 12vw, 72px);
+    }
+
+    /* reveal mobile-only shortcuts when left panel is hidden */
+    .mobile-only {
+      display: flex !important;
+      justify-content: center;
+      gap: 10px;
+      text-align: center;
     }
   }
 

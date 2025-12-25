@@ -101,17 +101,18 @@ const Register = () => {
         <div className="left">
           <h1>Heron Fusion</h1>
           <p>Showcase your talent and connect with others!</p>
-          <span>Already have an account?</span>
-          <button onClick={() => navigate("/login")}>Login</button>
+          {/* left-panel shortcuts removed — shortcuts now shown in right panel for consistent UX */}
         </div>
         <div className="right">
           {/* panel logo centered above the heading */}
           <img src={umakLogo} alt="UMak Logo" className="school-logo panel-logo" />
-          {/* UI shortcut for users who already have an account */}
+
+          {/* panel-quick: visible on desktop and mobile (styles already present in register.scss) */}
           <div className="panel-quick">
             <span>Already have an account?</span>
-            <button type="button" className="quick-login" onClick={() => navigate('/login')}>Login</button>
+            <button type="button" className="quick-login" onClick={() => navigate("/login")}>Login</button>
           </div>
+
           <h1>Register</h1>
           <form onSubmit={handleRegister}>
             <label htmlFor="usernameInput" className="sr-only">Username</label>

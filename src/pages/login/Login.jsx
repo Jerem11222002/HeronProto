@@ -145,29 +145,23 @@ const Login = () => {
         <div className="left">
           <h1>Heron Fusion</h1>
           <p>Showcase your talent and connect with others!</p>
-          <div className="loginTypeSwitch">
-            <button 
-              className={!isAdmin ? 'active' : ''} 
-              onClick={() => handleLoginTypeSwitch(false)}
-            >
-              User Login
-            </button>
-            <button 
-              className={isAdmin ? 'active' : ''} 
-              onClick={() => handleLoginTypeSwitch(true)}
-            >
-              Admin Login
-            </button>
-          </div>
-          {!isAdmin && (
-            <>
-              <span>Don't have an account?</span>
-              <button onClick={() => navigate("/register")}>Register</button>
-            </>
-          )}
+          
         </div>
         <div className="right">
           <img src={umakLogo} alt="UMak Logo" className="school-logo" />
+
+          {/* panel-quick: use same structure/classes as register's login shortcut for consistent styling */}
+          <div className="panel-quick">
+            <span>Don't have an account?</span>
+            <button
+              type="button"
+              className="quick-login"
+              onClick={() => { navigate("/register"); setTimeout(() => usernameRef.current?.focus(), 50); }}
+            >
+              Sign up
+            </button>
+          </div>
+
           <h1>{isAdmin ? 'Admin Login' : 'Login'}</h1>
           <form onSubmit={handleLogin}>
             {error && <div className="error-message">{error}</div>}
@@ -201,14 +195,7 @@ const Login = () => {
               <a href="/forgot-password">Forgot your password?</a>
             </p>
 
-            <div className="shortcuts">
-              <button type="button" className="link" onClick={() => { setIsAdmin(true); setTimeout(() => usernameRef.current?.focus(), 50); }}>
-                Quick admin login
-              </button>
-              <button type="button" className="link" onClick={() => navigate('/register')}>
-                Quick signup
-              </button>
-            </div>
+            
           </form>
         </div>
       </div>

@@ -18,16 +18,23 @@
     background-color: white;
     border-radius: 16px;
     min-height: 600px;
-    overflow: hidden;
+    /* bound the card to the viewport so internal panels can scroll independently */
+    max-height: calc(100vh - 80px);
+    overflow: hidden; /* keep overflow hidden on the card itself */
+    /* allow internal scrolling via the right panel (not the page) */
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
     gap: 0;
 
     .left {
-      position: relative;
+      /* keep left panel visually anchored while right panel scrolls */
+      position: sticky;
+      top: clamp(28px, 3.5vh, 48px);
       background: linear-gradient(rgba(39, 11, 96, 0.5), rgba(39, 11, 96, 0.5)),
         url("../../assets/umak-picture.png") center / cover no-repeat;
       background-size: cover;
       padding: clamp(30px, 5vw, 50px);
+      height: 100%;
+      align-self: stretch;
       display: flex;
       flex-direction: column;
       gap: clamp(20px, 3vw, 30px);
@@ -135,6 +142,9 @@
       flex-direction: column;
       gap: clamp(25px, 4vw, 40px);
       justify-content: center;
+      /* make right panel an independent scroll area */
+      overflow-y: auto;
+      max-height: 100%;
 
       h1 {
         color: #1a1a1a;
@@ -273,7 +283,55 @@
           }
         }
       }
+
+      /* panel-quick: compact action row for desktop+mobile */
+      .panel-quick {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: clamp(6px, 1.5vw, 12px);
+
+        span {
+          color: #6c757d;
+          font-size: clamp(0.9rem, 1.3vw, 1rem);
+        }
+
+        .link,
+        .quick-login,
+        .quick-signup {
+          background: transparent;
+          border: none;
+          color: #8353CA;
+          font-weight: 700;
+          cursor: pointer;
+          text-decoration: underline;
+          padding: 6px 10px;
+          border-radius: 6px;
+          font-size: clamp(0.9rem, 1.2vw, 1rem);
+          transition: color 0.18s ease, transform 0.12s ease;
+        }
+
+        .link:hover,
+        .quick-login:hover,
+        .quick-signup:hover {
+          color: #6A9CE9;
+          transform: translateY(-1px);
+        }
+
+        /* make quick-signup visually distinct on narrow screens if needed */
+        .quick-signup {
+          text-decoration: none;
+          background: rgba(131,83,202,0.06);
+          padding: 6px 12px;
+        }
+      }
     }
+  }
+
+  /* helpers: show some controls only on narrow screens where left panel is hidden */
+  .mobile-only {
+    display: none !important;
   }
 
   /* site logo placed at top-left of the page */
@@ -481,6 +539,8 @@
       .right {
         padding: 18px 16px; /* tighter padding for small screens */
 
+        
+
         h1 { font-size: 1.4rem; }
 
         /* center the logo inside the right panel and align with the heading */
@@ -527,6 +587,13 @@
       width: clamp(60px, 8vw, 100px);
       left: 50%;
       transform: translateX(-50%);
+    }
+
+    /* reveal mobile-only shortcuts when left panel is hidden */
+    .mobile-only {
+      display: flex !important;
+      justify-content: center;
+      gap: 12px;
     }
   }
 

@@ -118,6 +118,7 @@ const Login = () => {
     setError("");
     setUsername("");
     setPassword("");
+    setTimeout(() => usernameRef.current?.focus(), 50);
   };
 
   // keyboard shortcuts: Ctrl/Cmd+Shift+A => toggle admin mode; Ctrl/Cmd+Shift+S => go to register
@@ -145,7 +146,6 @@ const Login = () => {
         <div className="left">
           <h1>Heron Fusion</h1>
           <p>Showcase your talent and connect with others!</p>
-          
         </div>
         <div className="right">
           <img src={umakLogo} alt="UMak Logo" className="school-logo" />
@@ -161,6 +161,18 @@ const Login = () => {
               Sign up
             </button>
           </div>
+
+          {/* compact toggle icon placed at the top-right of the right panel */}
+          <button
+            type="button"
+            className="loginToggleIcon"
+            onClick={() => handleLoginTypeSwitch(!isAdmin)}
+            aria-pressed={isAdmin}
+            aria-label={isAdmin ? 'Switch to user login' : 'Switch to admin login'}
+            title={isAdmin ? 'Admin — click to switch to User' : 'User — click to switch to Admin'}
+          >
+            {isAdmin ? '🔒' : '👤'}
+          </button>
 
           <h1>{isAdmin ? 'Admin Login' : 'Login'}</h1>
           <form onSubmit={handleLogin}>

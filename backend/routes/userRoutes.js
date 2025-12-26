@@ -277,7 +277,7 @@ router.post("/follow/:userId", authenticateToken, async (req, res) => {
 
     // If it's a mutual follow, create another notification
     if (isMutualFollow) {
-      await Notification.create({
+      const mutualNotification = await Notification.create({
         userId: currentUser._id,
         senderId: userToFollow._id,
         type: 'follow_accept',
@@ -321,7 +321,7 @@ router.post("/follow/:userId", authenticateToken, async (req, res) => {
       io.emit('notification:new', {
         userId: currentUser._id,
         type: 'follow_accept',
-        notification
+        notification: mutualNotification
       });
     }
 

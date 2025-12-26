@@ -392,6 +392,16 @@ app.get('/api/health', (req, res) => {
   return res.json({ status: 'ok', time: new Date().toISOString(), pid: process.pid });
 });
 
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) return next();
+
+  res.sendFile(
+    path.join(__dirname, 'build', 'index.html'),
+    err => err && next(err)
+  );
+});
+
+
 logger.info('🔌 Admin analytics router mounted at /api/admin/analytics');
 // Error Handlers
 app.use((err, req, res, next) => {

@@ -92,7 +92,7 @@ const AdminRoute = ({ children }) => {
 };
 
 function AppContent() {
-  const { currentUser, isAdmin } = useContext(AuthContext);
+  const { currentUser, isAdmin, loading } = useContext(AuthContext);
   const { darkMode } = useContext(DarkModeContext);
 
   // Helper for admin permission checks
@@ -105,7 +105,13 @@ function AppContent() {
   console.log('adminRole', currentUser?.adminRole);
   console.log('adminPermissions', currentUser?.adminPermissions);
 
-  const router = createBrowserRouter([
+  // Create a temporary loading router while auth initializes to avoid
+  // "No route matches URL" errors on refresh. Hooks must remain unconditional.
+  const router = loading
+    ? createBrowserRouter([
+        { path: '*', element: <div className="loading-spinner">Loading...</div> }
+      ])
+    : createBrowserRouter([
     // User Routes: show Landing for anonymous visitors, app layout for authenticated users
     {
       path: "/",

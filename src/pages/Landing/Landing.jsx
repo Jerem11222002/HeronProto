@@ -119,6 +119,8 @@ const Landing = () => {
 
   // --- NEW: mobile nav state ---
   const [mobileOpen, setMobileOpen] = useState(false);
+  const navRightRef = useRef(null);
+  const burgerRef = useRef(null);
 
   // close mobile menu on escape
   useEffect(() => {
@@ -126,6 +128,48 @@ const Landing = () => {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
+
+  // focus trap + outside-click for mobile menu
+  useEffect(() => {
+    const node = navRightRef.current;
+    if (!node) return;
+    const previouslyFocused = document.activeElement;
+    const focusableSelector = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const getFocusable = () => Array.from(node.querySelectorAll(focusableSelector)).filter(n => n.offsetParent !== null);
+
+    function handleKey(e) {
+      if (!mobileOpen) return;
+      if (e.key !== 'Tab') return;
+      const list = getFocusable();
+      if (list.length === 0) { e.preventDefault(); return; }
+      const first = list[0];
+      const last = list[list.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    }
+
+    function onDocClick(e) {
+      if (!mobileOpen) return;
+      if (node.contains(e.target) || burgerRef.current?.contains(e.target)) return;
+      setMobileOpen(false);
+    }
+
+    if (mobileOpen) {
+      const list = getFocusable();
+      (list[0] || node).focus();
+      document.addEventListener('keydown', handleKey);
+      document.addEventListener('mousedown', onDocClick);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKey);
+      document.removeEventListener('mousedown', onDocClick);
+      try { previouslyFocused?.focus?.(); } catch (e) {}
+    };
+  }, [mobileOpen]);
 
   return (
     <main className="landingPage" role="main">
@@ -144,6 +188,7 @@ const Landing = () => {
             aria-controls="primary-navigation"
             aria-expanded={mobileOpen}
             onClick={() => setMobileOpen(v => !v)}
+            ref={burgerRef}
           >
             <span className="hamburgerBox">
               <span className="hamburgerInner" />
@@ -151,7 +196,7 @@ const Landing = () => {
           </button>
 
           {/* navRight becomes collapsible on small screens */}
-          <div id="primary-navigation" className={`navRight ${mobileOpen ? 'isOpen' : ''}`}>
+          <div id="primary-navigation" ref={navRightRef} className={`navRight ${mobileOpen ? 'isOpen' : ''}`}>
             <a href="#about" className="navLink" onClick={() => setMobileOpen(false)}>About</a>
             <Link to="/events" className="navLink" onClick={() => setMobileOpen(false)}>Explore</Link>
             <Link to="/register" className="navLink primary" onClick={() => { trackEvent('cta_click', { label: 'Get Started' }); setMobileOpen(false); }}>Get Started</Link>

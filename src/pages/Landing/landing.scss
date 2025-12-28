@@ -397,8 +397,10 @@ html {
         display: inline-flex;
         width: 100%;
         justify-content: flex-start;
-        padding: 10px 12px;
+        padding: 12px 14px;
         border-radius: 8px;
+        min-height: 44px; /* larger touch targets */
+        font-size: 1rem;
       }
     }
 
@@ -808,10 +810,13 @@ html {
   /* Mobile-specific refinements */
   @media (max-width: 560px) {
     .landingHero {
-      padding: 28px 12px 40px;
+      padding: 20px 12px 32px; /* reduce vertical padding to keep primary CTA visible */
       .heroText { text-align: center; }
-      .heroVisual { order: 2; .mockup { max-width: 100%; } .mockSvg { max-height: 260px; } }
+      .heroTitle { font-size: clamp(28px, 7.2vw, 44px); line-height:1.03; margin-bottom:10px; }
+      .heroDesc { font-size: 15px; line-height:1.6; max-width: 52ch; margin-bottom:12px; }
+      .heroVisual { order: 2; .mockup { max-width: 100%; } .mockSvg { max-height: 240px; } }
       .badges { justify-content: center; flex-wrap: wrap; gap: 8px; }
+      .ctaRow .btn.primary { padding: 14px 20px; font-weight:700; font-size:1rem; }
     }
 
     .recentStrip {
@@ -854,4 +859,14 @@ html {
   .categoryStrip .pills { justify-content:center; }
   .features .featureGrid { grid-template-columns: 1fr; }
   .ctaStrip .stripInner { flex-direction: column; align-items: stretch; gap:12px; }
+}
+
+/* Ensure the fixed navbar does not overlap the topmost hero on narrow screens.
+   This adds a small mobile-only top offset driven by --nav-height. */
+@media (max-width: 920px) {
+  .landingPage { padding-top: calc(var(--nav-height) + 12px); }
+}
+
+@media (max-width: 560px) {
+  .landingPage { padding-top: calc(var(--nav-height) + 14px); }
 }

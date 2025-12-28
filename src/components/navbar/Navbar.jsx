@@ -66,6 +66,7 @@ const Navbar = () => {
   const abortControllerRef = useRef(null);
   const searchResultsRef = useRef(null);
   const audioRef = useRef(null);
+  
 
   // State
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -74,6 +75,15 @@ const Navbar = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [showMobileOverlay, setShowMobileOverlay] = useState(false);
+  const mobileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (showMobileOverlay && mobileInputRef.current) {
+      // small timeout to ensure element is mounted
+      setTimeout(() => mobileInputRef.current && mobileInputRef.current.focus(), 50);
+    }
+  }, [showMobileOverlay]);
 
   // Chat dropdown state
   const [showFriendsDropdown, setShowFriendsDropdown] = useState(false);
@@ -131,6 +141,20 @@ const Navbar = () => {
       handleSearch(query);
     }, SEARCH_DEBOUNCE);
   }, [handleSearch]);
+
+  // When the search icon is clicked: on small screens open overlay, on desktop focus input
+  const handleSearchIconClick = useCallback(() => {
+    try {
+      if (typeof window !== 'undefined' && window.innerWidth <= 520) {
+        setShowMobileOverlay(true);
+      } else {
+        const el = document.getElementById('navSearch');
+        if (el) el.focus();
+      }
+    } catch (err) {
+      setShowMobileOverlay(true);
+    }
+  }, []);
 
   // Navigation handlers
   const handleProfileClick = useCallback(async () => {
@@ -393,10 +417,18 @@ const Navbar = () => {
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate("/events"); }}
           />
+          {/* unified search icon (click focuses desktop input; opens overlay on small screens) */}
+          <SearchIcon
+            onClick={handleSearchIconClick}
+            className="nav-icon mobile-search-toggle"
+            title="Search"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleSearchIconClick(); }}
+          />
           <div className="search-container">
             <div className="search-input-wrapper">
-              <SearchIcon className="search-icon" />
-              {/* Screen-reader label for accessibility / Wave */}
+              {/* Screen-reader label for accessibility */}
               <label htmlFor="navSearch" className="sr-only">Search users</label>
               <input
                 id="navSearch"
@@ -565,6 +597,49 @@ const Navbar = () => {
           )}
         </div>
       </div>
+      {/* Mobile search overlay (opened when tapping the magnifier on small screens) */}
+      {showMobileOverlay && (
+        <div className="mobile-search-overlay" role="dialog" aria-label="Search users">
+          <div className="mobile-search-inner">
+            <SearchIcon className="nav-icon" />
+            <input
+              ref={mobileInputRef}
+              id="mobileNavSearch"
+              type="text"
+              placeholder="Search users..."
+              value={searchQuery}
+              onChange={handleSearchInputChange}
+              onFocus={() => setShowSearchResults(true)}
+            />
+            <button className="close-search" onClick={() => { setShowMobileOverlay(false); setShowSearchResults(false); }} aria-label="Close search">×</button>
+          </div>
+          {showSearchResults && (
+            <div className="search-results mobile" ref={searchResultsRef}>
+              {isSearching ? (
+                <div className="search-loading"><CircularProgress size={20} /></div>
+              ) : searchResults.length > 0 ? (
+                searchResults.map((user) => (
+                  <Link
+                    key={user._id}
+                    to={`/profile/${user._id}`}
+                    className="search-result-item"
+                    onClick={() => { setShowSearchResults(false); setShowMobileOverlay(false); }}
+                  >
+                    <img
+                      src={getImageUrl(user.profilePic)}
+                      alt={user.name}
+                      onError={(e) => { e.target.onerror = null; e.target.src = createSilhouetteIcon({ bg: "#f2f4f8", fg: "#99a1b3", size: 128 }); }}
+                    />
+                    <span>{user.name}</span>
+                  </Link>
+                ))
+              ) : searchQuery ? (
+                <div className="no-results">No users found</div>
+              ) : null}
+            </div>
+          )}
+        </div>
+      )}
       {/* Multiple Chat Popups rendered outside navbar for correct fixed positioning */}
       {openChats.map((friend, idx) => (
         <ChatPopup

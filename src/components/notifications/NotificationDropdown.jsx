@@ -10,6 +10,18 @@ const NotificationDropdown = ({ onClose }) => {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== 'undefined' ? window.innerWidth <= 480 : false
+  );
+  const [navOffset, setNavOffset] = useState(() => {
+    if (typeof window === 'undefined') return 64;
+    const nav = document.querySelector('nav, .navbar, header, .topbar');
+    if (!nav) return 64;
+    const rect = nav.getBoundingClientRect();
+    const style = window.getComputedStyle(nav);
+    const isFixed = style.position === 'fixed' || style.position === 'sticky';
+    return isFixed ? Math.ceil(rect.bottom) : Math.ceil(rect.bottom + window.scrollY);
+  });
 
   const fetchNotifications = async (pageNum = 1) => {
     try {
@@ -73,16 +85,68 @@ const NotificationDropdown = ({ onClose }) => {
       });
     }
 
+    const onResize = () => {
+      setIsMobile(window.innerWidth <= 480);
+      const nav = document.querySelector('nav, .navbar, header, .topbar');
+      if (!nav) {
+        setNavOffset(64);
+        return;
+      }
+      const rect = nav.getBoundingClientRect();
+      const style = window.getComputedStyle(nav);
+      const isFixed = style.position === 'fixed' || style.position === 'sticky';
+      setNavOffset(isFixed ? Math.ceil(rect.bottom) : Math.ceil(rect.bottom + window.scrollY));
+    };
+
+    const onScroll = () => {
+      const nav = document.querySelector('nav, .navbar, header, .topbar');
+      if (!nav) return;
+      const rect = nav.getBoundingClientRect();
+      const style = window.getComputedStyle(nav);
+      const isFixed = style.position === 'fixed' || style.position === 'sticky';
+      if (!isFixed) {
+        setNavOffset(Math.ceil(rect.bottom + window.scrollY));
+      }
+    };
+
+    window.addEventListener('resize', onResize);
+    window.addEventListener('scroll', onScroll, { passive: true });
+
     return () => {
       if (socket) {
         socket.off('notification:new');
       }
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('scroll', onScroll);
     };
   }, []);
 
+  const mobileCenterStyle = isMobile
+    ? (()=>{
+        const topPx = (navOffset || 64) + 8;
+        const maxH = typeof window !== 'undefined' ? Math.max(window.innerHeight - topPx - 16, 120) : 400;
+        return {
+          position: 'fixed',
+          left: '50%',
+          top: `${topPx}px`,
+          transform: 'translateX(-50%)',
+          zIndex: 2000,
+          width: '92vw',
+          maxWidth: 420,
+          maxHeight: `${maxH}px`,
+          overflowY: 'auto',
+          borderRadius: 8,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+          background: '#fff',
+          padding: 8,
+          boxSizing: 'border-box'
+        };
+      })()
+    : undefined;
+
   if (error) {
     return (
-      <div className="notification-dropdown error">
+      <div className="notification-dropdown error" style={mobileCenterStyle}>
         <p>{error}</p>
         <button onClick={() => fetchNotifications(1)} className="retry-button">
           Retry
@@ -92,7 +156,7 @@ const NotificationDropdown = ({ onClose }) => {
   }
 
   return (
-    <div className="notification-dropdown">
+    <div className="notification-dropdown" style={mobileCenterStyle}>
       <div className="notification-header">
         <h3>Notifications</h3>
         {notifications.length > 0 && (

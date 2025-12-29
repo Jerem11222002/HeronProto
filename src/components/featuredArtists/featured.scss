@@ -454,35 +454,48 @@ $video-indicator-color: white;
       --fa-preview-h: 90px;
       padding: 12px;
 
+      /* make the featured list a horizontal, swipeable carousel */
       .featured-list {
-        grid-template-columns: 1fr; /* stack cards vertically */
+        display: flex;
+        flex-direction: row;
         gap: 12px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x mandatory;
+        padding-bottom: 6px;
+        /* ensure the carousel doesn't cause page horizontal scroll */
+        width: 100%;
+        box-sizing: border-box;
       }
 
+      /* each card becomes a snap-aligned slide */
       .featured-item {
+        flex: 0 0 86%;              /* visible width of each slide (adjustable) */
+        max-width: 86%;
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
         padding: 16px;
         min-height: auto;
+        margin-inline: 6px;
+      }
 
-        .artist-preview {
-          gap: 12px;
-          .artist-avatar img { width: var(--fa-avatar-size); height: var(--fa-avatar-size); }
-          .recent-posts-container {
-            .recent-posts {
-              overflow-x: auto;
-              -webkit-overflow-scrolling: touch;
-              padding-bottom: 4px;
-              /* preview cards stay inline and don't expand the parent */
-              .post-preview { flex: 0 0 auto; min-width: var(--fa-preview-w); width: var(--fa-preview-w); height: var(--fa-preview-h); }
-            }
+      .artist-preview {
+        gap: 12px;
+        .artist-avatar img { width: var(--fa-avatar-size); height: var(--fa-avatar-size); }
+        .recent-posts-container {
+          .recent-posts {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 4px;
+            .post-preview { flex: 0 0 auto; min-width: var(--fa-preview-w); width: var(--fa-preview-w); height: var(--fa-preview-h); }
           }
         }
+      }
 
-        .artist-info {
-          .info-left { flex-direction: column; align-items: flex-start; }
-          .compact-stats { gap: 8px; }
-        }
+      .artist-info {
+        .info-left { flex-direction: column; align-items: flex-start; }
+        .compact-stats { gap: 8px; }
       }
     }
-
   } /* themify */
 } /* .featured */

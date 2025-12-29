@@ -91,6 +91,14 @@ $transition-duration: 0.2s;
   }
 }
 
+/* New: wrapper used by NotificationBell to help center dropdown on small screens */
+.notification-dropdown-wrapper {
+  /* default: no layout impact on desktop */
+  position: static;
+  display: block;
+  pointer-events: none; /* allow dropdown itself to receive pointer-events when positioned */
+}
+
 .notification-dropdown {
   position: absolute;
   top: calc(100% + 12px);
@@ -106,6 +114,7 @@ $transition-duration: 0.2s;
   z-index: 1000;
   overflow: hidden;
   animation: dropdownEnter 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  pointer-events: auto; /* ensure it can be interacted with when visible */
 
   &::before {
     content: '';
@@ -314,29 +323,68 @@ $transition-duration: 0.2s;
 
   // Mobile styles
   @media (max-width: 480px) {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    height: 100vh;
-    max-height: none;
-    border-radius: 0;
-    border: none;
-    animation: mobileDropdownEnter 0.3s ease forwards;
-
-    &::before {
-      display: none;
-    }
-
-    .notification-list {
-      height: calc(100vh - $header-height);
+    .notification-dropdown {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      height: 100vh;
       max-height: none;
-      padding: 12px;
+      border-radius: 0;
+      border: none;
+      animation: mobileDropdownEnter 0.3s ease forwards;
+
+      &::before { display: none; }
+
+      .notification-list {
+        height: calc(100vh - $header-height);
+        max-height: none;
+        padding: 12px;
+      }
+
+      .notification-item { margin-bottom: 8px; }
     }
 
-    .notification-item {
-      margin-bottom: 8px;
+    /* ensure the wrapper doesn't block layout on very small screens */
+    .notification-dropdown-wrapper { position: fixed; inset: 0; pointer-events: none; }
+  }
+
+  /* Centering behavior for small but not tiny screens (prevent right overflow) */
+  @media (max-width: 720px) and (min-width: 481px) {
+    /* keep a wrapper so clicks inside dropdown are handled, but center the dropdown itself */
+    .notification-dropdown-wrapper {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 0;                 /* wrapper does not take space */
+      pointer-events: none;
+      z-index: 1200;
+      display: block;
+      padding: 0 8px;
+      box-sizing: border-box;
+    }
+
+    /* make the dropdown fixed and centered in the viewport */
+    .notification-dropdown {
+      position: fixed !important;
+      top: calc(#{$header-height} + 8px);
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+      width: min(92%, $notification-width) !important;
+      max-width: 92% !important;
+      box-sizing: border-box;
+      pointer-events: auto;
+      margin: 0 !important;
+
+      /* center the caret above the dropdown */
+      &::before {
+        left: 50% !important;
+        right: auto !important;
+        transform: translateX(-50%) rotate(45deg) !important;
+        top: -6px;
+      }
     }
   }
 

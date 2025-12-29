@@ -202,10 +202,14 @@ $shadows: (
         position: absolute;
         top: calc(100% + 12px);
         right: 0;
-        width: 260px;
+        min-width: 280px;
+        width: min(420px, 100%);
+        max-width: calc(100vw - 48px);
+        max-height: 60vh;
+        overflow-y: auto;
         border-radius: 16px;
         animation: slideIn 0.2s ease;
-        overflow: hidden;
+        overflow: hidden; /* inner items still scroll via overflow-y above */
 
         .dropdown-item {
           padding: 12px 16px;
@@ -235,16 +239,18 @@ $shadows: (
       // Enhanced Friends Dropdown
       .friends-dropdown {
         position: absolute;
-        top: calc(100% + 12px);
-        right: 60px;
-        width: 320px;
-        max-height: 420px;
+        top: calc(100% + 8px); /* same vertical offset as notifications */
+        right: 12px;            /* align to the right edge like notifications */
+        min-width: 280px;
+        width: min(420px, 100%);
+        max-width: calc(100vw - 48px);
+        max-height: 60vh;
         background: rgba(themed('bg'), 0.98);
-        border-radius: 18px;
+        border-radius: 12px;
         box-shadow: map-get($shadows, 'pop');
-        border: 1px solid rgba(themed('border'), 0.08);
+        border: 1px solid rgba(themed('border'), 0.06);
         overflow-y: auto;
-        z-index: 1001;
+        z-index: 1205; /* match notification z-index so it stacks similarly */
         animation: slideIn 0.2s ease;
         padding-bottom: 8px;
 
@@ -788,6 +794,7 @@ $shadows: (
       }
     }
 
+    /* keep the default fixed mobile placement as a fallback, inline mobile styles in JS will override */
     .right .dropdown-menu,
     .right .friends-dropdown,
     .right .notification-dropdown-wrapper {

@@ -78,6 +78,94 @@ const Navbar = () => {
   const [showMobileOverlay, setShowMobileOverlay] = useState(false);
   const mobileInputRef = useRef(null);
 
+  // Added: mobile detection and navbar bottom offset so friends-dropdown sits below the navbar on narrow screens
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== 'undefined' ? window.innerWidth <= 480 : false
+  );
+  const [navOffset, setNavOffset] = useState(() => {
+    if (typeof window === 'undefined') return 64;
+    const nav = document.querySelector('.navbar, nav, header, .topbar');
+    if (!nav) return 64;
+    const rect = nav.getBoundingClientRect();
+    const style = window.getComputedStyle(nav);
+    const isFixed = style.position === 'fixed' || style.position === 'sticky';
+    return isFixed ? Math.ceil(rect.bottom) : Math.ceil(rect.bottom + window.scrollY);
+  });
+
+  useEffect(() => {
+    const updateNavOffset = () => {
+      setIsMobile(window.innerWidth <= 480);
+      const nav = document.querySelector('.navbar, nav, header, .topbar');
+      if (!nav) {
+        setNavOffset(64);
+        return;
+      }
+      const rect = nav.getBoundingClientRect();
+      const style = window.getComputedStyle(nav);
+      const isFixed = style.position === 'fixed' || style.position === 'sticky';
+      setNavOffset(isFixed ? Math.ceil(rect.bottom) : Math.ceil(rect.bottom + window.scrollY));
+    };
+
+    updateNavOffset();
+    window.addEventListener('resize', updateNavOffset);
+    window.addEventListener('scroll', updateNavOffset, { passive: true });
+    return () => {
+      window.removeEventListener('resize', updateNavOffset);
+      window.removeEventListener('scroll', updateNavOffset);
+    };
+  }, []);
+
+  // compute mobile inline style for friends dropdown (centers it below navbar, sets maxHeight)
+  const mobileFriendsStyle = isMobile
+    ? (() => {
+        const topPx = (navOffset || 64) + 8;
+        // Cap maxHeight to 60vh (same as notification dropdown) minus navbar height
+        const maxH = typeof window !== 'undefined' ? Math.min(window.innerHeight - topPx - 16, Math.max(window.innerHeight * 0.6, 200)) : 400;
+        return {
+          position: 'fixed',
+          left: '50%',
+          top: `${topPx}px`,
+          transform: 'translateX(-50%)',
+          zIndex: 2000,
+          width: '92vw',
+          maxWidth: '420px',
+          height: `${maxH}px`, // Use fixed height instead of maxHeight
+          overflow: 'hidden', // Hide overflow
+          overflowY: 'auto', // Enable scrolling
+          borderRadius: 8,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+          background: '#fff',
+          padding: 8,
+          boxSizing: 'border-box'
+        };
+      })()
+    : undefined;
+
+  // Added: mobile inline style for user dropdown — similar size but nudged left so it doesn't overflow right edge
+  const mobileUserMenuStyle = isMobile
+    ? (() => {
+        const topPx = (navOffset || 64) + 8;
+        const maxH = typeof window !== 'undefined' ? Math.max(window.innerHeight - topPx - 16, 120) : 320;
+        return {
+          position: 'fixed',
+          // center then nudge left a bit to avoid overflowing right edge
+          left: '50%',
+          top: `${topPx}px`,
+          transform: 'translateX(-55%)',
+          zIndex: 2000,
+          width: '84vw',
+          maxWidth: 420,
+          maxHeight: `${maxH}px`,
+          overflowY: 'auto',
+          borderRadius: 8,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+          background: '#fff',
+          padding: 6,
+          boxSizing: 'border-box'
+        };
+      })()
+    : undefined;
+
   useEffect(() => {
     if (showMobileOverlay && mobileInputRef.current) {
       // small timeout to ensure element is mounted
@@ -497,7 +585,7 @@ const Navbar = () => {
           )}
           {/* Friends Dropdown */}
           {showFriendsDropdown && (
-            <div className="friends-dropdown">
+            <div className="friends-dropdown" style={isMobile ? mobileFriendsStyle : undefined}>
               <div className="dropdown-header">Chats</div>
               {loadingFriends ? (
                 <div className="dropdown-loading"><CircularProgress size={20} /></div>
@@ -583,7 +671,7 @@ const Navbar = () => {
           </div>
           
           {dropdownOpen && (
-            <div className="dropdown-menu">
+            <div className="dropdown-menu" style={isMobile ? mobileUserMenuStyle : undefined}>
               <div className="dropdown-item" onClick={handleProfileClick}>
                 {isLoading ? <CircularProgress size={16} /> : "Profile"}
               </div>

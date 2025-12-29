@@ -467,72 +467,95 @@
           }
         }
 
-        .follow-container {
-          margin-top: 30px;
+        /* New meta-row to utilize extra vertical space */
+        .meta-row {
           display: flex;
           flex-direction: column;
-          align-items: center; // Changed from flex-start
-          gap: 15px;
+          gap: 12px;
           width: 100%;
+          align-items: stretch;
+          margin-top: 6px;
 
-          .follow-button {
-            position: relative;
-            padding: 12px 35px;
-            font-size: 16px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            border: none;
-            border-radius: 25px;
-            background: linear-gradient(135deg, #5271ff 0%, #3f57ff 100%);
-            color: white;
-            cursor: pointer;
-            overflow: hidden;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 6px 20px rgba(82, 113, 255, 0.25);
+          .quick-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
 
-            &.following {
-              background: rgba(themed("bg"), 0.8);
-              color: themed("textColor");
-              border: 2px solid rgba(themed("border"), 0.2);
-
-              &:hover {
-                background: #ff3838;
-                color: white;
-                border-color: transparent;
-              }
-            }
-
-            &.mutual {
-              background: #4caf50;
+            .qa-btn {
+              padding: 8px 12px;
+              border-radius: 999px;
               border: none;
+              background: rgba(themed("bg"), 0.6);
+              color: themed("textColor");
+              font-weight: 600;
+              cursor: pointer;
+              transition: all 0.12s ease;
+              text-decoration: none;
+              display: inline-flex;
+              align-items: center;
+              gap: 8px;
 
-              &:hover {
-                background: #388e3c;
+              &.primary {
+                background: linear-gradient(135deg, #5271ff, #3f57ff);
+                color: #fff;
+                box-shadow: 0 6px 18px rgba(82,113,255,0.12);
               }
-            }
 
-            &:disabled {
-              opacity: 0.7;
-              cursor: not-allowed;
+              &:hover { transform: translateY(-3px); }
             }
           }
 
-          .error-message, .success-message {
-            padding: 10px 20px;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 500;
-            text-align: center; // Added for consistency
+          .highlights {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+
+            .highlight {
+              background: rgba(themed("bg"), 0.35);
+              color: themed("textColor");
+              padding: 6px 10px;
+              border-radius: 999px;
+              font-size: 13px;
+              font-weight: 600;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            }
           }
 
-          .error-message {
-            background: rgba(255, 82, 82, 0.1);
-            color: #ff5252;
+          .mini-activity {
+            display: flex;
+            gap: 8px;
+            flex-direction: row;
+            overflow-x: auto;
+            padding: 6px 4px;
+            -webkit-overflow-scrolling: touch;
+
+            .activity-item {
+              min-width: 160px;
+              max-width: 220px;
+              background: rgba(themed("bg"), 0.35);
+              padding: 8px 10px;
+              border-radius: 10px;
+              box-shadow: 0 6px 12px rgba(0,0,0,0.04);
+              cursor: pointer;
+              display: flex;
+              flex-direction: column;
+              gap: 6px;
+
+              .act-title { font-weight: 600; font-size: 13px; color: themed("textColor"); }
+              .act-time { font-size: 12px; color: themed("textColorSoft"); }
+            }
           }
 
-          .success-message {
-            background: rgba(76, 175, 80, 0.1);
-            color: #4caf50;
+          .compact-followers {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+
+            .MuiAvatar-root { width: 36px !important; height: 36px !important; border: 2px solid rgba(255,255,255,0.65); cursor: pointer; }
+            .more-count { color: themed("textColorSoft"); font-weight: 600; font-size: 13px; padding-left: 6px; }
           }
         }
       }

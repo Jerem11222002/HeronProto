@@ -1,5 +1,6 @@
 // src/components/chat/ChatPopup.jsx
 import React, { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 import axios from 'axios';
 import Message from './Message';
@@ -9,7 +10,7 @@ import { useSocket } from '../../context/SocketContext'; // Adjust the import ba
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
-const ChatPopup = ({ friend, onClose, style, messages: externalMessages }) => {
+const ChatPopupInternal = ({ friend, onClose, style, messages: externalMessages }) => {
   const [messages, setMessages] = useState([]);
   const [conversationId, setConversationId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -94,6 +95,16 @@ const ChatPopup = ({ friend, onClose, style, messages: externalMessages }) => {
 
   if (!friend) return null;
 
+  // Normalize incoming style: prevent accidental `top` positioning
+  // (some callers pass `top` which causes the popup to render out-of-bounds)
+  const appliedStyle = { ...(style || {}) };
+  // Force position: fixed to escape any positioned ancestors (e.g., navbar)
+  appliedStyle.position = 'fixed';
+  // Disallow explicit `top` to preserve bottom-anchored popup behavior
+  if ('top' in appliedStyle) delete appliedStyle.top;
+  // Ensure a sensible default bottom if caller didn't provide one
+  if (!('bottom' in appliedStyle)) appliedStyle.bottom = '24px';
+
   const handleSendMessage = async (text) => {
     if (!conversationId) return;
     try {
@@ -117,7 +128,7 @@ const ChatPopup = ({ friend, onClose, style, messages: externalMessages }) => {
   };
 
   return (
-    <div className="chat-popup" style={style}>
+    <div className="chat-popup" style={appliedStyle}>
       <div className="header">
         <div className="friend-info">
           <img src={friend.avatar || "/assets/person/Default.jpg"} alt={friend.name} className="avatar" />
@@ -145,7 +156,7 @@ const ChatPopup = ({ friend, onClose, style, messages: externalMessages }) => {
   );
 };
 
-ChatPopup.propTypes = {
+ChatPopupInternal.propTypes = {
   friend: PropTypes.shape({
     _id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
     name: PropTypes.string.isRequired,
@@ -154,4 +165,11 @@ ChatPopup.propTypes = {
   style: PropTypes.object,
 };
 
-export default ChatPopup;
+// Wrapper component that renders ChatPopupInternal via React Portal
+const ChatPopupPortal = (props) => {
+  const portalRoot = typeof document !== 'undefined' ? document.body : null;
+  if (!portalRoot) return null;
+  return ReactDOM.createPortal(<ChatPopupInternal {...props} />, portalRoot);
+};
+
+export default ChatPopupPortal;

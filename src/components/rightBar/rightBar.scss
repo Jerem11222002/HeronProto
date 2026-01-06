@@ -11,6 +11,8 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
+      height: 100%;
+      min-height: 0;
     }
 
     /* ---------------- Tabs ---------------- */
@@ -71,6 +73,30 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(themed("textColorSoft"), 0.3) transparent;
+
+      /* WebKit browsers (Chrome, Safari, Edge) */
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: rgba(themed("textColorSoft"), 0.3);
+        border-radius: 3px;
+
+        &:hover {
+          background: rgba(themed("textColorSoft"), 0.5);
+        }
+      }
     }
 
     .user-row {
@@ -178,8 +204,7 @@
       color: themed("textColorSoft");
     }
 
-    /* ---------------- Compact Mode ---------------- */
-
+    /* Compact Mode - hide scrollbar on smaller screens */
     @media (max-width: 768px) {
       .user-row {
         flex-direction: column;
@@ -199,6 +224,15 @@
       .tabs .count {
         display: none;
       }
+
+      /* Hide scrollbar but keep scrolling functional */
+      .user-list {
+        scrollbar-width: none;
+
+        &::-webkit-scrollbar {
+          display: none;
+        }
+      }
     }
 
     /* JS-driven compact mode (mirrors media-query styles) */
@@ -214,6 +248,15 @@
         .chat-hint { display: none; }
 
         /* tooltip for compact mode stays handled by data-tooltip */
+      }
+
+      /* Hide scrollbar on compact mode but keep scrolling functional */
+      .user-list {
+        scrollbar-width: none;
+
+        &::-webkit-scrollbar {
+          display: none;
+        }
       }
     }
 

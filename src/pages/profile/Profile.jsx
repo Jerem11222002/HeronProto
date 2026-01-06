@@ -297,8 +297,56 @@ const Profile = () => {
     setUserData(userPayload);
     setUserPosts(sortedPosts);
 
-    // --- NEW: friendsData should contain ONLY mutual friends (followers ∩ following)
+    // Fetch mutual friends from relationships endpoint (ensures full user objects)
     try {
+      const token = localStorage.getItem('token');
+      const relationshipsResp = await axios.get(
+        `${API_URL}/api/users/relationships/${resolvedUserId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (relationshipsResp.data.success && relationshipsResp.data.data) {
+        const mutualFriends = relationshipsResp.data.data.mutualFriends || [];
+        setFriendsData(mutualFriends);
+      } else {
+        setFriendsData([]);
+      }
+    } catch (e) {
+      console.warn('Could not fetch relationships:', e);
+      setFriendsData([]);
+    }
+
+  } catch (error) {
+    console.error("❌ Profile fetch error:", error);
+    setError(error.response?.data?.message || error.message || "Failed to load profile data");
+  } finally {
+    setLoading(false);
+  }
+}, [resolvedUserId, API_URL, isOwnProfile, currentUser]);
+
+  // Refetch only the friends list (without full profile reload)
+  const refetchFriendsList = useCallback(async () => {
+    if (!resolvedUserId) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      };
+
+      console.log('🔄 Refetching friends list for:', resolvedUserId);
+
+      const userResponse = await axios.get(`${API_URL}/api/users/${resolvedUserId}`, config);
+      const userPayload = userResponse?.data?.data ?? userResponse?.data;
+
+      if (!userPayload) return;
+
+      // Compute mutual friends from the fresh data
       const rawFollowers = Array.isArray(userPayload.followers) ? userPayload.followers : [];
       const rawFollowing = Array.isArray(userPayload.following) ? userPayload.following : [];
 
@@ -312,49 +360,41 @@ const Profile = () => {
 
       const followerIds = rawFollowers.map(idOf).filter(Boolean);
       const followingIds = rawFollowing.map(idOf).filter(Boolean);
-
-      // intersection (mutual friends)
       const mutualIds = followerIds.filter(id => followingIds.includes(id) && id !== String(userPayload._id));
 
       if (mutualIds.length === 0) {
         setFriendsData([]);
       } else {
-        // fetch lightweight profile info (avatar, name, username) in one request
-        const token = localStorage.getItem('token');
-        const resp = await axios.get(`${API_URL}/api/profile/profile-pics?userIds=${mutualIds.join(',')}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        try {
+          const resp = await axios.get(`${API_URL}/api/profile/profile-pics?userIds=${mutualIds.join(',')}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
 
-        const profileMap = (resp.data && resp.data.data) ? resp.data.data : {};
+          const profileMap = (resp.data && resp.data.data) ? resp.data.data : {};
 
-        // Build ordered friends array using mutualIds order
-        const friendsArr = mutualIds.map(id => {
-          // try to use any full object available in followers/following
-          const fromRaw = rawFollowers.find(r => idOf(r) === id) || rawFollowing.find(r => idOf(r) === id) || {};
-          return {
-            _id: id,
-            name: fromRaw.name || (profileMap[id] && profileMap[id].name) || 'Unknown',
-            username: fromRaw.username || (profileMap[id] && profileMap[id].username) || '',
-            email: fromRaw.email || (profileMap[id] && profileMap[id].email) || '',
-            profilePic: fromRaw.profilePic || (profileMap[id] && profileMap[id].profilePic) || getDefaultProfilePic(fromRaw.sex)
-          };
-        });
+          const friendsArr = mutualIds.map(id => {
+            const fromRaw = rawFollowers.find(r => idOf(r) === id) || rawFollowing.find(r => idOf(r) === id) || {};
+            return {
+              _id: id,
+              name: fromRaw.name || (profileMap[id] && profileMap[id].name) || 'Unknown',
+              username: fromRaw.username || (profileMap[id] && profileMap[id].username) || '',
+              email: fromRaw.email || (profileMap[id] && profileMap[id].email) || '',
+              profilePic: fromRaw.profilePic || (profileMap[id] && profileMap[id].profilePic) || getDefaultProfilePic(fromRaw.sex)
+            };
+          });
 
-        setFriendsData(friendsArr);
+          setFriendsData(friendsArr);
+          console.log('✅ Friends list updated:', friendsArr.length);
+        } catch (e) {
+          console.warn('Could not fetch profile pics for friends:', e);
+          setFriendsData([]);
+        }
       }
-    } catch (e) {
-      console.warn('Could not build friends list:', e);
-      setFriendsData([]);
+    } catch (error) {
+      console.error("❌ Error refetching friends list:", error);
     }
-    // --- END NEW
+  }, [resolvedUserId, API_URL]);
 
-  } catch (error) {
-    console.error("❌ Profile fetch error:", error);
-    setError(error.response?.data?.message || error.message || "Failed to load profile data");
-  } finally {
-    setLoading(false);
-  }
-}, [resolvedUserId, API_URL, isOwnProfile, currentUser]);
   // Initial Data Load Effect
   useEffect(() => {
     let isActive = true;
@@ -385,8 +425,12 @@ const Profile = () => {
     if (!socket || !isConnected) return;
 
     const handleFollowUpdate = async (data) => {
-      if (data.followedId === resolvedUserId || data.followerId === currentUser?._id) {
+      // Refresh if the profile being viewed is involved in the follow action
+      // OR if the current user is involved (for their own profile updates)
+      if (data.followedId === resolvedUserId || data.followerId === resolvedUserId || data.followerId === currentUser?._id) {
         console.log('📨 Follow update received:', data);
+        // Clear friends data to ensure fresh state
+        setFriendsData([]);
         await Promise.all([
           fetchProfileData(),
           fetchUserRelationships(currentUser._id)
@@ -574,8 +618,10 @@ const Profile = () => {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Please login to follow users");
 
+      // Choose endpoint based on current follow state
+      const endpoint = isFollowing ? 'unfollow' : 'follow';
       const response = await axios.post(
-        `${API_URL}/api/users/follow/${resolvedUserId}`,
+        `${API_URL}/api/users/${endpoint}/${resolvedUserId}`,
         {
           followerId: currentUser._id,
           followerName: currentUser.name,
@@ -590,7 +636,7 @@ const Profile = () => {
         const isNowFollowing = !isFollowing;
         setIsFollowing(isNowFollowing);
 
-        socket?.emit('follow:update', {
+        socket?.emit('follow:updated', {
           followerId: currentUser._id,
           followedId: resolvedUserId,
           followerName: currentUser.name,
@@ -613,6 +659,9 @@ const Profile = () => {
           `Successfully ${isNowFollowing ? 'followed' : 'unfollowed'} ${userData.name}`
         );
 
+        // Clear friends data before refetching to ensure fresh state
+        setFriendsData([]);
+        
         await Promise.all([
           fetchProfileData(),
           fetchUserRelationships(currentUser._id)
@@ -1256,7 +1305,7 @@ const Profile = () => {
               <div className="error-message">{friendsError}</div>
             ) : friendsData.length > 0 ? (
               friendsData
-                .filter(friend => friend._id !== currentUser._id) // Exclude self
+                .filter(friend => isOwnProfile ? friend._id !== currentUser._id : true) // Only exclude self when viewing own profile
                 .map(friend => (
                   <div
                     key={friend._id}

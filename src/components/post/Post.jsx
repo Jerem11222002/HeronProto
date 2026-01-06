@@ -567,14 +567,15 @@ const Post = ({ post, onDeletePost, onAddSharedPost, showOnly, fullScreen, showD
             <span className="label">shares</span>
           </div>
           {/* Show Full Post Button - now in metrics row */}
-          <Link
-            to={`/post/${post._id}`}
-
-            className="show-full-post-btn"
-            aria-label="Show full post"
-          >
-            Show Full Post
-          </Link>
+          {(post.media || post.img) && (
+            <Link
+              to={`/post/${post._id}`}
+              className="show-full-post-btn"
+              aria-label="Show full post"
+            >
+              Show Full Post
+            </Link>
+          )}
         </div>
         <div className="info">
           <div 

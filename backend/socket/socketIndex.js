@@ -6,13 +6,17 @@ const sessionStore = require('../services/sessionStore');
 const initializeSocket = (server) => {
   const io = socketIo(server, {
     path: '/socket.io/',
+    transports: ['polling', 'websocket'],
     cors: {
       origin: (origin, callback) => {
         const allowed = [
           "http://localhost:3000",
           "http://127.0.0.1:3000",
+          "http://localhost:5000",
+          "http://127.0.0.1:5000",
           process.env.CLIENT_URL,
           process.env.FRONTEND_URL,
+          process.env.DEPLOYMENT_URL,
           ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map(s => s.trim()) : [])
         ].filter(Boolean);
         
@@ -32,6 +36,11 @@ const initializeSocket = (server) => {
           if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
             return callback(null, true);
           }
+          
+          // Allow Vercel deployments
+          if (url.hostname.endsWith('.vercel.app')) {
+            return callback(null, true);
+          }
         } catch (e) {
           // ignore
         }
@@ -40,8 +49,13 @@ const initializeSocket = (server) => {
         return callback(new Error('CORS not allowed for Socket.IO'));
       },
       methods: ["GET", "POST"],
-      credentials: true
-    }
+      credentials: true,
+      allowEIO3: true
+    },
+    pingInterval: 30000,
+    pingTimeout: 60000,
+    upgradeTimeout: 10000,
+    maxHttpBufferSize: 1e6
   });
 
   // Track online users
@@ -75,17 +89,24 @@ const initializeSocket = (server) => {
 
   io.on('connection', (socket) => {
     console.log('👤 User connected:', socket.userId);
+    console.log('🔌 Socket ID:', socket.id);
+    console.log('🌐 Socket connection from:', socket.handshake.address);
     
     // Add user to online users set
     onlineUsers.add(socket.userId);
     console.log('📊 Current online users:', Array.from(onlineUsers));
+    console.log('📊 Online users count:', onlineUsers.size);
     
     // Send current online users to the connected client
-    socket.emit('authenticated', { onlineUsers: Array.from(onlineUsers) });
-    console.log('✅ Sent authenticated event to', socket.userId);
+    const onlineUsersList = Array.from(onlineUsers);
+    console.log('📤 Sending authenticated event with onlineUsers:', onlineUsersList);
+    socket.emit('authenticated', { onlineUsers: onlineUsersList });
+    console.log('✅ Authenticated event sent');
     
     // Broadcast that this user is now online to all other connected clients
+    console.log('📢 Broadcasting user:online for userId:', socket.userId);
     socket.broadcast.emit('user:online', socket.userId);
+    console.log('✅ user:online broadcast sent');
     
     // Join user-specific room
     socket.join(`user:${socket.userId}`);

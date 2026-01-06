@@ -2,8 +2,8 @@ import { createContext, useContext, useEffect, useState, useCallback, useRef } f
 import io from 'socket.io-client';
 
 const SOCKET_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 5000;
+const MAX_RETRIES = 5;
+const RETRY_DELAY = 2000;
 
 const SocketContext = createContext();
 
@@ -59,19 +59,27 @@ const SocketProvider = ({ children }) => {
     }
 
     const newSocket = io(SOCKET_URL, {
-      path: '/socket.io',
-      transports: ['websocket'],
+      path: '/socket.io/',
+      transports: ['polling', 'websocket'],
       reconnection: true,
       reconnectionAttempts: MAX_RETRIES,
       reconnectionDelay: RETRY_DELAY,
+      reconnectionDelayMax: 10000,
       auth: {
         token: token
       },
       query: {
         clientType: 'web'
-      }
+      },
+      withCredentials: true,
+      secure: true,
+      rejectUnauthorized: false
     });
 
+    console.log('🔌 Initializing Socket.IO client');
+    console.log('📍 Socket URL:', SOCKET_URL);
+    console.log('🔑 Token provided:', !!token);
+    console.log('📡 Transport order: polling first, websocket as fallback');
     console.log('Socket.IO client version:', io.version);
 
     socketRef.current = newSocket;
@@ -88,7 +96,10 @@ const SocketProvider = ({ children }) => {
 
     const handlers = {
       'connect': () => {
-        console.log('🔌 Socket connected');
+        const transport = socketRef.current?.io?.engine?.transport?.name || 'unknown';
+        console.log('🔌 Socket connected, id:', socketRef.current?.id);
+        console.log('📡 Transport used:', transport);
+        console.log('✅ Connection established');
         setIsConnected(true);
         setConnectionError(null);
         setRetryCount(0);
@@ -96,12 +107,16 @@ const SocketProvider = ({ children }) => {
       'authenticated': (data) => {
         console.log('🔑 Socket authenticated', data);
         console.log('📋 Received onlineUsers:', data?.onlineUsers);
+        console.log('📊 onlineUsers type:', typeof data?.onlineUsers);
+        console.log('📊 onlineUsers is array:', Array.isArray(data?.onlineUsers));
         if (data?.onlineUsers) {
           const onlineSet = new Set(data.onlineUsers);
           console.log('✅ Setting onlineUsers to:', Array.from(onlineSet));
+          console.log('✅ onlineUsers count:', onlineSet.size);
           setOnlineUsers(onlineSet);
         } else {
           console.warn('⚠️ No onlineUsers in authenticated data');
+          console.warn('⚠️ Data keys:', Object.keys(data || {}));
         }
       },
       'auth_error': (error) => {
@@ -111,12 +126,18 @@ const SocketProvider = ({ children }) => {
       },
       'connect_error': (error) => {
         console.error('❌ Socket connection error:', error);
+        console.error('Error type:', error.type);
+        console.error('Error data:', error.data);
+        console.error('Error message:', error.message);
         setIsConnected(false);
-        setConnectionError(error.message);
+        setConnectionError(error.message || 'Connection error');
         
         if (retryCount < MAX_RETRIES) {
+          console.log(`🔄 Retrying in ${RETRY_DELAY}ms... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
           setRetryCount(prev => prev + 1);
           debouncedConnect();
+        } else {
+          console.error('❌ Max retries reached, stopping socket connection attempts');
         }
       },
       'disconnect': (reason) => {
@@ -128,19 +149,23 @@ const SocketProvider = ({ children }) => {
         }
       },
       'user:online': (userId) => {
-        console.log('🟢 User online:', userId);
+        console.log('🟢 User online event received:', userId);
+        console.log('📊 Current onlineUsers before update:', Array.from(onlineUsers));
         setOnlineUsers(prev => {
           const updated = new Set([...prev, userId]);
-          console.log('📊 Updated onlineUsers:', Array.from(updated));
+          console.log('📊 Updated onlineUsers after adding:', Array.from(updated));
+          console.log('📊 New user count:', updated.size);
           return updated;
         });
       },
       'user:offline': (userId) => {
-        console.log('🔴 User offline:', userId);
+        console.log('🔴 User offline event received:', userId);
+        console.log('📊 Current onlineUsers before update:', Array.from(onlineUsers));
         setOnlineUsers(prev => {
           const updated = new Set(prev);
           updated.delete(userId);
-          console.log('📊 Updated onlineUsers:', Array.from(updated));
+          console.log('📊 Updated onlineUsers after removing:', Array.from(updated));
+          console.log('📊 Remaining user count:', updated.size);
           return updated;
         });
       },

@@ -125,14 +125,20 @@ const RightBar = () => {
     userRelationships || {};
 
   const normalizeUsers = useCallback(
-    (list) =>
-      list
+    (list) => {
+      console.log('🔵 Normalizing users with onlineUsers:', onlineUsers);
+      return list
         .filter((u) => u._id !== currentUser?._id)
-        .map((u) => ({
-          ...u,
-          isOnline: onlineUsers.includes(u._id)
-        }))
-        .sort((a, b) => Number(b.isOnline) - Number(a.isOnline)),
+        .map((u) => {
+          const isUserOnline = onlineUsers.includes(u._id) || onlineUsers.includes(String(u._id));
+          console.log(`👤 User ${u.name} (${u._id}): isOnline=${isUserOnline}`);
+          return {
+            ...u,
+            isOnline: isUserOnline
+          };
+        })
+        .sort((a, b) => Number(b.isOnline) - Number(a.isOnline));
+    },
     [onlineUsers, currentUser?._id]
   );
 

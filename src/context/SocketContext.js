@@ -95,8 +95,13 @@ const SocketProvider = ({ children }) => {
       },
       'authenticated': (data) => {
         console.log('🔑 Socket authenticated', data);
+        console.log('📋 Received onlineUsers:', data?.onlineUsers);
         if (data?.onlineUsers) {
-          setOnlineUsers(new Set(data.onlineUsers));
+          const onlineSet = new Set(data.onlineUsers);
+          console.log('✅ Setting onlineUsers to:', Array.from(onlineSet));
+          setOnlineUsers(onlineSet);
+        } else {
+          console.warn('⚠️ No onlineUsers in authenticated data');
         }
       },
       'auth_error': (error) => {
@@ -123,12 +128,19 @@ const SocketProvider = ({ children }) => {
         }
       },
       'user:online': (userId) => {
-        setOnlineUsers(prev => new Set([...prev, userId]));
+        console.log('🟢 User online:', userId);
+        setOnlineUsers(prev => {
+          const updated = new Set([...prev, userId]);
+          console.log('📊 Updated onlineUsers:', Array.from(updated));
+          return updated;
+        });
       },
       'user:offline': (userId) => {
+        console.log('🔴 User offline:', userId);
         setOnlineUsers(prev => {
           const updated = new Set(prev);
           updated.delete(userId);
+          console.log('📊 Updated onlineUsers:', Array.from(updated));
           return updated;
         });
       },

@@ -37,6 +37,7 @@ const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const User = require('./backend/models/users');
 const sessionStore = require('./backend/services/sessionStore');
+const initializeSocket = require('./backend/socket/socketIndex');
 
 // Constants
 const CORS_OPTIONS = {
@@ -112,144 +113,14 @@ const CORS_OPTIONS = {
 const app = express();
 const server = http.createServer(app);
 
-// Initialize Socket.IO with CORS
-const io = new Server(server, {
-  path: '/socket.io',
-  cors: { origin: '*' }
-});
+// Initialize Socket.IO using the dedicated socketIndex module
+const io = initializeSocket(server);
 
-app.set('io', io); // <-- ADD THIS LINE
+// Make io accessible to routes
+app.set('io', io);
+
 app.get('/', (req, res) => {
   res.send('Server is running');
-});
-
-// Socket.IO Authentication Middleware
-io.use(async (socket, next) => {
-  try {
-    const token = socket.handshake.auth.token;
-    
-    if (!token) {
-      return next(new Error('Authentication token required'));
-    }
-
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    // Attach user data to socket
-    socket.userId = decoded.id;
-    socket.isAdmin = decoded.isAdmin || false;
-    socket.role = decoded.role || 'user';
-    socket.permissions = decoded.permissions || {};
-
-    logger.debug('🔌 Socket authenticated:', { socketId: socket.id, userId: socket.userId, isAdmin: socket.isAdmin, role: socket.role });
-
-    next();
-  } catch (error) {
-    console.error('🔌 Socket auth error:', error.message);
-    next(new Error('Authentication failed'));
-  }
-});
-
-// Socket.IO Connection Handler
-io.on('connection', (socket) => {
-  logger.info('🔌 Client connected', { socketId: socket.id, userId: socket.userId, isAdmin: socket.isAdmin });
-
-  // Join user-specific room
-  socket.join(`user:${socket.userId}`);
-  if (socket.isAdmin) {
-    socket.join('admins');
-  }
-
-  // Join conversation room for real-time chat
-  socket.on('join', ({ conversationId }) => {
-    if (conversationId) {
-      socket.join(conversationId);
-      console.log(`Socket ${socket.id} joined conversation ${conversationId}`);
-    }
-  });
-
-  // Optionally: handle leaving a conversation room
-  socket.on('leave', ({ conversationId }) => {
-    if (conversationId) {
-      socket.leave(conversationId);
-      console.log(`Socket ${socket.id} left conversation ${conversationId}`);
-    }
-  });
-
-  // Handle disconnection
-  socket.on('disconnect', () => {
-    console.log('🔌 Client disconnected:', {
-      socketId: socket.id,
-      userId: socket.userId
-    });
-  });
-
-  // Handle errors
-  socket.on('error', (error) => {
-    console.error('🔌 Socket error:', {
-      socketId: socket.id,
-      userId: socket.userId,
-      error: error.message
-    });
-  });
-});
-
-// Authenticate socket and track sessions
-io.on('connection', async (socket) => {
-  try {
-    // Token may be sent in handshake auth: { token } or query.token
-    const token = socket.handshake.auth?.token || socket.handshake.query?.token;
-    if (!token) {
-      socket.disconnect(true);
-      return;
-    }
-
-    let decoded;
-    try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (err) {
-      socket.disconnect(true);
-      return;
-    }
-
-    const userId = decoded?.id || decoded?._id || decoded?.userId || null;
-    if (!userId) {
-      socket.disconnect(true);
-      return;
-    }
-
-    // Optionally read username from DB (fast) or decode from token
-    let username = decoded?.username || decoded?.user?.username || null;
-    if (!username) {
-      try {
-        const u = await User.findById(userId).select('username');
-        if (u) username = u.username;
-      } catch (e) { /* ignore */ }
-    }
-
-    const device = socket.handshake.headers['user-agent'] || 'unknown';
-    const ip = socket.handshake.address || (socket.request && (socket.request.headers['x-forwarded-for'] || socket.request.connection.remoteAddress)) || null;
-
-    // include isAdmin so we can filter admin sessions later
-    sessionStore.addSession(socket.id, { userId, username, device, ip, isAdmin: !!socket.isAdmin });
-    
-    // Broadcast updated sessions/activity to admins
-    io.emit('monitoring.sessions.update', { sessions: sessionStore.getSessions() });
-    io.emit('monitoring.activity.update', { activity: sessionStore.getActivity() });
-
-    socket.on('activity:heartbeat', () => {
-      sessionStore.touchSession(socket.id);
-    });
-
-    socket.on('disconnect', (reason) => {
-      sessionStore.removeSession(socket.id);
-      io.emit('monitoring.sessions.update', { sessions: sessionStore.getSessions() });
-      io.emit('monitoring.activity.update', { activity: sessionStore.getActivity() });
-    });
-  } catch (err) {
-    console.error('socket connection error', err);
-    try { socket.disconnect(true); } catch(e) {}
-  }
 });
 
 app.get('/favicon.ico', (req, res) => {

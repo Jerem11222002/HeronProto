@@ -15,6 +15,115 @@
     }
   }
 
+  .filters {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+
+    .searchBox {
+      width: 100%;
+    }
+
+    .filterControls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      align-items: end;
+
+      select, input {
+        width: 100%;
+      }
+    }
+
+    .buttonGroup {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+
+      button {
+        padding: 8px 16px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+    }
+  }
+
+  .statsRow {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+
+    .statBadge {
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      color: white;
+      white-space: nowrap;
+      flex: 1;
+      min-width: 120px;
+      text-align: center;
+    }
+  }
+
+  .groupedSection {
+    margin-bottom: 16px;
+
+    .sectionHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      margin-bottom: 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      user-select: none;
+      @include themify($themes) {
+        background-color: themed('bgSoft');
+        border: 1px solid themed('border');
+      }
+      @include transition(all);
+
+      &:hover {
+        @include themify($themes) {
+          background-color: themed('bg');
+        }
+      }
+
+      .sectionTitle {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+
+        .title {
+          font-weight: 600;
+          @include themify($themes) {
+            color: themed('textColor');
+          }
+        }
+
+        .badges {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+
+          .badge {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+          }
+        }
+      }
+    }
+  }
+
   .dataGrid {
     @include themify($themes) {
       background-color: themed('bg');
@@ -84,6 +193,162 @@
       flex-direction: column;
       gap: 12px;
       align-items: flex-start;
+
+      h1 {
+        font-size: 1.5rem;
+      }
+    }
+
+    .filters {
+      .filterControls {
+        grid-template-columns: 1fr;
+      }
+
+      .buttonGroup {
+        width: 100%;
+
+        button {
+          flex: 1;
+          min-width: 80px;
+        }
+      }
+    }
+
+    .statsRow {
+      gap: 8px;
+
+      .statBadge {
+        flex: 1;
+        min-width: 100px;
+        padding: 8px 12px;
+        font-size: 0.85rem;
+      }
+    }
+
+    .groupedSection {
+      .sectionHeader {
+        padding: 10px;
+        flex-wrap: wrap;
+
+        .sectionTitle {
+          width: 100%;
+          gap: 8px;
+
+          .title {
+            font-size: 0.95rem;
+          }
+
+          .badges {
+            width: 100%;
+            gap: 6px;
+
+            .badge {
+              flex: 1;
+              text-align: center;
+              min-width: 70px;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 600px) {
+  .participantsContainer {
+    padding: 10px;
+
+    .header {
+      h1 {
+        font-size: 1.25rem;
+      }
+    }
+
+    .filters {
+      gap: 10px;
+
+      .searchBox {
+        width: 100%;
+
+        input {
+          padding: 8px 12px;
+          font-size: 1rem;
+        }
+      }
+
+      .filterControls {
+        grid-template-columns: 1fr;
+        gap: 10px;
+
+        label {
+          font-size: 0.8rem;
+        }
+
+        select, input {
+          padding: 6px 10px;
+          font-size: 0.9rem;
+        }
+      }
+
+      .buttonGroup {
+        gap: 6px;
+
+        button {
+          flex: 1;
+          padding: 6px 10px;
+          font-size: 0.8rem;
+          min-width: 70px;
+        }
+      }
+    }
+
+    .statsRow {
+      gap: 6px;
+
+      .statBadge {
+        padding: 6px 10px;
+        font-size: 0.75rem;
+        min-width: 80px;
+      }
+    }
+
+    .groupedSection {
+      margin-bottom: 12px;
+
+      .sectionHeader {
+        padding: 8px;
+
+        .sectionTitle {
+          flex-direction: column;
+          width: 100%;
+
+          .title {
+            font-size: 0.9rem;
+          }
+
+          .badges {
+            width: 100%;
+            gap: 4px;
+
+            .badge {
+              padding: 3px 6px;
+              font-size: 0.75rem;
+              min-width: 60px;
+            }
+          }
+        }
+      }
+    }
+
+    .dataGrid {
+      .MuiDataGrid-columnHeaders {
+        font-size: 0.8rem;
+      }
+
+      .MuiDataGrid-cell {
+        padding: 8px 4px;
+        font-size: 0.8rem;
+      }
     }
   }
 }

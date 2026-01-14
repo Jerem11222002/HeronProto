@@ -51,7 +51,7 @@
       padding: clamp(30px, 5vw, 50px);
       /* keep left panel anchored while right panel scrolls */
       position: sticky;
-      top: clamp(28px, 3.5vh, 48px);
+      top: 0;
       height: 100%;
       align-self: stretch;
       display: flex;

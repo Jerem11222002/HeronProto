@@ -2,6 +2,11 @@
   padding: 20px;
   min-height: 100vh;
   background: #f5f5f5;
+  box-sizing: border-box;
+  width: 100%;
+  /* keep dashboard content centered and allow wider layouts on desktop */
+  max-width: 1200px;
+  margin: 0 auto;
 
   .loadingContainer {
     display: flex;
@@ -89,6 +94,14 @@
 
     @media (max-width: 768px) {
       padding: 0 6px;
+    }
+
+    /* Desktop: use a two-column layout for content (main + sidebar/summary) */
+    @media (min-width: 1025px) {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 24px;
+      align-items: start;
     }
 
     .contentSection {
@@ -294,5 +307,24 @@
     .dashboardContent {
       grid-template-columns: 1fr;
     }
+  }
+}
+
+/* Additional desktop breakpoints to ensure larger screens show multi-column cards */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .adminDashboard .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1399px) {
+  .adminDashboard .statsGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1400px) {
+  .adminDashboard .statsGrid {
+    grid-template-columns: repeat(4, 1fr);
   }
 }

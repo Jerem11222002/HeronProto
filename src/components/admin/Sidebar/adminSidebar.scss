@@ -127,63 +127,146 @@
   }
 }
 
-// Responsive styles
+// Responsive styles - Mobile sidebar as overlay
 @include tablet {
   .adminSidebar {
-    width: 100%;
-    min-height: auto;
-    @include flex(row, space-between, center);
-    padding: 10px;
+    // Hidden by default on mobile, shown as overlay when opened
+    position: fixed;
+    top: 0;
+    left: -250px;
+    width: 250px;
+    min-height: 100vh;
+    z-index: 1001; // ensure it's above the overlay
+    flex-direction: column;
+    transition: left 0.25s ease, background-color 0.15s ease;
+
+    // ensure a solid white panel background and subtle elevation so text is readable
+    background-color: #ffffff !important;
+    opacity: 1 !important;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    border-right: 1px solid #e0e0e0;
+
+    &.open {
+      left: 0;
+    }
 
     .logo {
-      padding: 0;
-      border-bottom: none;
+      padding: 20px;
+      border-bottom: 1px solid;
+      @include themify($themes) {
+        border-bottom-color: themed('border');
+      }
 
       h2 {
-        font-size: 1.25rem;
+        font-size: 1.5rem;
+        margin: 0;
+        font-weight: 600;
+        @include themify($themes) {
+          color: themed('logo');
+        }
       }
     }
 
     .menuItems {
-      @include flex(row, flex-start, center);
-      overflow-x: auto;
-      padding: 0;
+      @include flex(column, flex-start, stretch, nowrap, 10px);
+      flex: 1;
+      padding: 20px 0;
+      overflow-y: auto;
 
       .menuItem {
-        padding: 8px;
-        border-left: none;
+        @include flex(row, flex-start, center);
+        padding: 12px 20px;
+        border-left: 3px solid transparent;
+        text-decoration: none;
         @include themify($themes) {
-          border-bottom: 3px solid transparent;
+          color: themed('textColor');
         }
 
         .menuLabel {
-          display: none;
+          display: block;
+          font-size: 0.95rem;
+          font-weight: 500;
+        }
+
+        .menuIcon {
+          margin-right: 12px;
+          font-size: 1.5rem;
+          display: flex;
+          align-items: center;
+        }
+
+        &:hover {
+          @include themify($themes) {
+            background-color: themed('bgHover');
+            color: themed('textColor');
+            border-left-color: themed('primary');
+          }
         }
 
         &.active {
           @include themify($themes) {
-            border-bottom-color: themed('primary');
-            border-left-color: transparent;
+            background-color: themed('bgActive');
+            color: themed('primary');
+            border-left-color: themed('primary');
+          }
+          font-weight: 500;
+
+          .menuIcon {
+            @include themify($themes) {
+              color: themed('primary');
+            }
           }
         }
       }
     }
 
     .bottomMenu {
-      @include flex(row, flex-end, center, nowrap, 8px);
-      padding: 0;
-      border-top: none;
+      padding: 20px;
+      @include themify($themes) {
+        border-top: 1px solid themed('border');
+      }
+      @include flex(column, flex-start, stretch, nowrap, 10px);
 
       .actionButton {
-        width: auto;
-        padding: 8px;
-
-        span {
-          display: none;
-        }
+        @include flex(row, center, center);
+        padding: 10px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 500;
+        width: 100%;
 
         svg {
-          margin: 0;
+          margin-right: 8px;
+          font-size: 1.5rem;
+        }
+
+        span {
+          display: block;
+        }
+
+        &.switchButton {
+          @include themify($themes) {
+            background-color: themed('buttonSoft');
+            color: themed('textColorSoft');
+
+            &:hover {
+              background-color: themed('buttonSoftHover');
+              color: themed('primary');
+            }
+          }
+        }
+
+        &.logoutButton {
+          @include themify($themes) {
+            background-color: themed('error');
+            color: #fff;
+
+            &:hover {
+              filter: brightness(0.9);
+            }
+          }
         }
       }
     }

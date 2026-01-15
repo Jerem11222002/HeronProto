@@ -246,7 +246,16 @@ const Comments = ({ postId, onCommentUpdate }) => {
     const fetchComments = async () => {
       setLoading(true);
       try {
-        const res = await axios.get(GET_COMMENTS_URL(postId));
+        const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+        const token = localStorage.getItem("token");
+        const config = {
+          baseURL,
+          headers: {}
+        };
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        const res = await axios.get(GET_COMMENTS_URL(postId), config);
         if (!mounted) return;
         const raw = Array.isArray(res.data) ? res.data : res.data.comments || [];
         const top = normalizeTree(raw);
@@ -280,6 +289,7 @@ const Comments = ({ postId, onCommentUpdate }) => {
     if (!newComment.trim() || submitting) return;
     setSubmitting(true);
     setError(null);
+    const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
     const tempId = `tmp_${Date.now()}`;
     const optimistic = {
       _id: tempId,
@@ -297,6 +307,7 @@ const Comments = ({ postId, onCommentUpdate }) => {
     setNewComment('');
     try {
       const res = await axios.post(POST_COMMENT_URL(postId), { text: optimistic.body }, {
+        baseURL,
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
       });
       const saved = normalizeCommentNode(res.data);
@@ -386,11 +397,12 @@ const Comments = ({ postId, onCommentUpdate }) => {
 
   const handleEdit = async (commentId, newText) => {
     if (!newText.trim()) return false;
+    const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
     try {
       const response = await axios.patch(
         COMMENT_ITEM_URL(commentId),
         { text: newText },
-        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+        { baseURL, headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
       );
       const updatedComment = normalizeCommentNode(response.data);
       setComments(prev => {
@@ -408,8 +420,10 @@ const Comments = ({ postId, onCommentUpdate }) => {
 
   const handleDelete = async (commentId) => {
     if (!window.confirm("Are you sure you want to delete this comment?")) return;
+    const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
     try {
       await axios.delete(COMMENT_ITEM_URL(commentId), {
+        baseURL,
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
       });
       setComments(prev => removeCommentFromTree(prev, commentId));
@@ -424,8 +438,9 @@ const Comments = ({ postId, onCommentUpdate }) => {
   // fetch replies for parent and set them into the tree
   const fetchRepliesForParent = async (parentId) => {
     if (!parentId) return;
+    const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
     try {
-      const res = await axios.get(COMMENT_ITEM_URL(parentId) + "/replies");
+      const res = await axios.get(COMMENT_ITEM_URL(parentId) + "/replies", { baseURL });
       const raw = Array.isArray(res.data) ? res.data : res.data.replies || [];
       setComments(prev => setRepliesForParent(prev, parentId, raw));
     } catch (err) {
@@ -473,7 +488,9 @@ const Comments = ({ postId, onCommentUpdate }) => {
     setComments(prev => insertCommentInTree(prev, parentId, optimistic));
 
     try {
+      const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
       const res = await axios.post(POST_COMMENT_URL(postId), { text: trimmed, replyTo: parentId }, {
+        baseURL,
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
       });
       const saved = normalizeCommentNode(res.data);
@@ -535,6 +552,7 @@ const Comments = ({ postId, onCommentUpdate }) => {
   };
 
   const handleLike = async (commentId) => {
+    const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
     const cid = String(commentId);
     if (!currentUser) return;
     setLikeLoading(prev => ({ ...prev, [cid]: true }));
@@ -552,7 +570,7 @@ const Comments = ({ postId, onCommentUpdate }) => {
 
     try {
       const url = COMMENT_ITEM_URL(commentId) + "/like";
-      const res = await axios.post(url, {}, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } });
+      const res = await axios.post(url, {}, { baseURL, headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } });
       const updated = normalizeCommentNode(res.data);
       setComments(prev => {
         const { tree } = findAndUpdateInTree(prev, updated._id, () => updated);
@@ -562,7 +580,7 @@ const Comments = ({ postId, onCommentUpdate }) => {
       console.warn("Like toggle failed", err);
       // rollback by refetching full comments list
       try {
-        const res = await axios.get(GET_COMMENTS_URL(postId));
+        const res = await axios.get(GET_COMMENTS_URL(postId), { baseURL });
         const raw = Array.isArray(res.data) ? res.data : res.data.comments || [];
         setComments(normalizeTree(raw));
       } catch (e) { /* ignore */ }

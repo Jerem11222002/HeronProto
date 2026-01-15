@@ -20,8 +20,9 @@ export default function FullScreenPostPage() {
     async function fetchPost() {
       setLoading(true);
       try {
+        const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
         const token = localStorage.getItem("token");
-        const res = await fetch(`/api/posts/${postId}`, {
+        const res = await fetch(`${baseURL}/api/posts/${postId}`, {
           headers: {
             "Authorization": `Bearer ${token}`,
             "Content-Type": "application/json"

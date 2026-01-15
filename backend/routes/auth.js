@@ -12,7 +12,11 @@ const authenticateToken = require('../Middleware/authenticateToken');
 const router = express.Router();
 
 // Determine frontend URL based on environment
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+// For production: use explicit FRONTEND_URL env var
+// For development: always use localhost:3000
+const FRONTEND_URL = (process.env.NODE_ENV === 'production' && process.env.FRONTEND_URL)
+  ? process.env.FRONTEND_URL
+  : 'http://localhost:3000';
 
 
 const VALID_INTERESTS = [

@@ -184,6 +184,9 @@ app.use((req, res, next) => {
     '/build',
     '/api/auth/login',
     '/api/auth/register',
+    '/api/auth/forgot-password',
+    '/api/auth/reset-password',
+    '/api/auth/verify-reset-token',
     '/api/admin/auth/login',
     '/api/interests',
     '/socket.io'

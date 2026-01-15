@@ -27,7 +27,8 @@ const ResetPassword = () => {
 
     const verify = async () => {
       try {
-        await axios.post('/api/auth/verify-reset-token', { token, email });
+        const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+        await axios.post(`${apiUrl}/api/auth/verify-reset-token`, { token, email });
         setVerifying(false);
       } catch (err) {
         setError('Reset link has expired or is invalid. Please request a new one.');
@@ -65,7 +66,8 @@ const ResetPassword = () => {
 
     try {
       setLoading(true);
-      const response = await axios.post('/api/auth/reset-password', {
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const response = await axios.post(`${apiUrl}/api/auth/reset-password`, {
         token,
         email,
         newPassword: form.newPassword,

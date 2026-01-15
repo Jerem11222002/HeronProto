@@ -76,13 +76,13 @@ const Share = ({ onAddPost }) => {
     return new Promise((resolve, reject) => {
       // Check file type
       if (!ALLOWED_VIDEO_TYPES.includes(file.type)) {
-        reject('Please upload MP4 video files only');
+        reject('❌ Invalid video format. Please upload MP4 files. (MOV and AVI files may work depending on codec)');
         return;
       }
   
       // Check file size
       if (file.size > MAX_VIDEO_SIZE) {
-        reject(`Video size must be less than ${MAX_VIDEO_SIZE/1024/1024}MB`);
+        reject(`❌ Video file is too large. Maximum size is ${MAX_VIDEO_SIZE/1024/1024}MB. Your file is ${(file.size/1024/1024).toFixed(2)}MB.`);
         return;
       }
   
@@ -92,7 +92,7 @@ const Share = ({ onAddPost }) => {
       video.onloadedmetadata = () => {
         URL.revokeObjectURL(video.src);
         if (video.duration > MAX_VIDEO_DURATION) {
-          reject(`Video must be shorter than ${MAX_VIDEO_DURATION/60} minutes`);
+          reject(`❌ Video is too long. Maximum duration is ${MAX_VIDEO_DURATION/60} minutes. Your video is ${(video.duration/60).toFixed(1)} minutes.`);
           return;
         }
         resolve(true);
@@ -100,7 +100,7 @@ const Share = ({ onAddPost }) => {
   
       video.onerror = () => {
         URL.revokeObjectURL(video.src);
-        reject('Invalid video file');
+        reject('❌ Invalid video file or corrupted file. Please try another video.');
       };
   
       video.src = URL.createObjectURL(file);
@@ -121,7 +121,7 @@ const Share = ({ onAddPost }) => {
   
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
-      setError(`File size should not exceed ${MAX_FILE_SIZE/1024/1024}MB`);
+      setError(`❌ File is too large. Maximum size is ${MAX_FILE_SIZE/1024/1024}MB. Your file is ${(file.size/1024/1024).toFixed(2)}MB.`);
       return;
     }
   
@@ -130,7 +130,7 @@ const Share = ({ onAddPost }) => {
     const isVideo = ALLOWED_FILE_TYPES.video.includes(file.type);
   
     if (!isImage && !isVideo) {
-      setError("Unsupported file type. Please upload an image or video.");
+      setError("❌ Unsupported file type. Accepted formats: JPEG, PNG, GIF (images) and MP4, MOV, AVI (videos).");
       return;
     }
   
@@ -188,7 +188,7 @@ const Share = ({ onAddPost }) => {
     const token = localStorage.getItem("token");
     
     if (!token) {
-      throw new Error("Authentication required");
+      throw new Error("❌ Authentication failed. Please log in again.");
     }
     
     try {
@@ -232,22 +232,34 @@ const Share = ({ onAddPost }) => {
       console.error("Post creation error:", error);
       
       // If we have a response with data, the upload might have succeeded
-      if (error.response?.data) {
+      if (error.response?.data?.post) {
         return {
           success: true,
-          post: error.response.data.post || error.response.data
+          post: error.response.data.post
         };
       }
   
-      // Handle specific error cases
+      // Handle specific error cases with user-friendly messages
+      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        throw new Error("❌ Request timed out. Please check your internet connection and try again.");
+      }
       if (error.response?.status === 413) {
-        throw new Error("File size too large. Please upload a smaller file.");
+        throw new Error("❌ File size too large. Please upload a smaller file (maximum 50MB).");
       }
       if (error.response?.status === 415) {
-        throw new Error("Unsupported file type. Please use MP4 for videos.");
+        throw new Error("❌ Unsupported file type. Accepted formats: JPEG, PNG, GIF (images) and MP4 (videos).");
+      }
+      if (error.response?.status === 401) {
+        throw new Error("❌ Your session expired. Please log in again.");
+      }
+      if (error.response?.status === 500) {
+        throw new Error("❌ Server error. Please try again later.");
+      }
+      if (!navigator.onLine) {
+        throw new Error("❌ No internet connection. Please check your connection and try again.");
       }
       
-      throw new Error(error.response?.data?.message || error.message || "Failed to create post");
+      throw new Error(error.response?.data?.message || error.message || "❌ Failed to create post. Please try again.");
     }
   };
 
@@ -267,14 +279,14 @@ const Share = ({ onAddPost }) => {
         const mediaFile = imageFile || videoFile;
         
         if (mediaFile.size > MAX_FILE_SIZE) {
-          throw new Error(`File size should not exceed ${MAX_FILE_SIZE/1024/1024}MB`);
+          throw new Error(`❌ File size should not exceed ${MAX_FILE_SIZE/1024/1024}MB`);
         }
         
         if (mediaType === 'video') {
           try {
             await validateVideo(videoFile);
           } catch (err) {
-            throw new Error(`Video validation failed: ${err.message}`);
+            throw new Error(`${err.message}`);
           }
         }
         
@@ -289,19 +301,17 @@ const Share = ({ onAddPost }) => {
       
       // After successful post creation
       if (result.success && result.post) {
-        setSuccessMessage("Post shared!");
+        setSuccessMessage("✅ Your post has been successfully shared!");
         setIsProcessing(false);
         resetForm();
-        // Optionally: show a link to the new post
-        // setNewPostId(result.post._id || result.post.id);
-        setTimeout(() => setSuccessMessage(null), 3000);
+        setTimeout(() => setSuccessMessage(null), 5000);
       } else {
-        throw new Error("Failed to create post");
+        throw new Error("❌ Failed to create post. Please try again.");
       }
       
     } catch (err) {
       console.error("Share error:", err);
-      setError(err.message || "Failed to create post");
+      setError(err.message || "❌ Failed to create post. Please try again.");
       // Don't reset form on error so user can try again
     } finally {
       setIsLoading(false);

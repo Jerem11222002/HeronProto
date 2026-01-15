@@ -11,6 +11,11 @@ const Interest = require('../models/interest');
 const authenticateToken = require('../Middleware/authenticateToken');
 const router = express.Router();
 
+// Determine frontend URL based on environment
+const FRONTEND_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://heron-proto-vercel.vercel.app'
+  : 'http://localhost:3000';
+
 
 const VALID_INTERESTS = [
   'music',
@@ -512,13 +517,22 @@ router.post('/forgot-password', async (req, res) => {
     const resetToken = crypto.randomBytes(32).toString('hex');
     const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
 
-    // Set token expiry (1 hour)
+    // Set token expiry (24 hours)
     user.passwordResetToken = resetTokenHash;
-    user.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000);
+    user.passwordResetExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await user.save();
 
+    // Verify token was saved
+    const savedUser = await User.findById(user._id).select('+passwordResetToken +passwordResetExpires');
+    console.log('🔐 Token saved check:', {
+      tokenHash: resetTokenHash.substring(0, 10) + '...',
+      savedTokenHash: savedUser.passwordResetToken ? savedUser.passwordResetToken.substring(0, 10) + '...' : 'NOT SAVED',
+      expiresAt: user.passwordResetExpires,
+      expiresIn: new Date(user.passwordResetExpires - Date.now()) 
+    });
+
     // Build reset URL (frontend will handle this)
-    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
+    const resetUrl = `${FRONTEND_URL}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
 
     // Email content
     const mailOptions = {
@@ -530,7 +544,7 @@ router.post('/forgot-password', async (req, res) => {
         <p>Hi ${user.name || user.username},</p>
         <p>You requested a password reset. Click the link below to set a new password:</p>
         <p><a href="${resetUrl}" style="background-color: #4f46e5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Password</a></p>
-        <p>This link expires in 1 hour.</p>
+        <p>This link expires in 24 hours.</p>
         <p>If you didn't request this, ignore this email.</p>
         <p>Best,<br/>Heron Fusion Team</p>
       `
@@ -643,12 +657,29 @@ router.post('/verify-reset-token', async (req, res) => {
     }
 
     const resetTokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    
+    console.log('🔍 Verifying token:', {
+      email: email.toLowerCase(),
+      tokenHashSearch: resetTokenHash.substring(0, 10) + '...',
+      currentTime: new Date(),
+      tokenLength: token.length
+    });
 
     const user = await User.findOne({
       email: email.toLowerCase(),
       passwordResetToken: resetTokenHash,
       passwordResetExpires: { $gt: new Date() }
-    }).select('_id');
+    }).select('+passwordResetToken +passwordResetExpires');
+
+    console.log('🔎 User found:', user ? `Yes (${user._id})` : 'No');
+    
+    if (user) {
+      console.log('📅 Token expiry check:', {
+        expiresAt: user.passwordResetExpires,
+        now: new Date(),
+        isExpired: user.passwordResetExpires <= new Date()
+      });
+    }
 
     if (!user) {
       return res.status(400).json({

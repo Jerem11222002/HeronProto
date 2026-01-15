@@ -12,6 +12,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const usernameRef = useRef(null);
 
@@ -28,7 +29,7 @@ const Login = () => {
       // Input validation
       const trimmedUsername = username.trim().toLowerCase();
       if (!trimmedUsername || !password) {
-        throw new Error("Username and password are required");
+        throw new Error("❌ Please enter both username and password");
       }
   
       console.log('📝 Login attempt:', {
@@ -46,7 +47,7 @@ const Login = () => {
       // Validate response structure
       if (!response?.data?.token || !response?.data?.user) {
         console.error('❌ Invalid response structure:', response);
-        throw new Error("Invalid server response");
+        throw new Error("❌ Server response invalid. Please try again.");
       }
 
       // Save authentication data using token manager
@@ -56,7 +57,7 @@ const Login = () => {
       }, isAdmin);
 
       if (!authData) {
-        throw new Error("Failed to save authentication data");
+        throw new Error("❌ Failed to save login information. Please try again.");
       }
 
       // Set current user from saved data
@@ -100,7 +101,17 @@ const Login = () => {
         message = resData.message || resData.error || resData.msg || message;
       } else if (err?.response?.status === 401) {
         // Generic unauthorized fallback
-        message = "Invalid username or password";
+        message = "❌ Invalid username or password";
+      } else if (err?.response?.status === 403) {
+        message = "❌ Admin access denied. Please use regular login.";
+      } else if (err?.response?.status === 404) {
+        message = "❌ Account not found. Please check your username.";
+      } else if (err?.response?.status === 429) {
+        message = "❌ Too many login attempts. Please try again later.";
+      } else if (err?.response?.status === 500) {
+        message = "❌ Server error. Please try again later.";
+      } else if (err?.message?.includes("Network")) {
+        message = "❌ Network error. Please check your internet connection.";
       } else if (err?.message) {
         message = err.message;
       }
@@ -187,15 +198,26 @@ const Login = () => {
               autoComplete="username"
               className={error ? 'error' : ''}
             />
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-              className={error ? 'error' : ''}
-            />
+            <div className="password-input-wrapper">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                className={error ? 'error' : ''}
+              />
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                title={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? "🙈" : "👁️"}
+              </button>
+            </div>
             <button 
               type="submit" 
               disabled={loading || !username || !password}

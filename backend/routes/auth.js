@@ -12,9 +12,7 @@ const authenticateToken = require('../Middleware/authenticateToken');
 const router = express.Router();
 
 // Determine frontend URL based on environment
-const FRONTEND_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://heron-proto-vercel.vercel.app'
-  : 'http://localhost:3000';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
 
 const VALID_INTERESTS = [

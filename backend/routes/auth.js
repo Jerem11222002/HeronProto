@@ -5,7 +5,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const User = require("../models/users");
 const Interest = require('../models/interest');
 const authenticateToken = require('../Middleware/authenticateToken');
@@ -93,39 +93,15 @@ const upload = multer({
   }
 });
 
-// Configure email transporter (prefer SMTP config, fall back to Gmail or JSON for dev)
-let transporter;
+// Initialize Resend email service
+let resend;
 
-if (process.env.SMTP_HOST && process.env.SMTP_PASS) {
-  transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT, 10) || 587,
-    secure: (process.env.SMTP_SECURE === 'true') || false,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS
-    }
-  });
-  console.info('Email transporter: using SMTP host', process.env.SMTP_HOST);
-} else if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
-  transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASSWORD
-    }
-  });
-  console.info('Email transporter: using Gmail service for', process.env.EMAIL_USER);
+if (process.env.RESEND_API_KEY) {
+  resend = new Resend(process.env.RESEND_API_KEY);
+  console.info('✅ Resend email service initialized');
 } else {
-  // No real email credentials — use jsonTransport so code paths work in dev
-  transporter = nodemailer.createTransport({ jsonTransport: true });
-  console.warn('Email transporter: no SMTP/EMAIL credentials found — using jsonTransport (dev only)');
+  console.warn('⚠️ RESEND_API_KEY not found - password reset emails will fail. Set the environment variable.');
 }
-
-// Optional: verify transporter at startup and log result
-transporter.verify()
-  .then(() => console.info('✅ Email transporter verified'))
-  .catch((err) => console.warn('⚠️ Email transporter verification failed:', err && err.message));
 
 // Helper: Generate JWT Token
 const generateToken = (userId) => {
@@ -536,31 +512,43 @@ router.post('/forgot-password', async (req, res) => {
     // Build reset URL (frontend will handle this)
     const resetUrl = `${FRONTEND_URL}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
 
-    // Email content
-    const mailOptions = {
-      from: process.env.EMAIL_USER || 'noreply@heronFusion.com',
-      to: email,
-      subject: 'Heron Fusion - Password Reset Request',
-      html: `
-        <h2>Password Reset Request</h2>
-        <p>Hi ${user.name || user.username},</p>
-        <p>You requested a password reset. Click the link below to set a new password:</p>
-        <p><a href="${resetUrl}" style="background-color: #4f46e5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Password</a></p>
-        <p>This link expires in 24 hours.</p>
-        <p>If you didn't request this, ignore this email.</p>
-        <p>Best,<br/>Heron Fusion Team</p>
-      `
-    };
+    // Send email using Resend
+    if (!resend) {
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Email service not configured. Please try again later.' 
+      });
+    }
 
-    // Send email
-    await transporter.sendMail(mailOptions);
+    try {
+      await resend.emails.send({
+        from: 'Heron Fusion <onboarding@resend.dev>',
+        to: email,
+        subject: 'Heron Fusion - Password Reset Request',
+        html: `
+          <h2>Password Reset Request</h2>
+          <p>Hi ${user.name || user.username},</p>
+          <p>You requested a password reset. Click the link below to set a new password:</p>
+          <p><a href="${resetUrl}" style="background-color: #4f46e5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Password</a></p>
+          <p>This link expires in 24 hours.</p>
+          <p>If you didn't request this, ignore this email.</p>
+          <p>Best,<br/>Heron Fusion Team</p>
+        `
+      });
 
-    console.log('✅ Password reset email sent to:', email);
+      console.log('✅ Password reset email sent to:', email);
 
-    res.status(200).json({
-      success: true,
-      message: 'If an account exists, a reset link has been sent to your email.'
-    });
+      res.status(200).json({
+        success: true,
+        message: 'If an account exists, a reset link has been sent to your email.'
+      });
+    } catch (emailError) {
+      console.error('❌ Resend email error:', emailError);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to send reset email. Please try again later.'
+      });
+    }
   } catch (error) {
     console.error('❌ Forgot password error:', error);
     res.status(500).json({

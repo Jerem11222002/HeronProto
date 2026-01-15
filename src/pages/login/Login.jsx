@@ -16,10 +16,37 @@ const Login = () => {
   const navigate = useNavigate();
   const usernameRef = useRef(null);
 
+  // Debug: Log error state changes
+  useEffect(() => {
+    if (error) {
+      console.log(`📊 [State Update] Error state changed to: "${error}"`);
+    }
+  }, [error]);
+
+  // Fallback: Check localStorage for errors that might not propagate via React state
+  useEffect(() => {
+    const storedError = localStorage.getItem("loginError");
+    if (storedError && !error) {
+      console.log("🔧 [Fallback] Found error in localStorage, updating state:", storedError);
+      setError(storedError);
+    }
+  }, [error]);
+
+  // Cleanup: Remove error from localStorage when error state clears
+  useEffect(() => {
+    if (!error) {
+      localStorage.removeItem("loginError");
+    }
+  }, [error]);
+
   const handleLogin = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    
+    // Clear any previous error
+    localStorage.removeItem("loginError");
     setError("");
+    
+    setLoading(true);
   
     try {
       // Clear previous auth state
@@ -29,7 +56,12 @@ const Login = () => {
       // Input validation
       const trimmedUsername = username.trim().toLowerCase();
       if (!trimmedUsername || !password) {
-        throw new Error("❌ Please enter both username and password");
+        const validationError = "❌ Please enter both username and password";
+        console.log("✍️ Setting validation error:", validationError);
+        setError(validationError);
+        setLoading(false);
+        usernameRef.current?.focus();
+        return;
       }
   
       console.log('📝 Login attempt:', {
@@ -47,7 +79,11 @@ const Login = () => {
       // Validate response structure
       if (!response?.data?.token || !response?.data?.user) {
         console.error('❌ Invalid response structure:', response);
-        throw new Error("❌ Server response invalid. Please try again.");
+        const invalidError = "❌ Server response invalid. Please try again.";
+        console.log("✍️ Setting invalid response error:", invalidError);
+        setError(invalidError);
+        setLoading(false);
+        return;
       }
 
       // Save authentication data using token manager
@@ -57,7 +93,11 @@ const Login = () => {
       }, isAdmin);
 
       if (!authData) {
-        throw new Error("❌ Failed to save login information. Please try again.");
+        const saveError = "❌ Failed to save login information. Please try again.";
+        console.log("✍️ Setting save error:", saveError);
+        setError(saveError);
+        setLoading(false);
+        return;
       }
 
       // Set current user from saved data
@@ -70,10 +110,14 @@ const Login = () => {
         role: isAdmin ? user.adminRole : 'user'
       });
   
-      // Handle navigation
+      // Handle navigation (only on successful login)
       if (isAdmin) {
         if (!user.isAdmin || !user.adminRole) {
-          throw new Error("Invalid admin account");
+          const adminError = "❌ Invalid admin account";
+          console.log("✍️ Setting admin error:", adminError);
+          setError(adminError);
+          setLoading(false);
+          return;
         }
         navigate("/admin/dashboard");
       } else {
@@ -87,7 +131,7 @@ const Login = () => {
       }
   
     } catch (err) {
-      console.error("🚨 Login error:", {
+      console.error("🚨 Login error caught:", {
         message: err?.message,
         status: err?.response?.status,
         responseData: err?.response?.data
@@ -97,28 +141,52 @@ const Login = () => {
 
       // Prefer server-sent message shapes: { message } or { error } or { msg }
       const resData = err?.response?.data;
+      console.log("📋 Response data object:", resData);
+      console.log("📋 Type of resData:", typeof resData);
+      
       if (resData && typeof resData === 'object') {
-        message = resData.message || resData.error || resData.msg || message;
-      } else if (err?.response?.status === 401) {
-        // Generic unauthorized fallback
-        message = "❌ Invalid username or password";
-      } else if (err?.response?.status === 403) {
-        message = "❌ Admin access denied. Please use regular login.";
-      } else if (err?.response?.status === 404) {
-        message = "❌ Account not found. Please check your username.";
-      } else if (err?.response?.status === 429) {
-        message = "❌ Too many login attempts. Please try again later.";
-      } else if (err?.response?.status === 500) {
-        message = "❌ Server error. Please try again later.";
-      } else if (err?.message?.includes("Network")) {
-        message = "❌ Network error. Please check your internet connection.";
-      } else if (err?.message) {
-        message = err.message;
+        const extractedMessage = resData.message || resData.error || resData.msg;
+        console.log("📋 Extracted message from response:", extractedMessage);
+        if (extractedMessage) {
+          message = extractedMessage;
+        }
+      }
+      
+      // Handle specific HTTP status codes (only if no message from server)
+      if (!resData?.message && !resData?.error && !resData?.msg) {
+        if (err?.response?.status === 401) {
+          message = "❌ Invalid username or password";
+        } else if (err?.response?.status === 403) {
+          message = "❌ Admin access denied. Please use regular login.";
+        } else if (err?.response?.status === 404) {
+          message = "❌ Account not found. Please check your username.";
+        } else if (err?.response?.status === 429) {
+          message = "❌ Too many login attempts. Please try again later.";
+        } else if (err?.response?.status === 500) {
+          message = "❌ Server error. Please try again later.";
+        } else if (err?.message?.includes("Network")) {
+          message = "❌ Network error. Please check your internet connection.";
+        }
       }
 
+      console.log("✍️ Final error message to display:", message);
+      
+      // Store error in both state AND localStorage as a backup
+      // This ensures it displays even if React state update fails
+      localStorage.setItem("loginError", message);
+      setPassword("");
+      
+      // Ensure error is set and will display
+      console.warn("⚠️ SETTING ERROR STATE - This should trigger a re-render:", message);
       setError(message);
+      
+      console.log("✅ Error stored in localStorage:", localStorage.getItem("loginError"));
+      
       clearAuthData();
       setCurrentUser(null);
+      
+      // Focus on password field so user can retry
+      setTimeout(() => usernameRef.current?.focus(), 100);
     } finally {
       setLoading(false);
     }
@@ -187,7 +255,24 @@ const Login = () => {
 
           <h1>{isAdmin ? 'Admin Login' : 'Login'}</h1>
           <form onSubmit={handleLogin}>
-            {error && <div className="error-message">{error}</div>}
+            {/* Debug: Log error state to console on every render */}
+            {(() => {
+              if (error) {
+                console.log(`📊 Rendering error message: "${error}"`);
+              }
+              return null;
+            })()}
+            
+            {error && (
+              <div className="error-message" role="alert">
+                {error}
+              </div>
+            )}
+            
+            {/* Fallback: If error state isn't working, this will catch it */}
+            {username && !error && loading && (
+              <div className="processing-message">Processing...</div>
+            )}
             <input
               type="text"
               placeholder="Username"
@@ -197,6 +282,7 @@ const Login = () => {
               required
               autoComplete="username"
               className={error ? 'error' : ''}
+              disabled={loading}
             />
             <div className="password-input-wrapper">
               <input
@@ -207,6 +293,7 @@ const Login = () => {
                 required
                 autoComplete="current-password"
                 className={error ? 'error' : ''}
+                disabled={loading}
               />
               <button
                 type="button"
@@ -214,6 +301,7 @@ const Login = () => {
                 onClick={() => setShowPassword(!showPassword)}
                 aria-label={showPassword ? "Hide password" : "Show password"}
                 title={showPassword ? "Hide password" : "Show password"}
+                disabled={loading}
               >
                 {showPassword ? "🙈" : "👁️"}
               </button>

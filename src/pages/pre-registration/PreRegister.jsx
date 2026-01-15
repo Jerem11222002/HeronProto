@@ -7,6 +7,8 @@ import './PreRegister.scss';
 import AuditionRegister from './Forms/AuditionRegister';
 import WatchOnlyRegister from './Forms/WatchOnlyRegister';
 
+const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
 const ORGANIZATION_BADGES = {
   'CAST': '/images/badges/umak-cca-cast-300x300.png',
   'CULTURA': '/images/badges/umak-cca-cultura-300x300.jpg',
@@ -44,7 +46,7 @@ const PreRegister = () => {
       setError(null);
 
       // 1. Fetch event details
-      const response = await axios.get(`/api/events/${eventId}`, {
+      const response = await axios.get(`${baseURL}/api/events/${eventId}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
@@ -58,7 +60,7 @@ const PreRegister = () => {
       if ((!Array.isArray(eventData.registrationForm) || eventData.registrationForm.length === 0)
           && eventData.registrationFormTemplate) {
         try {
-          const tplRes = await axios.get(`/api/form-templates/${eventData.registrationFormTemplate}`, {
+          const tplRes = await axios.get(`${baseURL}/api/form-templates/${eventData.registrationFormTemplate}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
           });
           // try common property names
@@ -74,7 +76,7 @@ const PreRegister = () => {
       }
 
       // 2. Fetch participant count
-      const countsRes = await axios.post('/api/event-registrations/counts', { eventIds: [eventId] });
+      const countsRes = await axios.post(`${baseURL}/api/event-registrations/counts`, { eventIds: [eventId] });
       const participantData = countsRes.data?.counts?.[eventId] || { count: 0, maxParticipants: eventData.maxParticipants ?? null };
 
       eventData.currentParticipants = participantData.count;

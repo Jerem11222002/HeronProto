@@ -4,6 +4,8 @@ import DynamicRegistrationForm from './DynamicRegistrationForm';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 
+const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
 export default function WatchOnlyRegister({ event, user }) {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [registrationData, setRegistrationData] = useState(null);
@@ -20,7 +22,7 @@ export default function WatchOnlyRegister({ event, user }) {
       try {
         const token = localStorage.getItem('token');
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
-        const res = await axios.get('/api/users/me', { headers });
+        const res = await axios.get(`${baseURL}/api/users/me`, { headers });
         if (mounted && res?.data) setResolvedUser(res.data);
       } catch (err) {
         try {
@@ -28,7 +30,7 @@ export default function WatchOnlyRegister({ event, user }) {
             const id = user.id || user._id;
             const token = localStorage.getItem('token');
             const headers = token ? { Authorization: `Bearer ${token}` } : {};
-            const res2 = await axios.get(`/api/users/${id}`, { headers });
+            const res2 = await axios.get(`${baseURL}/api/users/${id}`, { headers });
             if (mounted && res2?.data) setResolvedUser(res2.data);
           }
         } catch (e) {
@@ -109,7 +111,7 @@ export default function WatchOnlyRegister({ event, user }) {
         const uid = user?.id || user?._id || resolvedUser?.id || resolvedUser?._id;
         if (uid) fd.append('userId', uid);
         // do NOT set Content-Type so browser sets multipart boundary
-        const res = await axios.post('/api/event-registrations/register', fd, { headers: { ...authHeaders } });
+        const res = await axios.post(`${baseURL}/api/event-registrations/register`, fd, { headers: { ...authHeaders } });
         setRegistrationData({
           registrationId: res.data.registrationId || '',
           userName: fd.get('name') || '',
@@ -117,7 +119,7 @@ export default function WatchOnlyRegister({ event, user }) {
         });
       } else {
         const payload = { ...(values || {}) , eventId: event._id, userId: user?.id || user?._id || resolvedUser?.id || resolvedUser?._id };
-        const res = await axios.post('/api/event-registrations/register', payload, { headers: { 'Content-Type': 'application/json', ...authHeaders } });
+        const res = await axios.post(`${baseURL}/api/event-registrations/register`, payload, { headers: { 'Content-Type': 'application/json', ...authHeaders } });
         setRegistrationData({
           registrationId: res.data.registrationId || '',
           userName: values.name || '',

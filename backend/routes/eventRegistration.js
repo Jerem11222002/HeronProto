@@ -171,6 +171,153 @@ router.post('/register', authenticate, async (req, res) => {
   }
 });
 
+// Get registrations for the authenticated user
+router.get('/user', authenticate, async (req, res) => {
+  try {
+    const userId = req.user && (req.user.id || req.user._id);
+    if (!userId) return res.status(400).json({ message: 'User ID not found in token.' });
+
+    // Pagination params
+    const page = Math.max(1, parseInt(req.query.page || '1', 10));
+    const limit = Math.max(1, Math.min(100, parseInt(req.query.limit || '10', 10)));
+    const skip = (page - 1) * limit;
+
+    // Filters
+    const status = req.query.status; // e.g. pending/approved
+    const q = req.query.q && String(req.query.q).trim();
+    const eventId = req.query.eventId;
+    const startDate = req.query.startDate ? new Date(req.query.startDate) : null;
+    const endDate = req.query.endDate ? new Date(req.query.endDate) : null;
+    const sortBy = req.query.sortBy || 'registrationDate';
+    const sortDir = req.query.sortDir === 'asc' ? 1 : -1;
+
+    const match = { userId: new mongoose.Types.ObjectId(String(userId)) };
+    if (status) match.status = status;
+    if (eventId) {
+      // Allow either string-stored eventId or ObjectId
+      if (mongoose.isValidObjectId(eventId)) match.eventId = new mongoose.Types.ObjectId(eventId);
+      else match.eventId = eventId;
+    }
+
+    if (startDate || endDate) {
+      match.$and = match.$and || [];
+      const range = {};
+      if (startDate) range.$gte = startDate;
+      if (endDate) range.$lte = endDate;
+      match.$and.push({ $or: [{ registrationDate: range }, { createdAt: range }] });
+    }
+
+    // Build aggregation pipeline to allow searching by event title and registration fields
+    const pipeline = [ { $match: match } ];
+
+    // lookup event details
+    pipeline.push({
+      $lookup: {
+        from: 'events',
+        localField: 'eventId',
+        foreignField: '_id',
+        as: 'event'
+      }
+    });
+    pipeline.push({ $unwind: { path: '$event', preserveNullAndEmptyArrays: true } });
+
+    // Text / fuzzy query
+    if (q) {
+      const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      pipeline.push({
+        $match: {
+          $or: [
+            { 'event.title': { $regex: re } },
+            { name: { $regex: re } },
+            { email: { $regex: re } },
+            { 'userId.email': { $regex: re } },
+            { 'userId.name': { $regex: re } },
+            { $expr: { $regexMatch: { input: { $toString: '$_id' }, regex: re } } }
+          ]
+        }
+      });
+    }
+
+    // add eventId field from lookup to keep compatibility with frontend
+    pipeline.push({ $addFields: { eventId: '$event' } });
+    pipeline.push({ $project: { event: 0 } });
+
+    // sorting
+    const sortStage = {};
+    if (sortBy === 'eventName') sortStage['eventId.title'] = sortDir;
+    else if (sortBy === 'status') sortStage['status'] = sortDir;
+    else sortStage['registrationDate'] = sortDir;
+
+    pipeline.push({
+      $facet: {
+        metadata: [ { $count: 'total' } ],
+        data: [ { $sort: sortStage }, { $skip: skip }, { $limit: limit } ]
+      }
+    });
+
+    const agg = await EventRegistration.aggregate(pipeline);
+    const meta = (agg[0] && agg[0].metadata && agg[0].metadata[0]) || { total: 0 };
+    const data = (agg[0] && agg[0].data) || [];
+
+    res.status(200).json({ success: true, data, total: meta.total || 0, page, limit });
+  } catch (err) {
+    console.error('Error fetching user registrations:', err);
+    res.status(500).json({ message: 'Error fetching registrations', error: err.message });
+  }
+});
+
+// Get a single registration (owner-only)
+router.get('/:registrationId', authenticate, async (req, res) => {
+  try {
+    const regId = req.params.registrationId;
+    if (!mongoose.isValidObjectId(regId)) return res.status(400).json({ message: 'Invalid registration ID.' });
+
+    const registration = await EventRegistration.findById(regId)
+      .populate('eventId', 'title startDate endDate slug organization registrationForm')
+      .populate('userId', 'name email profilePic')
+      .lean();
+
+    if (!registration) return res.status(404).json({ message: 'Registration not found.' });
+
+    const userId = String(req.user.id || req.user._id);
+    const ownerId = String(registration.userId && (registration.userId._id || registration.userId));
+    if (userId !== ownerId) return res.status(403).json({ message: 'Forbidden' });
+
+    res.status(200).json({ success: true, data: registration });
+  } catch (err) {
+    console.error('Error fetching registration detail:', err);
+    res.status(500).json({ message: 'Error fetching registration', error: err.message });
+  }
+});
+
+// Get a summary of the current user's registrations (counts by status)
+router.get('/user/summary', authenticate, async (req, res) => {
+  try {
+    const userId = req.user && (req.user.id || req.user._id);
+    if (!userId) return res.status(400).json({ message: 'User ID not found in token.' });
+
+    const agg = await EventRegistration.aggregate([
+      { $match: { userId: new mongoose.Types.ObjectId(String(userId)) } },
+      { $group: { _id: '$status', count: { $sum: 1 } } }
+    ]);
+
+    const counts = agg.reduce((acc, cur) => {
+      acc[cur._id || 'unknown'] = cur.count;
+      return acc;
+    }, {});
+
+    const total = Object.values(counts).reduce((a, b) => a + b, 0);
+
+    // alertCount: registrations that may require user's attention (pending or rejected)
+    const alertCount = (counts.pending || 0) + (counts.rejected || 0);
+
+    res.json({ success: true, counts, total, alertCount });
+  } catch (err) {
+    console.error('Error building registration summary:', err);
+    res.status(500).json({ message: 'Error fetching summary', error: err.message });
+  }
+});
+
 // Admin routes
 router.get("/admin/registrations/:eventId", adminAuthMiddleware, async (req, res) => {
   try {

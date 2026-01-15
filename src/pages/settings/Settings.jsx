@@ -1,9 +1,10 @@
 import React, { useState, useRef, useContext, useEffect } from 'react';
 import './Settings.scss';
 import { DarkModeContext } from '../../context/darkModeContext';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 
-// Backend base (use REACT_APP_API_BASE in .env or fallback)
-const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
+// Backend base (use REACT_APP_API_URL in .env or fallback)
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 const USER_INFO_ENDPOINT = `${API_BASE}/api/users/me`;
 const SETTINGS_ENDPOINT = `${API_BASE}/api/users/settings`;
 const DELETE_ACCOUNT_ENDPOINT = `${API_BASE}/api/users/delete-account`;
@@ -15,8 +16,24 @@ const getAuthHeaders = () => {
   return headers;
 };
 
+// Validation helper functions
+const validateEmail = (email) => {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email);
+};
+
+const validatePassword = (password) => {
+  // At least 8 characters, 1 uppercase, 1 lowercase, 1 number
+  return password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password);
+};
+
+const validateUsername = (username) => {
+  // At least 3 characters, alphanumeric and underscores
+  return username.length >= 3 && /^[a-zA-Z0-9_]+$/.test(username);
+};
+
 const Settings = () => {
-  const [userId, setUserId] = useState(null); // <-- new
+  const [userId, setUserId] = useState(null);
 
   // State for user input
   const [username, setUsername] = useState('');
@@ -26,6 +43,11 @@ const Settings = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [profilePicture, setProfilePicture] = useState(null);
   const [profilePreview, setProfilePreview] = useState(null);
+
+  // Password visibility toggles
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // New features
   const [language, setLanguage] = useState('en');
@@ -37,15 +59,16 @@ const Settings = () => {
   const [privacy, setPrivacy] = useState('public');
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
+  // Validation errors
+  const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
   const fileInputRef = useRef();
 
-  // Dark mode context (may not provide setDarkMode in some mounts)
+  // Dark mode context
   const { darkMode, setDarkMode } = useContext(DarkModeContext) || {};
-  // For select value
   const [themeSelect, setThemeSelect] = useState(darkMode ? 'dark' : 'light');
 
   // User's current profile picture URL
@@ -63,21 +86,17 @@ const Settings = () => {
         });
         if (res.ok) {
           const user = await res.json();
-          setUserId(user._id || user.id || null); // <-- new
+          setUserId(user._id || user.id || null);
           setUsername(user.username || '');
           setEmail(user.email || '');
-          // prefer customization object if present
           setLanguage(user.customization?.language || user.language || 'en');
           setPrivacy(user.customization?.visibility || user.privacy || 'public');
           setNotifications(user.notifications || { email: true, push: false, sms: false });
-          // backend uses profilePic; tolerate both keys
           const pic = user.profilePic || user.profilePicture || null;
           setProfilePicUrl(pic);
           setProfilePreview(pic);
-          // Sync theme from server if provided (may be under customization)
           const serverTheme = user.customization?.theme || user.theme || null;
 
-          // prefer a previously applied local setting if server doesn't have a theme
           const storedDark = (() => {
             try {
               const s = localStorage.getItem('darkMode');
@@ -92,7 +111,6 @@ const Settings = () => {
             if (setDarkMode) setDarkMode(serverTheme === 'dark');
             else applyThemeLocally(serverTheme);
           } else if (storedDark) {
-            // honor local preference if server hasn't stored a theme yet
             setThemeSelect(storedDark);
             if (setDarkMode) setDarkMode(storedDark === 'dark');
             else applyThemeLocally(storedDark);
@@ -100,22 +118,19 @@ const Settings = () => {
             setThemeSelect(darkMode ? 'dark' : 'light');
             if (!setDarkMode) applyThemeLocally(darkMode ? 'dark' : 'light');
           }
-        } else {
-          // optional: handle unauthorized etc.
         }
       } catch (err) {
-        // Optionally handle error
+        console.error('Error fetching user info:', err);
+        setErrorMsg('Failed to load user settings');
       }
     };
     fetchUserInfo();
-  }, []); // run once on mount
+  }, []);
 
-  // Sync select with context
   useEffect(() => {
     setThemeSelect(darkMode ? 'dark' : 'light');
   }, [darkMode]);
 
-  // Handle theme change
   const applyThemeLocally = (value) => {
     if (value === 'dark') {
       setDarkMode(true);
@@ -127,18 +142,12 @@ const Settings = () => {
   const handleThemeChange = (e) => {
     const value = e.target.value;
     setThemeSelect(value);
-
-    // apply immediately to the document for instant feedback
     applyThemeLocally(value);
-
-    // keep provider in sync if available
     if (typeof setDarkMode === 'function') {
       try { setDarkMode(value === 'dark'); } catch (err) { /* ignore */ }
     }
-    // Optionally handle "system" here
   };
 
-  // Handle profile picture preview
   const handleProfilePictureChange = (e) => {
     const file = e.target.files[0];
     setProfilePicture(file);
@@ -151,26 +160,63 @@ const Settings = () => {
     }
   };
 
+  // Validate form
+  const validateForm = () => {
+    const errors = {};
+
+    if (username && !validateUsername(username)) {
+      errors.username = 'Username must be 3+ characters, alphanumeric and underscores only';
+    }
+
+    if (email && !validateEmail(email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+
+    // Password validation - stricter
+    if (newPassword && newPassword.trim()) {
+      if (!validatePassword(newPassword)) {
+        errors.newPassword = 'Password must be 8+ characters with uppercase, lowercase, and numbers';
+      }
+      if (newPassword !== confirmPassword) {
+        errors.confirmPassword = 'Passwords do not match';
+      }
+      if (!currentPassword || !currentPassword.trim()) {
+        errors.currentPassword = 'Current password is required to change password';
+      }
+    }
+
+    // If confirmPassword is filled but newPassword is not, show error
+    if (confirmPassword && !newPassword) {
+      errors.confirmPassword = 'Please enter new password';
+    }
+
+    // If currentPassword is filled but newPassword is not, show info
+    if (currentPassword && !newPassword) {
+      // Just note it, don't error
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSuccessMsg('');
     setErrorMsg('');
 
-    // Password validation
-    if (newPassword && newPassword !== confirmPassword) {
-      setErrorMsg('New passwords do not match.');
+    if (!validateForm()) {
+      setErrorMsg('Please fix the errors above');
       return;
     }
 
     setLoading(true);
 
-    // Prepare data to send to the backend
     const formData = new FormData();
-    if (username) formData.append('username', username);
-    if (email) formData.append('email', email);
-    if (currentPassword) formData.append('currentPassword', currentPassword);
-    if (newPassword) formData.append('newPassword', newPassword);
+    if (username) formData.append('username', username.trim());
+    if (email) formData.append('email', email.trim());
+    if (currentPassword) formData.append('currentPassword', currentPassword.trim());
+    if (newPassword) formData.append('newPassword', newPassword.trim());
     formData.append('theme', themeSelect);
     formData.append('language', language);
     formData.append('privacy', privacy);
@@ -178,25 +224,66 @@ const Settings = () => {
     if (profilePicture) {
       formData.append('profilePicture', profilePicture);
     }
+    
+    console.log('FormData being sent:');
+    for (let [key, value] of formData.entries()) {
+      if (key !== 'profilePicture') {
+        console.log(`  ${key}:`, value);
+      }
+    }
 
     try {
+      console.log('Submitting settings form...');
+      console.log('Endpoint:', SETTINGS_ENDPOINT);
+      
+      // Log FormData contents for debugging
+      console.log('FormData contents:');
+      for (let [key, value] of formData.entries()) {
+        if (key === 'profilePicture') {
+          console.log(`  ${key}: File(${value.size} bytes)`);
+        } else if (key === 'notifications') {
+          console.log(`  ${key}:`, value);
+        } else {
+          console.log(`  ${key}:`, value || '(empty)');
+        }
+      }
+      
       const response = await fetch(SETTINGS_ENDPOINT, {
         method: 'POST',
         body: formData,
         credentials: 'include',
-        headers: {
-          ...getAuthHeaders() // do not set Content-Type for FormData
-        }
+        headers: getAuthHeaders()
+        // DO NOT set Content-Type header with FormData - let browser handle it
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response status text:', response.statusText);
+      const data = await response.json();
+      console.log('Response data:', data);
+      
+      if (!response.ok) {
+        console.error('Settings update failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          message: data.message,
+          error: data.error
+        });
+      }
+
       if (response.ok) {
-        const data = await response.json();
-        setSuccessMsg('Settings updated successfully!');
+        setSuccessMsg('✅ Settings updated successfully!');
         const updatedPic = data.profilePic || data.profilePicture;
         if (updatedPic) {
           setProfilePicUrl(updatedPic);
           setProfilePreview(updatedPic);
         }
+        // Clear password fields after successful update
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setProfilePicture(null);
+        setFieldErrors({});
+        
         const returnedTheme = data.theme || data.customization?.theme;
         if (returnedTheme) {
           setThemeSelect(returnedTheme);
@@ -210,13 +297,11 @@ const Settings = () => {
             applyThemeLocally(returnedTheme);
           }
 
-          // persist canonical theme and per-user theme key so it survives logout
           try {
             localStorage.setItem('theme', returnedTheme);
             if (userId) {
               localStorage.setItem(`userTheme_${userId}`, returnedTheme);
             }
-            // also update stored currentUser if present
             const stored = localStorage.getItem('currentUser');
             if (stored) {
               try {
@@ -224,15 +309,25 @@ const Settings = () => {
                 cu.customization = cu.customization || {};
                 cu.customization.theme = returnedTheme;
                 localStorage.setItem('currentUser', JSON.stringify(cu));
-              } catch (err) { /* ignore parse error */ }
+              } catch (err) { /* ignore */ }
             }
-          } catch (err) { /* ignore storage errors */ }
+          } catch (err) { /* ignore */ }
         }
       } else {
-        const errBody = await response.json().catch(()=>null);
-        setErrorMsg(errBody?.message || 'Error updating settings.');
+        // Map common error codes to user-friendly messages
+        if (response.status === 400) {
+          setErrorMsg(data?.message || 'Invalid request. Please check your input.');
+        } else if (response.status === 401) {
+          setErrorMsg(data?.message || 'Current password is incorrect.');
+          setFieldErrors(prev => ({ ...prev, currentPassword: data?.message || 'Incorrect password' }));
+        } else if (response.status === 404) {
+          setErrorMsg('User account not found.');
+        } else {
+          setErrorMsg(data?.message || `Error updating settings (${response.status}).`);
+        }
       }
     } catch (error) {
+      console.error('Fetch error:', error);
       setErrorMsg('Network error: ' + error.message);
     } finally {
       setLoading(false);
@@ -246,15 +341,17 @@ const Settings = () => {
     setErrorMsg('');
     try {
       const response = await fetch(DELETE_ACCOUNT_ENDPOINT, {
-          method: 'DELETE',
-          credentials: 'include',
-          headers: {
-            ...getAuthHeaders()
-          }
-        });
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          ...getAuthHeaders()
+        }
+      });
       if (response.ok) {
-        setSuccessMsg('Account deleted.');
-        // Optionally redirect or log out
+        setSuccessMsg('Account deleted. Redirecting...');
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 1500);
       } else {
         setErrorMsg('Failed to delete account.');
       }
@@ -265,6 +362,30 @@ const Settings = () => {
       setDeleteConfirm(false);
     }
   };
+
+  const renderPasswordField = (label, value, onChange, show, setShow, errorKey) => (
+    <label>
+      {label}
+      <div className="password-input-wrapper">
+        <input
+          type={show ? 'text' : 'password'}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          autoComplete="off"
+          className={fieldErrors[errorKey] ? 'input-error' : ''}
+        />
+        <button
+          type="button"
+          className="password-toggle"
+          onClick={() => setShow(!show)}
+          title={show ? 'Hide password' : 'Show password'}
+        >
+          {show ? <VisibilityOff size={20} /> : <Visibility size={20} />}
+        </button>
+      </div>
+      {fieldErrors[errorKey] && <span className="error-text">{fieldErrors[errorKey]}</span>}
+    </label>
+  );
 
   return (
     <div className="settings">
@@ -312,7 +433,9 @@ const Settings = () => {
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Enter your username"
                 autoComplete="username"
+                className={fieldErrors.username ? 'input-error' : ''}
               />
+              {fieldErrors.username && <span className="error-text">{fieldErrors.username}</span>}
             </label>
             <label>
               Email
@@ -322,7 +445,9 @@ const Settings = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
                 autoComplete="email"
+                className={fieldErrors.email ? 'input-error' : ''}
               />
+              {fieldErrors.email && <span className="error-text">{fieldErrors.email}</span>}
             </label>
           </div>
         </section>
@@ -330,33 +455,33 @@ const Settings = () => {
         <section>
           <h2>Password Management</h2>
           <div className="settings-row">
-            <label>
-              Current Password
-              <input
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                autoComplete="current-password"
-              />
-            </label>
-            <label>
-              New Password
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                autoComplete="new-password"
-              />
-            </label>
-            <label>
-              Confirm New Password
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                autoComplete="new-password"
-              />
-            </label>
+            {renderPasswordField(
+              'Current Password',
+              currentPassword,
+              setCurrentPassword,
+              showCurrentPassword,
+              setShowCurrentPassword,
+              'currentPassword'
+            )}
+            {renderPasswordField(
+              'New Password',
+              newPassword,
+              setNewPassword,
+              showNewPassword,
+              setShowNewPassword,
+              'newPassword'
+            )}
+            <small className="password-hint">
+              Min 8 chars, 1 uppercase, 1 lowercase, 1 number
+            </small>
+            {renderPasswordField(
+              'Confirm New Password',
+              confirmPassword,
+              setConfirmPassword,
+              showConfirmPassword,
+              setShowConfirmPassword,
+              'confirmPassword'
+            )}
           </div>
         </section>
 
@@ -377,7 +502,7 @@ const Settings = () => {
                 <option value="en">English</option>
                 <option value="es">Spanish</option>
                 <option value="fr">French</option>
-                {/* Add more languages as needed */}
+                <option value="tl">Tagalog</option>
               </select>
             </label>
           </div>
@@ -422,9 +547,9 @@ const Settings = () => {
             <label>
               Profile Visibility
               <select value={privacy} onChange={e => setPrivacy(e.target.value)}>
-                <option value="public">Public</option>
-                <option value="friends">Friends Only</option>
-                <option value="private">Private</option>
+                <option value="public">🌐 Public (everyone can see)</option>
+                <option value="friends">👥 Friends Only</option>
+                <option value="private">🔒 Private (only you)</option>
               </select>
             </label>
           </div>

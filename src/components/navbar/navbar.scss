@@ -154,6 +154,7 @@ $shadows: (
 
     // Right Section
     .right {
+      .registrations-icon { margin-left: 6px; }
       @include flex-center;
       gap: clamp(12px, 3vw, 18px);
       flex: 0 0 auto; /* keep right section compact */

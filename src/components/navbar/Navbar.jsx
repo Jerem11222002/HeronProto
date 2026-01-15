@@ -2,6 +2,7 @@ import React, { useState, useContext, useCallback, useRef, useEffect } from "rea
 import "./navbar.scss";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import GridViewOutlinedIcon from "@mui/icons-material/GridViewOutlined";
+import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined';
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
 import SearchIcon from "@mui/icons-material/Search";
@@ -70,6 +71,7 @@ const Navbar = () => {
 
   // State
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [regSummary, setRegSummary] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -395,6 +397,21 @@ const Navbar = () => {
     if (currentUser) fetchUnreadCounts();
   }, [currentUser]);
 
+  // Fetch registration summary for badge in navbar
+  useEffect(() => {
+    const fetchSummary = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/api/event-registrations/user/summary`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        setRegSummary(res.data || null);
+      } catch (err) {
+        setRegSummary(null);
+      }
+    };
+    if (currentUser) fetchSummary();
+  }, [currentUser]);
+
   // Real-time update for message previews and chat popups via socket
   useEffect(() => {
     if (!socket || !currentUser) return;
@@ -505,6 +522,22 @@ const Navbar = () => {
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate("/events"); }}
           />
+          <Badge 
+            badgeContent={regSummary?.alertCount || 0}
+            color="error"
+            overlap="circular"
+            variant="dot"
+            invisible={!regSummary || regSummary.alertCount === 0}
+          >
+            <EventAvailableOutlinedIcon
+              onClick={() => navigate('/dashboard')}
+              className="nav-icon registrations-icon"
+              title="My Registrations"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate('/dashboard'); }}
+            />
+          </Badge>
           {/* unified search icon (click focuses desktop input; opens overlay on small screens) */}
           <SearchIcon
             onClick={handleSearchIconClick}
@@ -674,6 +707,9 @@ const Navbar = () => {
             <div className="dropdown-menu" style={isMobile ? mobileUserMenuStyle : undefined}>
               <div className="dropdown-item" onClick={handleProfileClick}>
                 {isLoading ? <CircularProgress size={16} /> : "Profile"}
+              </div>
+              <div className="dropdown-item" onClick={() => { navigate('/dashboard'); setDropdownOpen(false); }}>
+                My Registrations
               </div>
               <div className="dropdown-item" onClick={handleSettingsClick}>
                 {isLoading ? <CircularProgress size={16} /> : "Settings"}

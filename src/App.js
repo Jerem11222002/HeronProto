@@ -16,6 +16,8 @@ import RightBar from "./components/rightBar/RightBar";
 import Home from "./pages/home/Home";
 import Profile from "./pages/profile/Profile";
 import Events from "./pages/events/events";
+import Dashboard from "./pages/dashboard/Dashboard";
+import RegistrationDetail from "./pages/dashboard/RegistrationDetail";
 import "./style.scss";
 import "./layout.scss";
 import { DarkModeContext, DarkModeContextProvider } from "./context/darkModeContext";
@@ -125,6 +127,8 @@ function AppContent() {
                    <Home />
         },
         { path: "profile/:userId", element: isAdmin ? <Navigate to="/admin/dashboard" replace /> : <Profile /> },
+        { path: "dashboard", element: isAdmin ? <Navigate to="/admin/dashboard" replace /> : <Dashboard /> },
+        { path: "dashboard/registration/:id", element: isAdmin ? <Navigate to="/admin/dashboard" replace /> : <RegistrationDetail /> },
         { path: "settings", element: isAdmin ? <Navigate to="/admin/settings" replace /> : <Settings /> },
         { path: "events", element: isAdmin ? <Navigate to="/admin/events" replace /> : <Events /> },
         { path: "pre-registration/:eventId", element: isAdmin ? <Navigate to="/admin/events" replace /> : <PreRegister /> }

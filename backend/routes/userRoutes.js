@@ -4,7 +4,19 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/users");
 const Notification = require("../models/notification");
 const authenticateToken = require("../Middleware/authenticateToken");
+const multer = require('multer');
 const router = express.Router();
+
+// Setup multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'backend/uploads/');
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + '-' + file.originalname);
+  }
+});
+const upload = multer({ storage });
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -422,6 +434,197 @@ router.post("/batch", authenticateToken, async (req, res) => {
   } catch (error) {
     console.error("❌ Batch fetch error:", error);
     res.status(500).json({ message: "Failed to fetch users" });
+  }
+});
+
+// Update user settings (username, email, password, theme, language, etc.)
+router.post('/settings', authenticateToken, upload.single('profilePicture'), async (req, res) => {
+  try {
+    console.log('\n📥 ============ SETTINGS.UPDATE REQUEST ============');
+    console.log('📥 Request received at:', new Date().toISOString());
+    console.log('📥 User ID:', req.user.id);
+    console.log('📥 Has file:', !!req.file);
+    if (req.file) {
+      console.log('📥 File info:', { fieldname: req.file.fieldname, filename: req.file.filename, size: req.file.size });
+    }
+    console.log('📥 Body keys:', Object.keys(req.body || {}));
+    console.log('📥 Raw body:', {
+      username: req.body.username || '(not provided)',
+      email: req.body.email || '(not provided)',
+      currentPassword: req.body.currentPassword ? '(provided)' : '(not provided)',
+      newPassword: req.body.newPassword ? '(provided)' : '(not provided)',
+      confirmPassword: req.body.confirmPassword ? '(provided)' : '(not provided)',
+      theme: req.body.theme || '(not provided)',
+      language: req.body.language || '(not provided)',
+      privacy: req.body.privacy || '(not provided)',
+      notifications: req.body.notifications || '(not provided)'
+    });
+
+    const userId = req.user.id;
+    let { username, email, currentPassword, newPassword, theme, language, privacy, notifications } = req.body;
+
+    // Trim all string inputs immediately
+    username = username ? String(username).trim() : '';
+    email = email ? String(email).trim() : '';
+    currentPassword = currentPassword ? String(currentPassword).trim() : '';
+    newPassword = newPassword ? String(newPassword).trim() : '';
+    
+    console.log('📥 After trimming:', {
+      username: username || '(empty)',
+      email: email || '(empty)',
+      currentPassword: currentPassword ? '(provided, length: ' + currentPassword.length + ')' : '(empty)',
+      newPassword: newPassword ? '(provided, length: ' + newPassword.length + ')' : '(empty)',
+      theme,
+      language,
+      privacy,
+      notifications: notifications ? '(provided)' : '(not provided)'
+    });
+
+    // Fetch current user
+    const user = await User.findById(userId);
+    if (!user) {
+      console.error('❌ User not found:', userId);
+      return res.status(404).json({ message: 'User not found.' });
+    }
+    console.log('✅ User found:', userId);
+
+    // If password change is requested, validate current password
+    if (newPassword) {
+      console.log('🔐 ========== PASSWORD CHANGE REQUESTED ==========');
+      
+      if (!currentPassword) {
+        console.warn('⚠️ Password change requested without current password');
+        return res.status(400).json({ message: 'Current password is required to change password.' });
+      }
+
+      if (!user.password) {
+        console.error('❌ User has no password hash stored');
+        return res.status(500).json({ message: 'Password validation failed: no password on file.' });
+      }
+
+      try {
+        console.log('🔐 Starting bcrypt comparison...');
+        console.log('🔐 currentPassword type:', typeof currentPassword);
+        console.log('🔐 currentPassword length:', currentPassword.length);
+        console.log('🔐 user.password type:', typeof user.password);
+        console.log('🔐 user.password length:', user.password.length);
+        console.log('🔐 user.password starts with:', user.password.substring(0, 20) + '...');
+        
+        const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+        console.log('✅ bcrypt.compare() returned:', isPasswordValid);
+        
+        if (!isPasswordValid) {
+          console.warn('⚠️ Current password incorrect for user:', userId);
+          return res.status(401).json({ message: 'Current password is incorrect.' });
+        }
+        
+        console.log('✅ Password verified successfully');
+        console.log('🔐 Setting new password (will be auto-hashed by pre-save hook)...');
+        // DO NOT hash here - the pre-save hook will do it automatically
+        user.password = newPassword;
+        console.log('✅ New password set (will be hashed on save)');
+      } catch (bcryptErr) {
+        console.error('❌ Bcrypt error:', bcryptErr.message);
+        console.error('❌ Bcrypt error type:', bcryptErr.constructor.name);
+        console.error('❌ Bcrypt error stack:', bcryptErr.stack);
+        return res.status(500).json({ message: 'Password validation failed: ' + bcryptErr.message });
+      }
+    }
+
+    // Update basic fields
+    console.log('📝 ========== UPDATING BASIC FIELDS ==========');
+    if (username) {
+      user.username = username;
+      console.log('✅ Username updated to:', username);
+    }
+    if (email) {
+      user.email = email;
+      console.log('✅ Email updated to:', email);
+    }
+
+    // Handle profile picture upload
+    if (req.file) {
+      user.profilePic = `/uploads/${req.file.filename}`;
+      console.log('✅ Profile picture updated to:', user.profilePic);
+    }
+
+    // Update customization settings
+    console.log('🎨 ========== UPDATING CUSTOMIZATION ==========');
+    if (!user.customization) {
+      user.customization = {};
+      console.log('✅ Created customization object');
+    }
+    if (theme) {
+      user.customization.theme = theme;
+      console.log('✅ Theme updated to:', theme);
+    }
+    if (language) {
+      user.customization.language = language;
+      console.log('✅ Language updated to:', language);
+    }
+    if (privacy) {
+      user.privacy = privacy;
+      console.log('✅ Privacy updated to:', privacy);
+    }
+
+    // Update notifications
+    console.log('🔔 ========== UPDATING NOTIFICATIONS ==========');
+    if (notifications) {
+      try {
+        const notifObj = typeof notifications === 'string' ? JSON.parse(notifications) : notifications;
+        user.notifications = notifObj;
+        console.log('✅ Notifications updated:', notifObj);
+      } catch (e) {
+        console.error('⚠️ Error parsing notifications:', e.message);
+        console.warn('⚠️ Notifications value was:', notifications);
+      }
+    }
+
+    // Save user
+    console.log('💾 ========== SAVING USER ==========');
+    await user.save();
+    console.log('✅ User saved successfully to database');
+
+    // Return updated user data (without password)
+    const updatedUser = await User.findById(userId).select('-password').lean();
+    console.log('✅ Updated user retrieved for response');
+    console.log('📤 ========== SENDING RESPONSE ==========');
+    res.status(200).json({
+      success: true,
+      message: 'Settings updated successfully.',
+      ...updatedUser,
+      theme: updatedUser.customization?.theme || 'light',
+      profilePic: updatedUser.profilePic || user.profilePic
+    });
+    console.log('✅ Response sent successfully\n');
+  } catch (error) {
+    console.error('❌ ========== ERROR IN SETTINGS UPDATE ==========');
+    console.error('❌ Error message:', error.message);
+    console.error('❌ Error name:', error.name);
+    console.error('❌ Error type:', error.constructor.name);
+    console.error('❌ Stack trace:', error.stack);
+    res.status(500).json({ message: 'Failed to update settings.', error: error.message });
+  }
+});
+
+// Delete user account
+router.delete('/delete-account', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Find and delete user
+    const user = await User.findByIdAndDelete(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Account deleted successfully.'
+    });
+  } catch (error) {
+    console.error('Error deleting account:', error);
+    res.status(500).json({ message: 'Failed to delete account.', error: error.message });
   }
 });
 

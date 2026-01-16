@@ -41,9 +41,11 @@ function wrapConsole(level, fn) {
   };
 }
 
-export default {
+const logger = {
   debug: wrapConsole('debug', console.debug.bind(console)),
   info: wrapConsole('info', console.info.bind(console)),
   warn: wrapConsole('warn', console.warn.bind(console)),
   error: wrapConsole('error', console.error.bind(console))
 };
+
+export default logger;

@@ -89,10 +89,12 @@ export const getImageUrl = (imagePath, type = 'avatar') => {
     event.target.src = getDefaultAvatar(gender);
   };
   
-  export default {
+  const imageUtilsExport = {
     DEFAULT_IMAGES,
     getDefaultAvatar,
     getImageUrl,
     validateImage,
     handleImageError
   };
+
+  export default imageUtilsExport;

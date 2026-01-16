@@ -100,7 +100,7 @@ const ResetPassword = () => {
           <h1>Reset Password</h1>
           <div className="error-message">{error}</div>
           <p className="back-link">
-            <a onClick={() => navigate('/forgot-password')}>Request a new reset link</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); navigate('/forgot-password'); }}>Request a new reset link</a>
           </p>
         </div>
       </div>
@@ -140,7 +140,7 @@ const ResetPassword = () => {
         </form>
 
         <p className="back-link">
-          <a onClick={() => navigate('/login')}>Back to Login</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/login'); }}>Back to Login</a>
         </p>
       </div>
     </div>

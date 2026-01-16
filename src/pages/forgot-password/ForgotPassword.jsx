@@ -59,7 +59,7 @@ const ForgotPassword = () => {
         </form>
 
         <p className="back-link">
-          <a onClick={() => navigate('/login')}>Back to Login</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/login'); }}>Back to Login</a>
         </p>
       </div>
     </div>

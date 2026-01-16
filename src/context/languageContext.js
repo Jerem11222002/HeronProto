@@ -151,8 +151,6 @@ const translations = {
     'event-name': 'Event Name',
     'registration-id': 'Registration ID',
     'loading-registrations': 'Loading registrations...',
-    // Notifications
-    'notifications': 'Notifications',
     'mark-all-as-read': 'Mark all as read',
     'no-notifications-yet': 'No notifications yet',
     'load-more': 'Load more',
@@ -309,8 +307,6 @@ const translations = {
     'event-name': 'Nombre del Evento',
     'registration-id': 'ID de Registro',
     'loading-registrations': 'Cargando registros...',
-    // Notifications
-    'notifications': 'Notificaciones',
     'mark-all-as-read': 'Marcar todo como leído',
     'no-notifications-yet': 'Sin notificaciones aún',
     'load-more': 'Cargar más',
@@ -467,8 +463,6 @@ const translations = {
     'event-name': 'Nom de l\'Événement',
     'registration-id': 'ID d\'Inscription',
     'loading-registrations': 'Chargement des inscriptions...',
-    // Notifications
-    'notifications': 'Notifications',
     'mark-all-as-read': 'Marquer tout comme lu',
     'no-notifications-yet': 'Pas encore de notifications',
     'load-more': 'Charger plus',
@@ -625,8 +619,6 @@ const translations = {
     'event-name': 'Pangalan ng Evento',
     'registration-id': 'ID ng Rehistro',
     'loading-registrations': 'Kumukuha ng mga rehistro...',
-    // Notifications
-    'notifications': 'Mga Notipikasyon',
     'mark-all-as-read': 'Markahan ang lahat bilang nabasa',
     'no-notifications-yet': 'Walang notipikasyon pa',
     'load-more': 'Magkarga pa',

@@ -9,7 +9,7 @@ import FavoriteBorderOutlinedIcon from "@mui/icons-material/FavoriteBorderOutlin
 import FavoriteOutlinedIcon from "@mui/icons-material/FavoriteOutlined";
 
 function escapeHtml(text = '') {
-  return text.replace(/[&<>"'`=\/]/g, function (s) {
+  return text.replace(/[&<>"'`=/]/g, function (s) {
     return ({
       '&': '&amp;',
       '<': '&lt;',

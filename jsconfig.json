@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
-    "baseUrl": "src",
+    "baseUrl": ".",
     "jsx": "react-jsx",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["src/*"]
     },
     "moduleResolution": "node",
     "resolveJsonModule": true,
@@ -11,6 +11,6 @@
     "allowJs": true,
     "checkJs": false
   },
-  "include": ["src/**/*", "src/App.js"],
+  "include": ["src/**/*.{js,jsx,ts,tsx}"],
   "exclude": ["node_modules", "build", "dist"]
 }

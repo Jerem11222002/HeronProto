@@ -367,7 +367,7 @@ const AdminEvents = () => {
          console.log('[AdminEvents] addEvent result:', result);
          toast.success('Event created successfully');
          // notify other admin UIs that an event was created
-         try { window.dispatchEvent(new CustomEvent('app:events:updated', { detail: { eventId: result && result._id || result.id } })); } catch (e) {}
+         try { window.dispatchEvent(new CustomEvent('app:events:updated', { detail: { eventId: (result && result._id) || result.id } })); } catch (e) {}
        }
        
        handleClose();

@@ -52,7 +52,7 @@ const formatMediaUrl = (url) => {
   }
 
   // For just filenames, construct full path
-  const filename = url.split(/[\/\\]/).pop();
+  const filename = url.split(/[/\\]/).pop();
   return `${API_URL}/uploads/${filename}`;
 };
 
@@ -237,7 +237,7 @@ const Profile = () => {
       const getFileName = (path) => {
         if (!path) return null;
         if (path.startsWith('http')) return path;
-        return path.split(/[\/\\]/).pop();
+        return path.split(/[/\\]/).pop();
       };
 
       // Format media URLs

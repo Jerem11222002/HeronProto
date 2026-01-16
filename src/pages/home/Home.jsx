@@ -41,7 +41,7 @@ const normalizeMediaPath = (p) => {
   if (!p) return null;
   if (typeof p !== 'string') return null;
   if (/^https?:\/\//i.test(p)) return p;
-  const base = process.env.REACT_APP_API_URL || process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  const base = process.env.REACT_APP_API_URL || 'http://localhost:5000';
   if (p.startsWith('/')) return `${base}${p}`;
   return `${base}/uploads/${p.split(/[\/\\]/).pop()}`;
 };

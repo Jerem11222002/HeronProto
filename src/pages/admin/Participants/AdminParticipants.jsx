@@ -565,8 +565,8 @@ const AdminParticipants = () => {
 
     // fetch missing form schema if it's not already present
     const raw = participant?.raw || participant || {};
-    const hasSchema = Array.isArray(raw?.eventId?.registrationForm) && raw.eventId.registrationForm.length
-                    || Array.isArray(participant?.eventForm) && participant.eventForm.length;
+    const hasSchema = (Array.isArray(raw?.eventId?.registrationForm) && raw.eventId.registrationForm.length)
+                    || (Array.isArray(participant?.eventForm) && participant.eventForm.length);
     if (!hasSchema) {
       const schema = await fetchEventFormIfMissing(participant);
       // update local selected participant so dialog shows fields immediately

@@ -67,6 +67,23 @@ $shadows: (
       flex: 1 1 auto; /* allow left section to grow on wide screens */
       min-width: 0; /* allow children to shrink inside flex container */
 
+      .heron-logo {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        text-decoration: none;
+
+        .heron-text {
+          font-size: clamp(20px, 3vw, 24px);
+          font-weight: 700;
+          color: themed('textColor');
+        }
+      }
+
       .logo {
         font-size: clamp(20px, 3vw, 24px); // Responsive font
         font-weight: 700;
@@ -81,13 +98,29 @@ $shadows: (
           font-size: clamp(18px, 2.5vw, 22px);
           padding: clamp(8px, 1.5vw, 10px);
           border-radius: 12px;
-          color: themed('textColorSoft');
+          color: themed('textColor');
           cursor: pointer;
           @include hover-lift;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          
+          /* Force SVG colors */
+          svg {
+            fill: themed('textColor');
+            stroke: themed('textColor');
+            color: themed('textColor');
+          }
           
           &:hover {
             color: themed('primary');
             background: rgba(themed('primary'), 0.06);
+            
+            svg {
+              fill: themed('primary');
+              stroke: themed('primary');
+              color: themed('primary');
+            }
           }
         }
       }
@@ -120,6 +153,15 @@ $shadows: (
             /* match nav icons size */
             font-size: clamp(18px, 2.2vw, 22px);
             margin-right: clamp(8px, 2vw, 12px);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            
+            svg {
+              fill: themed('textColorSoft');
+              stroke: themed('textColorSoft');
+              color: themed('textColorSoft');
+            }
           }
 
           /* mobile toggle (visible on small screens) */
@@ -163,9 +205,25 @@ $shadows: (
         color: themed('textColorSoft');
         cursor: pointer;
         @include hover-lift;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        
+        /* Force SVG colors */
+        svg {
+          fill: themed('textColorSoft');
+          stroke: themed('textColorSoft');
+          color: themed('textColorSoft');
+        }
 
         &:hover {
           color: themed('primary');
+          
+          svg {
+            fill: themed('primary');
+            stroke: themed('primary');
+            color: themed('primary');
+          }
         }
       }
 
@@ -278,7 +336,7 @@ $shadows: (
             outline: none;
             &:focus {
               border-color: themed('primary');
-              background: #fff;
+              background: themed('bg');
             }
           }
         }
@@ -342,7 +400,7 @@ $shadows: (
             border-radius: 50%;
             background: #4caf50;
             margin-left: 8px;
-            border: 2px solid #fff;
+            border: 2px solid themed('bg');
             box-shadow: 0 0 0 2px rgba(76,175,80,0.15);
           }
 

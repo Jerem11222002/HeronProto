@@ -1,9 +1,12 @@
+@use '../../style.scss' as *;
+
 .featured-title {
+  @include themify($themes) {
     padding: 20px;
-    background-color: white;
+    background-color: themed("bg");
     border-radius: 10px;
     margin-bottom: 20px;
-    box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
+    box-shadow: 0px 0px 15px themed("shadow");
   
     .title-container {
       display: flex;
@@ -14,12 +17,11 @@
       h1 {
         font-size: 24px;
         font-weight: 600;
-        color: #0f1419;
+        color: themed("textColor");
       }
   
       .view-all {
-        /* darker blue for better contrast on white */
-        color: #0b66c3;
+        color: themed("primary");
         font-size: 14px;
         cursor: pointer;
         font-weight: 600;
@@ -28,9 +30,12 @@
         background: transparent;
         transition: background-color 0.12s, color 0.12s;
   
-        &:hover { text-decoration: underline; color: #084a93; }
+        &:hover { 
+          text-decoration: underline; 
+          color: themed("primaryHover");
+        }
         &:focus-visible {
-          outline: 3px solid rgba(11,102,195,0.18);
+          outline: 3px solid rgba(82, 113, 255, 0.18);
           outline-offset: 2px;
         }
       }
@@ -38,8 +43,9 @@
   
     .title-description {
       p {
-        color: #536471;
+        color: themed("textColorSoft");
         font-size: 14px;
       }
     }
   }
+}

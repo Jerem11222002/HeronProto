@@ -1,14 +1,17 @@
+import { useLanguage } from "../../hooks/useLanguage";
 import "./FeaturedTitle.scss"
 
 const FeaturedTitle = () => {
+  const { t } = useLanguage();
+  
   return (
     <div className="featured-title">
       <div className="title-container">
-        <h1>Featured Artists</h1>
-        <span className="view-all">View All</span>
+        <h1>{t('featured-artists')}</h1>
+        <span className="view-all">{t('view-all')}</span>
       </div>
       <div className="title-description">
-        <p>Discover amazing artists in our community</p>
+        <p>{t('discover-artists')}</p>
       </div>
     </div>
   )

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/authContext';
 import { useEvents } from '../../context/EventsContext';
+import { useLanguage } from '../../hooks/useLanguage';
 import useEventCounts from '../../hooks/useEventCounts';
 import EventCard from '../../components/evenCard/EventCard';
 import { IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, MenuItem, FormControlLabel, Switch, InputAdornment } from '@mui/material';
@@ -49,6 +50,7 @@ const initialFormData = {
 
 const Events = () => {
   const { currentUser, isAdmin } = useContext(AuthContext);
+  const { t } = useLanguage();
   const { events, addEvent, updateEvent, deleteEvent } = useEvents();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -62,11 +64,14 @@ const Events = () => {
   const [editingEvent, setEditingEvent] = useState(null);
   const [formData, setFormData] = useState(initialFormData);
   const navigate = useNavigate();
-  // Recommended mode state
   const [recommendedMode, setRecommendedMode] = useState(false);
   const [recommendedEvents, setRecommendedEvents] = useState([]);
   const [recommendedLoading, setRecommendedLoading] = useState(false);
   const [recommendedError, setRecommendedError] = useState(null);
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [filterByPrice, setFilterByPrice] = useState('all'); // 'all', 'free', 'paid'
+  const [favorites, setFavorites] = useState(new Set(JSON.parse(localStorage.getItem('eventFavorites')) || []));
 
   const fetchRecommended = async () => {
     setRecommendedLoading(true);
@@ -118,7 +123,13 @@ const Events = () => {
             __rawFeedItem: item
           };
         })
-        .filter(ev => ev._id && ev.title);
+        .filter(ev => ev._id && ev.title)
+        .sort((a, b) => {
+          // Sort by date, newest first
+          const dateA = new Date(a.date).getTime();
+          const dateB = new Date(b.date).getTime();
+          return dateB - dateA;
+        });
       setRecommendedEvents(eventsFromFeed);
     } catch (err) {
       console.error('Failed to fetch recommended events (strict):', err);
@@ -160,6 +171,17 @@ const Events = () => {
     } catch (err) {
       console.error('Error sharing event:', err);
     }
+  };
+
+  const handleToggleFavorite = (eventId) => {
+    const newFavorites = new Set(favorites);
+    if (newFavorites.has(eventId)) {
+      newFavorites.delete(eventId);
+    } else {
+      newFavorites.add(eventId);
+    }
+    setFavorites(newFavorites);
+    localStorage.setItem('eventFavorites', JSON.stringify([...newFavorites]));
   };
 
   const handleCreateEvent = () => {
@@ -244,7 +266,21 @@ const Events = () => {
     .filter(event =>
       selectedEventType === 'all' ||
       event.eventType === selectedEventType
-    ); // NEW
+    )
+    .filter(event => {
+      // Filter by price
+      if (filterByPrice === 'all') return true;
+      const isFree = !event.price || event.price === 0;
+      if (filterByPrice === 'free') return isFree;
+      if (filterByPrice === 'paid') return !isFree;
+      return true;
+    })
+    .sort((a, b) => {
+      // Sort by date, newest first
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
+      return dateB - dateA;
+    });
 
   const organizations = ['all', ...new Set(events.map(event => event.organization))];
   const categories = ['all', ...new Set(events.map(event => event.category))];
@@ -280,19 +316,19 @@ const Events = () => {
               type="button"
               className={`recommended-btn ${recommendedMode ? 'active' : ''}`}
               onClick={() => setRecommendedMode(v => !v)}
-              title={recommendedMode ? 'Show all events' : 'Show recommended events for you'}
+              title={recommendedMode ? t('all-events') : t('recommended-events')}
             >
-              {recommendedMode ? 'Show All' : 'Show Recommended'}
+              {recommendedMode ? t('all-events') : t('recommended-events')}
             </button>
             {recommendedMode && recommendedLoading && <span className="recommended-loader">Loading...</span>}
             {recommendedMode && recommendedError && <span className="recommended-error">{recommendedError}</span>}
-            <label htmlFor="eventSearch" className="sr-only">Search events</label>
+            <label htmlFor="eventSearch" className="sr-only">{t('search-events')}</label>
             <input
               id="eventSearch"
               name="eventSearch"
               type="text"
-              placeholder="Search events..."
-              aria-label="Search events"
+              placeholder={t('search-events')}
+              aria-label={t('search-events')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               disabled={recommendedMode}
@@ -304,7 +340,7 @@ const Events = () => {
              >
                {organizations.map(org => (
                  <option key={org} value={org}>
-                   {org === 'all' ? 'All Organizations' : org}
+                   {org === 'all' ? t('filter-by-organization') : org}
                  </option>
                ))}
              </select>
@@ -315,7 +351,7 @@ const Events = () => {
              >
                {categories.map(cat => (
                  <option key={cat} value={cat}>
-                   {cat === 'all' ? 'All Categories' : cat}
+                   {cat === 'all' ? t('filter-by-category') : cat}
                  </option>
                ))}
              </select>
@@ -326,20 +362,52 @@ const Events = () => {
                disabled={recommendedMode}
              >
                <option value="all">All Types</option>
-               <option value={EVENT_TYPES.WATCH_ONLY}>Watch-Only</option>
-               <option value={EVENT_TYPES.AUDITION}>Audition/Performance</option>
+               <option value={EVENT_TYPES.WATCH_ONLY}>{t('watch-only')}</option>
+               <option value={EVENT_TYPES.AUDITION}>{t('audition')}</option>
              </select>
+             {/* Price Filter */}
+             <select
+               value={filterByPrice}
+               onChange={(e) => setFilterByPrice(e.target.value)}
+               disabled={recommendedMode}
+               title="Filter by price"
+             >
+               <option value="all">All Events</option>
+               <option value="free">Free Only</option>
+               <option value="paid">Paid Only</option>
+             </select>
+             {/* View Mode Toggle */}
+             <div className="view-mode-toggle">
+               <button
+                 type="button"
+                 className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
+                 onClick={() => setViewMode('grid')}
+                 title="Grid view"
+                 disabled={recommendedMode}
+               >
+                 ⊞ Grid
+               </button>
+               <button
+                 type="button"
+                 className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
+                 onClick={() => setViewMode('list')}
+                 title="List view"
+                 disabled={recommendedMode}
+               >
+                 ≡ List
+               </button>
+             </div>
            </div>
         </div>
       </div>
 
       {displayedEvents.length === 0 ? (
         <div className="no-events">
-          {recommendedMode ? 'No recommended events right now.' : 'No events found matching your criteria'}
+          {recommendedMode ? `${t('no-events-found')} - ${t('recommended-events')}.` : `${t('no-events-found')}.`}
         </div>
       ) : (
         <>
-          <div className="events-container">
+          <div className={`events-container events-${viewMode}`}>
             {displayedEvents.map((event) => (
               <EventCard
                 key={event._id}
@@ -349,6 +417,8 @@ const Events = () => {
                 isAdmin={isAdmin}
                 onEdit={handleEditEvent}
                 onDelete={handleDeleteEvent}
+                onToggleFavorite={handleToggleFavorite}
+                isFavorite={favorites.has(event._id)}
                 participantData={counts[event._id] ?? { count: 0, maxParticipants: event.maxParticipants ?? null }}
               />
             ))}
@@ -377,14 +447,14 @@ const Events = () => {
         fullWidth
       >
         <DialogTitle>
-          {editingEvent ? 'Edit Event' : 'Create New Event'}
+          {editingEvent ? t('edit-event') : t('create-event')}
         </DialogTitle>
         <form onSubmit={handleSubmit}>
           <DialogContent>
             <TextField
               autoFocus
               margin="dense"
-              label="Title"
+              label={t('event-title')}
               fullWidth
               required
               value={formData.title}
@@ -392,7 +462,7 @@ const Events = () => {
             />
             <TextField
               margin="dense"
-              label="Description"
+              label={t('event-description')}
               fullWidth
               multiline
               rows={4}
@@ -622,9 +692,9 @@ const Events = () => {
             )}
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setIsModalOpen(false)}>Cancel</Button>
+            <Button onClick={() => setIsModalOpen(false)}>{t('cancel')}</Button>
             <Button type="submit" variant="contained" color="primary">
-              {editingEvent ? 'Update' : 'Create'}
+              {editingEvent ? 'Update' : t('create-event')}
             </Button>
           </DialogActions>
         </form>

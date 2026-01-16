@@ -125,12 +125,6 @@ router.get('/top-artists/:timeFilter', authenticate, async (req, res) => {
           preserveNullAndEmptyArrays: false
         }
       },
-      // Add followers count field
-      {
-        $addFields: {
-          followers: { $size: { $ifNull: ['$userDetails.followers', []] } }
-        }
-      },
       // Lookup top posts, excluding self-shares
       {
         $lookup: {
@@ -223,7 +217,7 @@ router.get('/top-artists/:timeFilter', authenticate, async (req, res) => {
               { $multiply: ['$totalLikes', 3] },
               { $multiply: ['$totalComments', 2] },
               { $multiply: ['$totalViews', 1] },
-              { $multiply: ['$followers', 1] },
+              { $multiply: [{ $size: { $ifNull: ['$userDetails.followers', []] } }, 1] },
               { $multiply: ['$postCount', 1] }
             ]
           }
@@ -236,7 +230,8 @@ router.get('/top-artists/:timeFilter', authenticate, async (req, res) => {
           username: '$userDetails.username',
           profilePic: '$userDetails.profilePic',
           bio: '$userDetails.bio',
-          followers: 1,
+          followers: '$userDetails.followers',
+          followersCount: { $size: { $ifNull: ['$userDetails.followers', []] } },
           totalLikes: 1,
           totalComments: 1,
           totalViews: 1,

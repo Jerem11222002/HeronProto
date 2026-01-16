@@ -1,10 +1,14 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useContext } from 'react';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import { EventAvailable as EventIcon, Visibility as ViewIcon, Search as SearchIcon } from '@mui/icons-material';
+import { useLanguage } from '../../hooks/useLanguage';
+import { DarkModeContext } from '../../context/darkModeContext';
 import './dashboard.scss';
 
 const Dashboard = () => {
+  const { t } = useLanguage();
+  const { darkMode } = useContext(DarkModeContext) || {};
   const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -50,39 +54,39 @@ const Dashboard = () => {
 
   const totalPages = Math.ceil(total / limit) || 1;
 
-  if (loading) return <div className="loading-spinner">Loading registrations...</div>;
+  if (loading) return <div className="loading-spinner">{t('loading-registrations')}</div>;
   if (error) return <div className="error-message">{error}</div>;
 
   return (
     <div className="user-dashboard">
       <div className="dashboard-header">
-        <h1>My Registrations</h1>
+        <h1>{t('my-registrations')}</h1>
         <div className="controls">
           <div className="filters">
-            <input type="text" placeholder="Search events or registration id" value={filters.q} onChange={(e) => setFilters({...filters, q: e.target.value})} />
+            <input type="text" placeholder={t('search-events-registrations')} value={filters.q} onChange={(e) => setFilters({...filters, q: e.target.value})} />
             <select value={filters.status} onChange={(e) => setFilters({...filters, status: e.target.value})}>
-              <option value="">All statuses</option>
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
+              <option value="">{t('all-statuses')}</option>
+              <option value="pending">{t('pending')}</option>
+              <option value="approved">{t('approved')}</option>
+              <option value="rejected">{t('rejected')}</option>
               <option value="waitlisted">Waitlisted</option>
             </select>
             <input type="date" value={filters.startDate} onChange={(e) => setFilters({...filters, startDate: e.target.value})} />
             <input type="date" value={filters.endDate} onChange={(e) => setFilters({...filters, endDate: e.target.value})} />
             <select value={filters.sortBy} onChange={(e) => setFilters({...filters, sortBy: e.target.value})}>
-              <option value="registrationDate">Newest</option>
-              <option value="eventName">Event name</option>
-              <option value="status">Status</option>
+              <option value="registrationDate">{t('newest')}</option>
+              <option value="eventName">{t('event-name')}</option>
+              <option value="status">{t('status')}</option>
             </select>
             <select value={filters.sortDir} onChange={(e) => setFilters({...filters, sortDir: e.target.value})}>
-              <option value="desc">Desc</option>
-              <option value="asc">Asc</option>
+              <option value="desc">{t('descending')}</option>
+              <option value="asc">{t('ascending')}</option>
             </select>
-            <button className="btn-primary" onClick={() => { setPage(1); fetchRegs(1, limit, filters); }}>Apply</button>
-            <button className="btn-secondary" onClick={() => { setFilters({ status: '', q: '', startDate: '', endDate: '', sortBy: 'registrationDate', sortDir: 'desc' }); setPage(1); }}>Clear</button>
+            <button className="btn-primary" onClick={() => { setPage(1); fetchRegs(1, limit, filters); }}>{t('apply')}</button>
+            <button className="btn-secondary" onClick={() => { setFilters({ status: '', q: '', startDate: '', endDate: '', sortBy: 'registrationDate', sortDir: 'desc' }); setPage(1); }}>{t('clear')}</button>
           </div>
           <label>
-            Per page:
+            {t('per-page')}:
             <select value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}>
               <option value={5}>5</option>
               <option value={10}>10</option>

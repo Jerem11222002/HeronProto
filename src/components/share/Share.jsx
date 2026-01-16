@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect } from "react";
 import "./share.scss";
 import Image from "../../assets/img.png";
 import { AuthContext } from "../../context/authContext";
+import { useLanguage } from "../../hooks/useLanguage";
 import axios from "axios";
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import VideocamIcon from '@mui/icons-material/Videocam';
@@ -25,6 +26,7 @@ const MAX_VIDEO_SIZE = MAX_FILE_SIZE; // 50MB for videos
 
 const Share = ({ onAddPost }) => {
   const { currentUser } = useContext(AuthContext);
+  const { t } = useLanguage();
   const [postContent, setPostContent] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
   const [imageFile, setImageFile] = useState(null);
@@ -418,7 +420,7 @@ const Share = ({ onAddPost }) => {
               id="postContent"
               name="postContent"
               type="text"
-              placeholder={`What's on your mind, ${currentUser.name || 'there'}?`}
+              placeholder={`${t('whats-on-your-mind')}, ${currentUser.name || 'there'}?`}
               value={postContent}
               onChange={(e) => {
                 setPostContent(e.target.value);
@@ -441,7 +443,7 @@ const Share = ({ onAddPost }) => {
                 id="tagInput"
                 name="tagInput"
                 type="text"
-                placeholder="Add tags (comma separated) e.g., painting, digital-art"
+                placeholder={t('add-tags')}
                 value={tagInput}
                 onChange={handleTagInput}
                 onKeyDown={(e) => {
@@ -509,8 +511,8 @@ const Share = ({ onAddPost }) => {
               <div className="media-button">
                 <div className="item">
                   <AddIcon />
-                  <span>Add Media</span>
-                  <span className="supported-formats">Images & Videos</span>
+                  <span>{t('add-media')}</span>
+                  <span className="supported-formats">{t('images-videos')}</span>
                 </div>
               </div>
             </label>
@@ -548,7 +550,7 @@ const Share = ({ onAddPost }) => {
                   <div className="spinner"></div>
                   <span>{progress > 0 ? `${progress}%` : 'Processing...'}</span>
                 </>
-              ) : 'Share'}
+              ) : t('share')}
             </button>
           </div>
         </div>

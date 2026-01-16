@@ -13,7 +13,9 @@ import {
   PersonAdd,
   Share,
   AccessTime,
-  Place
+  Place,
+  Favorite as FavoriteIcon,
+  FavoriteBorder as FavoriteBorderIcon
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import axios from 'axios';
@@ -84,6 +86,8 @@ const ORGANIZATION_CATEGORIES = {
  * @param {boolean} props.isAdmin
  * @param {(event: EventItem) => void} [props.onEdit]
  * @param {(eventId: string) => void} [props.onDelete]
+ * @param {(eventId: string) => void} [props.onToggleFavorite]
+ * @param {boolean} [props.isFavorite]
  * @param {boolean} [props.isHomePage]
  * @param {string[] | undefined} [props.currentUserInterests]
  * @param {{ count: number, maxParticipants: number | null }} [props.participantData]
@@ -96,6 +100,8 @@ const EventCard = ({
   isAdmin, 
   onEdit, 
   onDelete, 
+  onToggleFavorite,
+  isFavorite = false,
   isHomePage = false,
   currentUserInterests = [],
   participantData = { count: 0, maxParticipants: null }
@@ -423,6 +429,21 @@ const EventCard = ({
                 >
                   <PersonAdd fontSize="small" />
                   {isPastOrCompleted ? 'View' : 'Join Event'}
+                </button>
+              </span>
+            </Tooltip>
+            <Tooltip 
+              title={isFavorite ? "Remove from favorites" : "Add to favorites"} 
+              placement="top" 
+              TransitionComponent={Zoom}
+            >
+              <span style={{ display: 'inline-flex' }}>
+                <button 
+                  className={`favorite-button ${isFavorite ? 'active' : ''}`}
+                  onClick={() => onToggleFavorite?.(event._id)}
+                >
+                  {isFavorite ? <FavoriteIcon fontSize="small" /> : <FavoriteBorderIcon fontSize="small" />}
+                  {isFavorite ? 'Saved' : 'Save'}
                 </button>
               </span>
             </Tooltip>

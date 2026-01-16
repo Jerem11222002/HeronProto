@@ -524,6 +524,35 @@
             box-shadow: 0 4px 12px rgba(themed("textColorSoft"), 0.1);
           }
         }
+
+        .favorite-button {
+          background-color: themed("bgSoft");
+          color: themed("textColor");
+          transition: all 0.2s ease;
+
+          &:hover {
+            background-color: themed("bg");
+            box-shadow: 0 4px 12px rgba(themed("textColorSoft"), 0.1);
+          }
+
+          &.active {
+            background: linear-gradient(
+              45deg,
+              #ff6b9d 0%,
+              #ff6b9d 100%
+            );
+            color: white;
+            box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
+
+            &:hover {
+              box-shadow: 0 6px 16px rgba(255, 107, 157, 0.4);
+            }
+
+            svg {
+              animation: pulse 0.3s ease;
+            }
+          }
+        }
       }
     }
   }

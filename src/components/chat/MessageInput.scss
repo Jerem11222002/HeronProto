@@ -1,40 +1,52 @@
 // src/components/chat/MessageInput.scss
+@use '../../style.scss' as *;
+
 .message-input {
-  display: flex;
-  padding: 16px 22px;
-  border-top: 1px solid #eee;
-  background: #fafbfc;
+  @include themify($themes) {
+    display: flex;
+    padding: 16px 22px;
+    border-top: 1px solid themed("border");
+    background: themed("bgSoft");
 
-  textarea {
-    flex: 1;
-    padding: 12px 14px;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    resize: none;
-    font-size: 15px;
-    margin-right: 12px;
-    min-height: 36px;
-    max-height: 80px;
-    outline: none;
-  }
+    textarea {
+      flex: 1;
+      padding: 12px 14px;
+      border: 1px solid themed("border");
+      border-radius: 10px;
+      resize: none;
+      font-size: 15px;
+      margin-right: 12px;
+      min-height: 36px;
+      max-height: 80px;
+      outline: none;
+      background: themed("bg");
+      color: themed("textColor");
+      transition: border-color 0.2s, box-shadow 0.2s;
 
-  button {
-    padding: 10px 20px;
-    border: none;
-    background-color: #5271ff;
-    color: white;
-    border-radius: 10px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: background 0.2s;
-
-    &:hover:enabled {
-      background-color: #4056b4;
+      &:focus {
+        border-color: #5271ff;
+        box-shadow: 0 0 0 2px rgba(82,113,255,0.10);
+      }
     }
 
-    &:disabled {
-      background: #bfc6e0;
-      cursor: not-allowed;
+    button {
+      padding: 10px 20px;
+      border: none;
+      background-color: #5271ff;
+      color: white;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s;
+
+      &:hover:enabled {
+        background-color: #4056b4;
+      }
+
+      &:disabled {
+        background: #bfc6e0;
+        cursor: not-allowed;
+      }
     }
   }
 }

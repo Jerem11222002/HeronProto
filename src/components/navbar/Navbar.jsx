@@ -513,6 +513,12 @@ const Navbar = () => {
             role="button"
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate("/"); }}
+            sx={{
+              color: darkMode ? '#fff' : '#000',
+              '&:hover': {
+                color: '#5271ff'
+              }
+            }}
           />
           <GridViewOutlinedIcon
             onClick={() => navigate("/events")}
@@ -521,6 +527,12 @@ const Navbar = () => {
             role="button"
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate("/events"); }}
+            sx={{
+              color: darkMode ? '#fff' : '#000',
+              '&:hover': {
+                color: '#5271ff'
+              }
+            }}
           />
           <Badge 
             badgeContent={regSummary?.alertCount || 0}
@@ -536,6 +548,12 @@ const Navbar = () => {
               role="button"
               tabIndex={0}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate('/dashboard'); }}
+              sx={{
+                color: darkMode ? '#fff' : '#000',
+                '&:hover': {
+                  color: '#5271ff'
+                }
+              }}
             />
           </Badge>
           {/* unified search icon (click focuses desktop input; opens overlay on small screens) */}
@@ -546,6 +564,12 @@ const Navbar = () => {
             role="button"
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleSearchIconClick(); }}
+            sx={{
+              color: darkMode ? '#e6e6e6' : '#333',
+              '&:hover': {
+                color: '#5271ff'
+              }
+            }}
           />
           <div className="search-container">
             <div className="search-input-wrapper">

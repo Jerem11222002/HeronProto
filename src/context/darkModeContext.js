@@ -23,6 +23,7 @@ export const DarkModeContextProvider = ({ children }) => {
       const canonical = localStorage.getItem('theme');
       if (canonical === 'dark') return true;
       if (canonical === 'light') return false;
+      if (canonical === 'system') return null; // signal to use system preference
 
       // 3) legacy user.customization stored in currentUser/adminUser
       const currentUserJson = localStorage.getItem('currentUser') || localStorage.getItem('adminUser');
@@ -32,6 +33,7 @@ export const DarkModeContextProvider = ({ children }) => {
           const theme = user?.customization?.theme || user?.theme;
           if (theme === 'dark') return true;
           if (theme === 'light') return false;
+          if (theme === 'system') return null;
         } catch (e) { /* ignore */ }
       }
 
@@ -40,8 +42,9 @@ export const DarkModeContextProvider = ({ children }) => {
       if (stored === 'true') return true;
       if (stored === 'false') return false;
 
-      // 5) system preference
-      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      // 5) system preference - but only as last resort
+      // Most reliable way: light is default, only go dark if explicitly set or system says so
+      return false; // Default to light mode instead of detecting system preference immediately
     } catch (e) {
       return false;
     }
@@ -68,6 +71,33 @@ export const DarkModeContextProvider = ({ children }) => {
 
   useEffect(() => {
     applyClass(darkMode);
+    
+    // On mount, check if we should use system preference (only if nothing is explicitly set)
+    if (!localStorage.getItem('theme') && !localStorage.getItem('darkMode')) {
+      try {
+        const currentUserJson = localStorage.getItem('currentUser') || localStorage.getItem('adminUser');
+        let hasExplicitTheme = false;
+        
+        if (currentUserJson) {
+          const user = JSON.parse(currentUserJson);
+          const uid = user._id || user.id || user.idStr || user.username || null;
+          if (uid && localStorage.getItem(`userTheme_${uid}`)) {
+            hasExplicitTheme = true;
+          }
+          if (user?.customization?.theme || user?.theme) {
+            hasExplicitTheme = true;
+          }
+        }
+        
+        // Only check system preference if no explicit theme is set
+        if (!hasExplicitTheme && window.matchMedia) {
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (prefersDark && !darkMode) {
+            setDarkModeState(true);
+          }
+        }
+      } catch (e) { /* ignore */ }
+    }
   }, [darkMode]);
 
   return (

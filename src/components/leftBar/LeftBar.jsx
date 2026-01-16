@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/authContext";
+import { useLanguage } from "../../hooks/useLanguage";
 import Tooltip from '@mui/material/Tooltip';
 import "./leftBar.scss";
 
@@ -45,15 +46,15 @@ const MenuItem = ({ icon: Icon, label, path, badge, isActive, isCollapsed, onCli
   );
 };
 
-const UserStats = ({ following, followers, isCollapsed }) => (
+const UserStats = ({ following, followers, isCollapsed, t }) => (
   <div className="user-stats">
     <div className="stat">
       <span className="count">{following || 0}</span>
-      {!isCollapsed && <span className="label">Following</span>}
+      {!isCollapsed && <span className="label">{t('following')}</span>}
     </div>
     <div className="stat">
       <span className="count">{followers || 0}</span>
-      {!isCollapsed && <span className="label">Followers</span>}
+      {!isCollapsed && <span className="label">{t('followers')}</span>}
     </div>
   </div>
 );
@@ -88,6 +89,7 @@ const ProfileSection = ({ currentUser, isCollapsed, isLoading, onClick }) => (
 
 const LeftBar = () => {
   const { currentUser, userRelationships } = useContext(AuthContext);
+  const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
   // manual collapse state (user toggle)
@@ -132,23 +134,23 @@ const LeftBar = () => {
   }, []);
 
   const menuItems = [
-    { id: 'home', icon: HomeIcon, label: 'Home', path: '/', badge: 0 },
+    { id: 'home', icon: HomeIcon, label: t('home'), path: '/', badge: 0 },
     { 
       id: 'friends', 
       icon: PeopleIcon, 
-      label: 'Friends', 
+      label: t('friends'), 
       path: currentUser ? `/profile/${currentUser._id}?tab=friends` : '/', 
       badge: 0 
     },
-    { id: 'events', icon: EventIcon, label: 'Events', path: '/events', badge: 0 },
+    { id: 'events', icon: EventIcon, label: t('events'), path: '/events', badge: 0 },
     { 
       id: 'gallery', 
       icon: PhotoLibraryIcon, 
-      label: 'Gallery', 
+      label: t('gallery'), 
       path: currentUser ? `/profile/${currentUser._id}?tab=gallery` : '/', 
       badge: 0 
     },
-    { id: 'settings', icon: SettingsIcon, label: 'Settings', path: '/settings', badge: 0 }
+    { id: 'settings', icon: SettingsIcon, label: t('settings'), path: '/settings', badge: 0 }
   ];
 
   const isGalleryActive = () => {
@@ -199,6 +201,7 @@ const LeftBar = () => {
             following={userRelationships?.following?.length}
             followers={userRelationships?.followers?.length}
             isCollapsed={isCollapsed}
+            t={t}
           />
         </div>
 

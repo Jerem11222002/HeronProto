@@ -1,32 +1,7 @@
-// src/components/chat/MessageInput.scss
-.message-input {
-    display: flex;
-    padding: 10px;
-    border-top: 1px solid #ccc;
-  
-    input {
-      flex: 1;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      margin-right: 10px;
-    }
-  
-    button {
-      padding: 10px 15px;
-      border: none;
-      background-color: #5271ff; // Button color
-      color: white;
-      border-radius: 5px;
-      cursor: pointer;
-  
-      &:hover {
-        background-color: #4056b4; // Darker shade on hover
-      }
-    }
-  }
+// src/components/chat/Message.scss
+@use '../../style.scss' as *;
 
-  .message {
+.message {
   display: flex;
   flex-direction: column;
   max-width: 75%;
@@ -46,11 +21,13 @@
   }
 
   &.received {
-    align-self: flex-start;
-    background: #f1f1f1;
-    color: #222;
-    border-bottom-left-radius: 6px;
-    margin-right: 40px;
+    @include themify($themes) {
+      align-self: flex-start;
+      background: themed("bgSoft");
+      color: themed("textColor");
+      border-bottom-left-radius: 6px;
+      margin-right: 40px;
+    }
   }
 
   .timestamp {

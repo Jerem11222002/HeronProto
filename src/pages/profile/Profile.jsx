@@ -3,6 +3,7 @@ import { useParams, useLocation, useNavigate, useSearchParams } from "react-rout
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import "./profile.scss";
+import { useLanguage } from "../../hooks/useLanguage";
 import FacebookIcon from "@mui/icons-material/Facebook";
 import PlaceIcon from "@mui/icons-material/Place";
 import LanguageIcon from "@mui/icons-material/Language";
@@ -92,6 +93,7 @@ const StatCard = ({ icon, count, label }) => (
 
 const Profile = () => {
   // Context and Hooks
+  const { t } = useLanguage();
   const { 
     currentUser, 
     updateUserProfile, 
@@ -1054,7 +1056,7 @@ const Profile = () => {
               </div>
               <span>{uploadProgress}%</span>
               <p>
-                {imageUploadType === 'profilePic' ? 'Updating profile picture...' : 'Updating cover photo...'}
+                {imageUploadType === 'profilePic' ? t('updating-profile-pic') : t('updating-cover-photo')}
               </p>
               <CircularProgress size={24} />
             </motion.div>
@@ -1084,10 +1086,10 @@ const Profile = () => {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.5 }}
           >
-            {userData?.bio || "No bio available"}
+            {userData?.bio || t('no-bio-available')}
             {isOwnProfile && (
               <IconButton
-                aria-label="Edit bio"
+                aria-label={t('edit-bio')}
                 onClick={handleOpenEditBio}
                 size="small"
                 style={{ marginLeft: 8 }}
@@ -1106,17 +1108,17 @@ const Profile = () => {
             <StatCard 
               icon={<PeopleIcon />}
               count={userData?.followers?.length || 0}
-              label="Followers"
+              label={t('followers-label')}
             />
             <StatCard 
               icon={<PersonAddIcon />}
               count={userData?.following?.length || 0}
-              label="Following"
+              label={t('following-label')}
             />
             <StatCard 
               icon={<PostAddIcon />}
               count={userPosts.length}
-              label="Posts"
+              label={t('posts-label')}
             />
           </motion.div>
   
@@ -1149,7 +1151,7 @@ const Profile = () => {
             {userData?.joinDate && (
               <div className="item">
                 <CalendarMonthIcon />
-                <span>Joined {new Date(userData.joinDate).toLocaleDateString()}</span>
+                <span>{t('joined')} {new Date(userData.joinDate).toLocaleDateString()}</span>
               </div>
             )}
           </motion.div>
@@ -1192,11 +1194,11 @@ const Profile = () => {
                 {followLoading ? (
                   <LoadingSpinner />
                 ) : isMutualFollow ? (
-                  "Friends"
+                  t('friends-button')
                 ) : isFollowing ? (
-                  "Following"
+                  t('following-button')
                 ) : (
-                  "Follow"
+                  t('follow-button')
                 )}
               </motion.button>
   
@@ -1223,19 +1225,19 @@ const Profile = () => {
           className={activeTab === "posts" ? "active" : ""}
           onClick={() => handleTabChange("posts")}
         >
-          <CollectionsIcon /> Posts
+          <CollectionsIcon /> {t('posts-tab')}
         </button>
         <button
           className={activeTab === "gallery" ? "active" : ""}
           onClick={() => handleTabChange("gallery")}
         >
-          <PhotoLibraryIcon /> Gallery
+          <PhotoLibraryIcon /> {t('gallery-tab')}
         </button>
         <button
           className={activeTab === "friends" ? "active" : ""}
           onClick={() => handleTabChange("friends")}
         >
-          <PeopleIcon /> Friends
+          <PeopleIcon /> {t('friends-tab-profile')}
         </button>
       </div>
 
@@ -1251,7 +1253,7 @@ const Profile = () => {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 1.1 }}
           >
-            {userData.name}'s Posts
+            {userData.name}{t('s-posts')}
           </motion.h2>
           
           {userPosts.length > 0 ? (
@@ -1268,7 +1270,7 @@ const Profile = () => {
               transition={{ delay: 1.2 }}
               className="no-posts"
             >
-              No posts to display yet
+              {t('no-posts-display')}
             </motion.p>
           )}
         </motion.div>
@@ -1276,14 +1278,14 @@ const Profile = () => {
 
       {activeTab === "gallery" && (
         <motion.div className="userGallery" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <h2>{userData.name}'s Gallery</h2>
+          <h2>{userData.name}{t('s-gallery')}</h2>
           <div className="gallery-filters">
-            <button className={mediaFilter === "all" ? "active" : ""} onClick={() => setMediaFilter("all")}>All</button>
-            <button className={mediaFilter === "photos" ? "active" : ""} onClick={() => setMediaFilter("photos")}>Photos</button>
-            <button className={mediaFilter === "videos" ? "active" : ""} onClick={() => setMediaFilter("videos")}>Videos</button>
+            <button className={mediaFilter === "all" ? "active" : ""} onClick={() => setMediaFilter("all")}>{t('all-media')}</button>
+            <button className={mediaFilter === "photos" ? "active" : ""} onClick={() => setMediaFilter("photos")}>{t('photos')}</button>
+            <button className={mediaFilter === "videos" ? "active" : ""} onClick={() => setMediaFilter("videos")}>{t('videos')}</button>
           </div>
           <div className="gallery-grid">
-            {filteredGalleryMedia.length === 0 && <div>No media found.</div>}
+            {filteredGalleryMedia.length === 0 && <div>{t('no-media-found')}</div>}
             {filteredGalleryMedia.map(item =>
               item.type === "video" ? (
                 <video key={item._id} controls src={item.url} className="gallery-item video-item" />
@@ -1297,7 +1299,7 @@ const Profile = () => {
 
       {activeTab === "friends" && (
         <motion.div className="userFriends" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <h2>{userData.name}'s Friends</h2>
+          <h2>{userData.name}{t('s-friends')}</h2>
           <div className="friends-list">
             {friendsLoading ? (
               <LoadingSpinner />
@@ -1324,7 +1326,7 @@ const Profile = () => {
                   </div>
                 ))
             ) : (
-              <div>No friends to display.</div>
+              <div>{t('no-friends-display')}</div>
             )}
           </div>
         </motion.div>

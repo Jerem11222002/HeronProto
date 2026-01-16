@@ -1,7 +1,9 @@
 import React, { useState, useRef, useContext, useEffect } from 'react';
 import './Settings.scss';
 import { DarkModeContext } from '../../context/darkModeContext';
-import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { LanguageContext } from '../../context/languageContext';
+import { useLanguage } from '../../hooks/useLanguage';
+import { Visibility, VisibilityOff, ExpandMore, ExpandLess } from '@mui/icons-material';
 
 // Backend base (use REACT_APP_API_URL in .env or fallback)
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5000';
@@ -67,9 +69,34 @@ const Settings = () => {
 
   const fileInputRef = useRef();
 
-  // Dark mode context
+  // Expanded sections on mobile
+  const [expandedSections, setExpandedSections] = useState({
+    account: true,
+    password: false,
+    preferences: true,
+    notifications: false,
+    privacy: false,
+  });
+
+  // Dark mode context - read actual theme value from DOM/localStorage instead of relying on context
   const { darkMode, setDarkMode } = useContext(DarkModeContext) || {};
-  const [themeSelect, setThemeSelect] = useState(darkMode ? 'dark' : 'light');
+  
+  // Initialize themeSelect from actual DOM/localStorage state, not context
+  const getInitialTheme = () => {
+    try {
+      const stored = localStorage.getItem('theme');
+      if (stored === 'dark' || stored === 'light') return stored;
+      const dark = localStorage.getItem('darkMode');
+      if (dark === 'true') return 'dark';
+      if (dark === 'false') return 'light';
+    } catch (e) {}
+    return darkMode ? 'dark' : 'light';
+  };
+  
+  const [themeSelect, setThemeSelect] = useState(getInitialTheme());
+  
+  // Language - use both context and hook to ensure updates propagate
+  const { t, language: contextLanguage, setLanguage: setContextLanguage } = useLanguage();
 
   // User's current profile picture URL
   const [profilePicUrl, setProfilePicUrl] = useState(null);
@@ -89,7 +116,14 @@ const Settings = () => {
           setUserId(user._id || user.id || null);
           setUsername(user.username || '');
           setEmail(user.email || '');
-          setLanguage(user.customization?.language || user.language || 'en');
+          
+          // Initialize language from user or context
+          const userLang = user.customization?.language || user.language || contextLanguage || 'en';
+          setLanguage(userLang);
+          if (userLang !== contextLanguage) {
+            setContextLanguage(userLang);
+          }
+          
           setPrivacy(user.customization?.visibility || user.privacy || 'public');
           setNotifications(user.notifications || { email: true, push: false, sms: false });
           const pic = user.profilePic || user.profilePicture || null;
@@ -109,14 +143,11 @@ const Settings = () => {
           if (serverTheme) {
             setThemeSelect(serverTheme);
             if (setDarkMode) setDarkMode(serverTheme === 'dark');
-            else applyThemeLocally(serverTheme);
           } else if (storedDark) {
             setThemeSelect(storedDark);
             if (setDarkMode) setDarkMode(storedDark === 'dark');
-            else applyThemeLocally(storedDark);
           } else {
             setThemeSelect(darkMode ? 'dark' : 'light');
-            if (!setDarkMode) applyThemeLocally(darkMode ? 'dark' : 'light');
           }
         }
       } catch (err) {
@@ -127,24 +158,63 @@ const Settings = () => {
     fetchUserInfo();
   }, []);
 
-  useEffect(() => {
-    setThemeSelect(darkMode ? 'dark' : 'light');
-  }, [darkMode]);
-
-  const applyThemeLocally = (value) => {
-    if (value === 'dark') {
-      setDarkMode(true);
-    } else {
-      setDarkMode(false);
-    }
-  };
-
   const handleThemeChange = (e) => {
     const value = e.target.value;
+    
+    // Update state, DOM, localStorage, and context all immediately
     setThemeSelect(value);
-    applyThemeLocally(value);
+    
+    // Apply DOM classes immediately
+    if (value === 'dark') {
+      document.documentElement.classList.remove('theme-light');
+      document.documentElement.classList.add('theme-dark');
+    } else {
+      document.documentElement.classList.remove('theme-dark');
+      document.documentElement.classList.add('theme-light');
+    }
+    
+    // Save to localStorage immediately
+    try {
+      localStorage.setItem('theme', value);
+      localStorage.setItem('darkMode', value === 'dark' ? 'true' : 'false');
+      if (userId) {
+        localStorage.setItem(`userTheme_${userId}`, value);
+      }
+    } catch (err) { /* ignore */ }
+    
+    // Update context immediately for instant UI theme update across all components
     if (typeof setDarkMode === 'function') {
-      try { setDarkMode(value === 'dark'); } catch (err) { /* ignore */ }
+      setDarkMode(value === 'dark');
+    }
+    
+    // Save to server in the background (fire and forget - don't block UI)
+    // If it fails, localStorage still has the value so it persists
+    const updateServerTheme = async () => {
+      try {
+        const formData = new FormData();
+        formData.append('theme', value);
+        
+        await fetch(SETTINGS_ENDPOINT, {
+          method: 'POST',
+          body: formData,
+          credentials: 'include',
+          headers: getAuthHeaders()
+        });
+      } catch (err) {
+        // Silently fail - user already sees theme change locally
+        console.error('Failed to save theme to server:', err);
+      }
+    };
+    
+    updateServerTheme();
+  };
+
+  const handleLanguageChange = (e) => {
+    const newLang = e.target.value;
+    setLanguage(newLang);
+    // Also update the global language context immediately
+    if (typeof setContextLanguage === 'function') {
+      setContextLanguage(newLang);
     }
   };
 
@@ -213,14 +283,17 @@ const Settings = () => {
     setLoading(true);
 
     const formData = new FormData();
-    if (username) formData.append('username', username.trim());
-    if (email) formData.append('email', email.trim());
-    if (currentPassword) formData.append('currentPassword', currentPassword.trim());
-    if (newPassword) formData.append('newPassword', newPassword.trim());
+    // Always send theme and language - these are always important
     formData.append('theme', themeSelect);
     formData.append('language', language);
     formData.append('privacy', privacy);
     formData.append('notifications', JSON.stringify(notifications));
+    
+    // Optional fields - only append if changed
+    if (username && username.trim()) formData.append('username', username.trim());
+    if (email && email.trim()) formData.append('email', email.trim());
+    if (currentPassword && currentPassword.trim()) formData.append('currentPassword', currentPassword.trim());
+    if (newPassword && newPassword.trim()) formData.append('newPassword', newPassword.trim());
     if (profilePicture) {
       formData.append('profilePicture', profilePicture);
     }
@@ -284,34 +357,52 @@ const Settings = () => {
         setProfilePicture(null);
         setFieldErrors({});
         
-        const returnedTheme = data.theme || data.customization?.theme;
+        // Extract theme from settings object or directly from response
+        const returnedTheme = data.theme || 
+                             data.settings?.customization?.theme || 
+                             data.customization?.theme ||
+                             themeSelect; // Fallback to what we sent
+        
+        const returnedLang = data.language || 
+                            data.settings?.customization?.language || 
+                            data.customization?.language ||
+                            language; // Fallback to what we sent
+        
+        // Update theme from server response
         if (returnedTheme) {
           setThemeSelect(returnedTheme);
+          // Apply DOM changes immediately
           try {
-            if (typeof setDarkMode === 'function') {
-              setDarkMode(returnedTheme === 'dark');
+            if (returnedTheme === 'dark') {
+              document.documentElement.classList.remove('theme-light');
+              document.documentElement.classList.add('theme-dark');
             } else {
-              applyThemeLocally(returnedTheme);
+              document.documentElement.classList.remove('theme-dark');
+              document.documentElement.classList.add('theme-light');
             }
-          } catch (e) {
-            applyThemeLocally(returnedTheme);
-          }
-
-          try {
             localStorage.setItem('theme', returnedTheme);
+            localStorage.setItem('darkMode', returnedTheme === 'dark' ? 'true' : 'false');
             if (userId) {
               localStorage.setItem(`userTheme_${userId}`, returnedTheme);
             }
-            const stored = localStorage.getItem('currentUser');
-            if (stored) {
-              try {
-                const cu = JSON.parse(stored);
-                cu.customization = cu.customization || {};
-                cu.customization.theme = returnedTheme;
-                localStorage.setItem('currentUser', JSON.stringify(cu));
-              } catch (err) { /* ignore */ }
-            }
           } catch (err) { /* ignore */ }
+          
+          // Update context AFTER DOM changes so components re-render with new theme
+          setTimeout(() => {
+            if (typeof setDarkMode === 'function') {
+              setDarkMode(returnedTheme === 'dark');
+            }
+          }, 0);
+        }
+        
+        // Update language if returned from server
+        if (returnedLang) {
+          setLanguage(returnedLang);
+          setContextLanguage(returnedLang);
+          // Fire custom event so other components know language changed
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('languageChanged', { detail: { language: returnedLang } }));
+          }
         }
       } else {
         // Map common error codes to user-friendly messages
@@ -387,11 +478,40 @@ const Settings = () => {
     </label>
   );
 
+  const toggleSection = (section) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
+  const renderSection = (section, title, icon, children, description) => (
+    <section className={`settings-section ${expandedSections[section] ? 'expanded' : ''}`}>
+      <div className="section-header" onClick={() => toggleSection(section)}>
+        <div className="section-title">
+          <span className="section-icon">{icon}</span>
+          <div className="section-label">
+            <h2>{title}</h2>
+            {description && <p className="section-description">{description}</p>}
+          </div>
+        </div>
+        <button type="button" className="expand-btn" aria-label="Toggle section">
+          {expandedSections[section] ? <ExpandLess size={24} /> : <ExpandMore size={24} />}
+        </button>
+      </div>
+      {expandedSections[section] && (
+        <div className="section-content">
+          {children}
+        </div>
+      )}
+    </section>
+  );
+
   return (
     <div className="settings">
       <h1>
         <span className="settings-icon" role="img" aria-label="settings">⚙️</span>
-        Account Settings
+        {t('account-settings')}
       </h1>
       {/* Modern Centered round profile photo */}
       <div className="profile-photo-center">
@@ -422,11 +542,13 @@ const Settings = () => {
         <div className="profile-photo-email">{email}</div>
       </div>
       <form onSubmit={handleSubmit} encType="multipart/form-data" className="settings-form">
-        <section>
-          <h2>Account Information</h2>
+        {renderSection(
+          'account',
+          t('account-information'),
+          '👤',
           <div className="settings-row">
             <label>
-              Username
+              {t('username')}
               <input
                 type="text"
                 value={username}
@@ -438,7 +560,7 @@ const Settings = () => {
               {fieldErrors.username && <span className="error-text">{fieldErrors.username}</span>}
             </label>
             <label>
-              Email
+              {t('email')}
               <input
                 type="email"
                 value={email}
@@ -449,14 +571,17 @@ const Settings = () => {
               />
               {fieldErrors.email && <span className="error-text">{fieldErrors.email}</span>}
             </label>
-          </div>
-        </section>
+          </div>,
+          'Update your account details'
+        )}
 
-        <section>
-          <h2>Password Management</h2>
+        {renderSection(
+          'password',
+          t('password-management'),
+          '🔐',
           <div className="settings-row">
             {renderPasswordField(
-              'Current Password',
+              t('current-password'),
               currentPassword,
               setCurrentPassword,
               showCurrentPassword,
@@ -464,7 +589,7 @@ const Settings = () => {
               'currentPassword'
             )}
             {renderPasswordField(
-              'New Password',
+              t('new-password'),
               newPassword,
               setNewPassword,
               showNewPassword,
@@ -472,44 +597,49 @@ const Settings = () => {
               'newPassword'
             )}
             <small className="password-hint">
-              Min 8 chars, 1 uppercase, 1 lowercase, 1 number
+              {t('password-hint')}
             </small>
             {renderPasswordField(
-              'Confirm New Password',
+              t('confirm-password'),
               confirmPassword,
               setConfirmPassword,
               showConfirmPassword,
               setShowConfirmPassword,
               'confirmPassword'
             )}
-          </div>
-        </section>
+          </div>,
+          'Change your password to keep your account secure'
+        )}
 
-        <section>
-          <h2>Preferences</h2>
+        {renderSection(
+          'preferences',
+          t('preferences'),
+          '🎨',
           <div className="settings-row">
             <label>
-              Theme
+              {t('theme')}
               <select value={themeSelect} onChange={handleThemeChange}>
-                <option value="light">Light</option>
-                <option value="dark">Dark</option>
-                <option value="system">System Default</option>
+                <option value="light">☀️ Light</option>
+                <option value="dark">🌙 Dark</option>
               </select>
             </label>
             <label>
-              Language
-              <select value={language} onChange={e => setLanguage(e.target.value)}>
-                <option value="en">English</option>
-                <option value="es">Spanish</option>
-                <option value="fr">French</option>
-                <option value="tl">Tagalog</option>
+              {t('language')}
+              <select value={language} onChange={handleLanguageChange}>
+                <option value="en">🇺🇸 English</option>
+                <option value="es">🇪🇸 Spanish</option>
+                <option value="fr">🇫🇷 French</option>
+                <option value="tl">🇵🇭 Tagalog</option>
               </select>
             </label>
-          </div>
-        </section>
+          </div>,
+          'Customize your appearance and language'
+        )}
 
-        <section>
-          <h2>Notifications</h2>
+        {renderSection(
+          'notifications',
+          t('notifications'),
+          '🔔',
           <div className="settings-row notifications-row">
             <label className="switch">
               <input
@@ -518,7 +648,7 @@ const Settings = () => {
                 onChange={e => setNotifications(n => ({ ...n, email: e.target.checked }))}
               />
               <span className="slider"></span>
-              <span className="switch-label">Email</span>
+              <span className="switch-label">{t('email-notif')}</span>
             </label>
             <label className="switch">
               <input
@@ -527,7 +657,7 @@ const Settings = () => {
                 onChange={e => setNotifications(n => ({ ...n, push: e.target.checked }))}
               />
               <span className="slider"></span>
-              <span className="switch-label">Push</span>
+              <span className="switch-label">{t('push-notif')}</span>
             </label>
             <label className="switch">
               <input
@@ -536,52 +666,56 @@ const Settings = () => {
                 onChange={e => setNotifications(n => ({ ...n, sms: e.target.checked }))}
               />
               <span className="slider"></span>
-              <span className="switch-label">SMS</span>
+              <span className="switch-label">{t('sms-notif')}</span>
             </label>
-          </div>
-        </section>
+          </div>,
+          'Choose how you want to be notified'
+        )}
 
-        <section>
-          <h2>Privacy</h2>
+        {renderSection(
+          'privacy',
+          t('privacy'),
+          '🔒',
           <div className="settings-row">
             <label>
-              Profile Visibility
+              {t('profile-visibility')}
               <select value={privacy} onChange={e => setPrivacy(e.target.value)}>
                 <option value="public">🌐 Public (everyone can see)</option>
                 <option value="friends">👥 Friends Only</option>
                 <option value="private">🔒 Private (only you)</option>
               </select>
             </label>
-          </div>
-        </section>
+          </div>,
+          'Control who can see your profile'
+        )}
 
         <div className="settings-actions">
           <button type="submit" disabled={loading} className="save-btn">
-            {loading ? 'Saving...' : 'Save Changes'}
+            {loading ? t('saving') : t('save-changes')}
           </button>
-          {successMsg && <div className="success">{successMsg}</div>}
-          {errorMsg && <div className="error">{errorMsg}</div>}
+          {successMsg && <div className="success">✅ {successMsg}</div>}
+          {errorMsg && <div className="error">❌ {errorMsg}</div>}
         </div>
       </form>
 
       <section className="danger-zone">
-        <h2>Danger Zone</h2>
+        <h2>{t('danger-zone')}</h2>
         {!deleteConfirm ? (
           <button
             className="delete-account"
             onClick={() => setDeleteConfirm(true)}
             disabled={loading}
           >
-            Delete Account
+            {t('delete-account')}
           </button>
         ) : (
           <div>
-            <p>Are you sure? This action cannot be undone.</p>
+            <p>{t('confirm-delete-message')}</p>
             <button className="confirm-delete" onClick={handleDeleteAccount} disabled={loading}>
-              Yes, Delete My Account
+              {t('confirm-delete')}
             </button>
             <button onClick={() => setDeleteConfirm(false)} disabled={loading}>
-              Cancel
+              {t('cancel')}
             </button>
           </div>
         )}

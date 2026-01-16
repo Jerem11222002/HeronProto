@@ -9,6 +9,7 @@ import React, {
 import ChatPopup from "../chat/ChatPopup";
 import { useSocket } from "../../context/SocketContext";
 import { AuthContext } from "../../context/authContext";
+import { useLanguage } from "../../hooks/useLanguage";
 import "./rightBar.scss";
 
 import { ReactComponent as IconFriends } from "./icons/friends.svg";
@@ -19,12 +20,6 @@ const DEFAULT_AVATARS = {
   male: "/assets/person/Male.jpg",
   female: "/assets/person/Female.jpg",
   default: "/assets/person/Default.jpg"
-};
-
-const TABS = {
-  friends: { id: "friends", label: "Friends", icon: IconFriends },
-  following: { id: "following", label: "Following", icon: IconFollowing },
-  followers: { id: "followers", label: "Followers", icon: IconFollowers }
 };
 
 const MAX_CHAT_POPUPS = 3;
@@ -104,6 +99,7 @@ const Tabs = ({ tabs, active, onChange, compact }) => {
 /* ----------------------------- RightBar ----------------------------- */
 
 const RightBar = () => {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState("friends");
   const [openChats, setOpenChats] = useState([]);
   const [isCompact, setIsCompact] = useState(() => {
@@ -187,9 +183,9 @@ const RightBar = () => {
       <div className="container">
         <Tabs
           tabs={{
-            friends: { ...TABS.friends, count: counts.friends },
-            following: { ...TABS.following, count: counts.following },
-            followers: { ...TABS.followers, count: counts.followers }
+            friends: { id: "friends", label: t('friends-tab'), icon: IconFriends, count: counts.friends },
+            following: { id: "following", label: t('following-tab'), icon: IconFollowing, count: counts.following },
+            followers: { id: "followers", label: t('followers-tab'), icon: IconFollowers, count: counts.followers }
           }}
           active={activeTab}
           onChange={setActiveTab}
@@ -198,7 +194,7 @@ const RightBar = () => {
 
         <div className="user-list">
           {usersByTab[activeTab].length === 0 ? (
-            <div className="empty">No users yet</div>
+            <div className="empty">{t('no-users-yet')}</div>
           ) : (
             usersByTab[activeTab].map((user) => (
               <UserRow

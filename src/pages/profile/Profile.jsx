@@ -133,6 +133,8 @@ const Profile = () => {
   const [prevLoading, setPrevLoading] = useState(false);
   const [editBioOpen, setEditBioOpen] = useState(false);
   const [editingBio, setEditingBio] = useState('');
+  const [showProfileFullSize, setShowProfileFullSize] = useState(false);
+  const [showCoverFullSize, setShowCoverFullSize] = useState(false);
 
   // Memoized Values
   const isOwnProfile = useMemo(() => 
@@ -792,6 +794,80 @@ const Profile = () => {
   const handleCoverMenuOpen = (event) => setCoverMenuAnchor(event.currentTarget);
   const handleCoverMenuClose = () => setCoverMenuAnchor(null);
 
+  // Remove cover photo handler
+  const handleRemoveCoverPhoto = useCallback(async () => {
+    try {
+      if (!isOwnProfile) {
+        setError('You can only remove your own cover photo');
+        return;
+      }
+
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('Not authenticated');
+
+      const response = await axios.delete(
+        `${API_URL}/api/profile/delete/cover-pic/${currentUser._id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data?.success) {
+        // Update local state
+        setUserData(prev => ({
+          ...prev,
+          coverPic: null
+        }));
+
+        // Emit socket event for real-time updates
+        emitProfileUpdate({
+          userId: currentUser._id,
+          updates: { coverPic: null }
+        });
+
+        setSuccessMessage('Cover photo removed successfully');
+      }
+    } catch (err) {
+      console.error('Error removing cover photo:', err);
+      setError(err.response?.data?.message || 'Failed to remove cover photo');
+    }
+  }, [isOwnProfile, currentUser?._id, API_URL, emitProfileUpdate]);
+
+  // Remove profile photo handler
+  const handleRemoveProfilePhoto = useCallback(async () => {
+    try {
+      if (!isOwnProfile) {
+        setError('You can only remove your own profile photo');
+        return;
+      }
+
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('Not authenticated');
+
+      const response = await axios.delete(
+        `${API_URL}/api/profile/delete/profile-pic/${currentUser._id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data?.success) {
+        // Update local state with default profile pic
+        setUserData(prev => ({
+          ...prev,
+          profilePic: null
+        }));
+
+        // Emit socket event for real-time updates
+        emitProfileUpdate({
+          userId: currentUser._id,
+          updates: { profilePic: null }
+        });
+
+        setSuccessMessage('Profile photo removed successfully');
+      }
+    } catch (err) {
+      console.error('Error removing profile photo:', err);
+      setError(err.response?.data?.message || 'Failed to remove profile photo');
+    }
+  }, [isOwnProfile, currentUser?._id, API_URL, emitProfileUpdate]);
+
   // --- MOVE: editable-bio hooks must be declared BEFORE early returns ---
   const handleOpenEditBio = useCallback(() => {
     setEditingBio(userData?.bio || '');
@@ -875,60 +951,62 @@ const Profile = () => {
   return (
     <motion.div className="profile" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <div className="images">
-        <div className="cover-container">
-          <motion.img
-            initial={{ scale: 1.1 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0.5 }}
-            src={userData?.coverPic || ""}
-            alt="Cover"
-            className="cover"
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = ""; // fallback to blank or gradient
-            }}
-          />
-          {isOwnProfile && (
-            <motion.div className="cover-upload" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
-              <input
-                type="file"
-                id="coverPic"
-                name="coverPic"
-                accept="image/*"
-                onChange={handleCoverPicUpdate}
-                style={{ display: 'none' }}
-                disabled={uploadLoading}
-                aria-label="Choose a new cover photo"
-              />
-              <IconButton
-                aria-label="Change cover photo"
-                onClick={handleCoverMenuOpen}
-                size="large"
-                className="upload-icon-btn"
-              >
-                <CameraAltIcon />
-              </IconButton>
-              <Menu
-                anchorEl={coverMenuAnchor}
-                open={Boolean(coverMenuAnchor)}
-                onClose={handleCoverMenuClose}
-              >
-                <MenuItem onClick={() => { document.getElementById('coverPic').click(); handleCoverMenuClose(); }}>
-                  <CameraAltIcon fontSize="small" /> Change Cover
-                </MenuItem>
-                <MenuItem onClick={() => { /* open modal for full size view */ handleCoverMenuClose(); }}>
-                  <FullscreenIcon fontSize="small" /> View Full Size
-                </MenuItem>
-                <MenuItem onClick={() => { fetchPreviousImages(); setShowPrevCoverDialog(true); handleCoverMenuClose(); }}>
-                  <CollectionsIcon fontSize="small" /> Choose from Previous
-                </MenuItem>
-                <MenuItem onClick={() => { /* call delete handler */ handleCoverMenuClose(); }}>
-                  <DeleteIcon fontSize="small" /> Remove Cover
-                </MenuItem>
-              </Menu>
-            </motion.div>
-          )}
-        </div>
+        {(userData?.coverPic || isOwnProfile) && (
+          <div className="cover-container">
+            <motion.img
+              initial={{ scale: 1.1 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.5 }}
+              src={userData?.coverPic || ""}
+              alt="Cover"
+              className="cover"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = ""; // fallback to blank or gradient
+              }}
+            />
+            {isOwnProfile && (
+              <motion.div className="cover-upload" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
+                <input
+                  type="file"
+                  id="coverPic"
+                  name="coverPic"
+                  accept="image/*"
+                  onChange={handleCoverPicUpdate}
+                  style={{ display: 'none' }}
+                  disabled={uploadLoading}
+                  aria-label="Choose a new cover photo"
+                />
+                <IconButton
+                  aria-label="Change cover photo"
+                  onClick={handleCoverMenuOpen}
+                  size="large"
+                  className="upload-icon-btn"
+                >
+                  <CameraAltIcon />
+                </IconButton>
+                <Menu
+                  anchorEl={coverMenuAnchor}
+                  open={Boolean(coverMenuAnchor)}
+                  onClose={handleCoverMenuClose}
+                >
+                  <MenuItem onClick={() => { document.getElementById('coverPic').click(); handleCoverMenuClose(); }}>
+                    <CameraAltIcon fontSize="small" /> Change Cover
+                  </MenuItem>
+                  <MenuItem onClick={() => { setShowCoverFullSize(true); handleCoverMenuClose(); }}>
+                    <FullscreenIcon fontSize="small" /> View Full Size
+                  </MenuItem>
+                  <MenuItem onClick={() => { fetchPreviousImages(); setShowPrevCoverDialog(true); handleCoverMenuClose(); }}>
+                    <CollectionsIcon fontSize="small" /> Choose from Previous
+                  </MenuItem>
+                  <MenuItem onClick={() => { handleRemoveCoverPhoto(); handleCoverMenuClose(); }}>
+                    <DeleteIcon fontSize="small" /> Remove Cover
+                  </MenuItem>
+                </Menu>
+              </motion.div>
+            )}
+          </div>
+        )}
 
         <div className="profile-pic-container">
           <motion.img
@@ -971,13 +1049,13 @@ const Profile = () => {
                 <MenuItem onClick={() => { document.getElementById('profilePic').click(); handleProfileMenuClose(); }}>
                   <EditIcon fontSize="small" /> Change Photo
                 </MenuItem>
-                <MenuItem onClick={() => { /* open modal for full size view */ handleProfileMenuClose(); }}>
+                <MenuItem onClick={() => { setShowProfileFullSize(true); handleProfileMenuClose(); }}>
                   <FullscreenIcon fontSize="small" /> View Full Size
                 </MenuItem>
                 <MenuItem onClick={() => { fetchPreviousImages(); setShowPrevProfileDialog(true); handleProfileMenuClose(); }}>
                   <CollectionsIcon fontSize="small" /> Choose from Previous
                 </MenuItem>
-                <MenuItem onClick={() => { /* call delete handler */ handleProfileMenuClose(); }}>
+                <MenuItem onClick={() => { handleRemoveProfilePhoto(); handleProfileMenuClose(); }}>
                   <DeleteIcon fontSize="small" /> Remove Photo
                 </MenuItem>
               </Menu>
@@ -1045,6 +1123,68 @@ const Profile = () => {
           <DialogActions>
             <Button onClick={() => setEditBioOpen(false)}>Cancel</Button>
             <Button onClick={handleSaveBio} variant="contained" color="primary">Save</Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Full Size Profile Photo Dialog */}
+        <Dialog 
+          open={showProfileFullSize} 
+          onClose={() => setShowProfileFullSize(false)} 
+          maxWidth="lg" 
+          fullWidth
+          PaperProps={{
+            style: {
+              backgroundColor: '#000',
+              backgroundImage: `url(${userData?.profilePic || getFallbackProfilePic(userData?.sex)})`,
+              backgroundSize: 'contain',
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'center'
+            }
+          }}
+        >
+          <img 
+            src={userData?.profilePic || getFallbackProfilePic(userData?.sex)} 
+            alt="Profile Full Size"
+            style={{
+              width: '100%',
+              height: 'auto',
+              maxHeight: '90vh',
+              objectFit: 'contain'
+            }}
+          />
+          <DialogActions>
+            <Button onClick={() => setShowProfileFullSize(false)}>Close</Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Full Size Cover Photo Dialog */}
+        <Dialog 
+          open={showCoverFullSize} 
+          onClose={() => setShowCoverFullSize(false)} 
+          maxWidth="lg" 
+          fullWidth
+          PaperProps={{
+            style: {
+              backgroundColor: '#000',
+              backgroundImage: `url(${userData?.coverPic})`,
+              backgroundSize: 'contain',
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'center'
+            }
+          }}
+        >
+          <img 
+            src={userData?.coverPic} 
+            alt="Cover Full Size"
+            style={{
+              width: '100%',
+              height: 'auto',
+              maxHeight: '90vh',
+              objectFit: 'contain'
+            }}
+          />
+          <DialogActions>
+            <Button onClick={() => setShowCoverFullSize(false)}>Close</Button>
           </DialogActions>
         </Dialog>
 

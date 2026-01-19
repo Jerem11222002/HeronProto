@@ -8,7 +8,6 @@ const FeaturedTitle = () => {
     <div className="featured-title">
       <div className="title-container">
         <h1>{t('featured-artists')}</h1>
-        <span className="view-all">{t('view-all')}</span>
       </div>
       <div className="title-description">
         <p>{t('discover-artists')}</p>

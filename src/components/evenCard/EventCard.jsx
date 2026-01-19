@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { IconButton, Tooltip, Zoom } from '@mui/material';
 import { 
@@ -11,7 +11,6 @@ import {
   Category,
   Visibility,
   PersonAdd,
-  Share,
   AccessTime,
   Place,
   Favorite as FavoriteIcon,
@@ -82,7 +81,6 @@ const ORGANIZATION_CATEGORIES = {
  * @param {Object} props
  * @param {EventItem} props.event
  * @param {(event: EventItem) => void} props.onJoin
- * @param {(event: EventItem) => void} props.onShare
  * @param {boolean} props.isAdmin
  * @param {(event: EventItem) => void} [props.onEdit]
  * @param {(eventId: string) => void} [props.onDelete]
@@ -96,7 +94,6 @@ const ORGANIZATION_CATEGORIES = {
 const EventCard = ({ 
   event, 
   onJoin, 
-  onShare, 
   isAdmin, 
   onEdit, 
   onDelete, 
@@ -109,6 +106,9 @@ const EventCard = ({
   const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const [hasTagOverflow, setHasTagOverflow] = useState(false);
+  const tagsContainerRef = useRef(null);
+  const tagsWrapperRef = useRef(null);
   const participantCount = participantData.count ?? 0;
   const maxParticipants = participantData.maxParticipants ?? event.maxParticipants ?? null;
 
@@ -117,6 +117,51 @@ const EventCard = ({
     if (!currentUserInterests) return [];
     return Array.isArray(currentUserInterests) ? currentUserInterests : [];
   }, [currentUserInterests]);
+
+  // Safely convert possible object fields to plain strings
+  const toPlain = (v) => {
+    if (v == null) return '';
+    if (typeof v === 'string') return v;
+    if (Array.isArray(v)) return v.map(toPlain).filter(Boolean).join(', ');
+    if (typeof v === 'object') return v.name || v.title || v.label || v.displayName || '';
+    return String(v);
+  };
+  
+  // Get organization category and tags
+  const getOrganizationInfo = (orgName) => {
+    return ORGANIZATION_CATEGORIES[orgName] || {
+      primaryCategory: 'other',
+      tags: [],
+      badge: ''
+    };
+  };
+
+  // derive safe labels used in UI
+  const orgLabel = toPlain(event.organization) || '';
+  const safeTags = (event.tags || []).map(t => toPlain(t)).filter(Boolean);
+
+  const orgInfo = getOrganizationInfo(orgLabel);
+  
+  // Memoize the unique tags - MOVED UP before useEffect
+  const uniqueTags = useMemo(() => {
+    const allTags = [...orgInfo.tags, ...safeTags];
+    return [...new Set(allTags.map(tag => (typeof tag === 'string' ? tag.toLowerCase() : toPlain(tag))))];
+  }, [orgInfo.tags, safeTags]);
+
+  // Check if tags have overflow
+  useEffect(() => {
+    const checkOverflow = () => {
+      if (tagsContainerRef.current) {
+        const hasOverflow = tagsContainerRef.current.scrollWidth > tagsContainerRef.current.clientWidth;
+        setHasTagOverflow(hasOverflow);
+      }
+    };
+
+    checkOverflow();
+    window.addEventListener('resize', checkOverflow);
+    
+    return () => window.removeEventListener('resize', checkOverflow);
+  }, [uniqueTags]);
 
   /**
    * Check if a tag matches user interests
@@ -143,19 +188,6 @@ const EventCard = ({
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  /**
-   * Get organization category and tags
-   * @param {OrganizationName} orgName
-   * @returns {OrganizationInfo}
-   */
-  const getOrganizationInfo = (orgName) => {
-    return ORGANIZATION_CATEGORIES[orgName] || {
-      primaryCategory: 'other',
-      tags: [],
-      badge: ''
-    };
-  };
-
   // --- UPDATED: Render engagement metrics as Seats and Participants ---
   const renderEngagementMetrics = () => (
     <div className="engagement-metrics">
@@ -173,29 +205,9 @@ const EventCard = ({
   );
   // --- END UPDATED ---
 
-  // Safely convert possible object fields to plain strings
-  const toPlain = (v) => {
-    if (v == null) return '';
-    if (typeof v === 'string') return v;
-    if (Array.isArray(v)) return v.map(toPlain).filter(Boolean).join(', ');
-    if (typeof v === 'object') return v.name || v.title || v.label || v.displayName || '';
-    return String(v);
-  };
-  
-  // derive safe labels used in UI
-  const orgLabel = toPlain(event.organization) || '';
-  const safeTags = (event.tags || []).map(t => toPlain(t)).filter(Boolean);
-
-  const orgInfo = getOrganizationInfo(orgLabel);
   const description = isHomePage && !showFullDescription 
     ? `${event.description.slice(0, 120)}${event.description.length > 120 ? '...' : ''}`
     : event.description;
- 
-   // Memoize the unique tags
-   const uniqueTags = useMemo(() => {
-    const allTags = [...orgInfo.tags, ...safeTags];
-    return [...new Set(allTags.map(tag => (typeof tag === 'string' ? tag.toLowerCase() : toPlain(tag))))];
-   }, [orgInfo.tags, event.tags]);
  
   const handleJoinClick = (eventData) => {
     try {
@@ -371,24 +383,29 @@ const EventCard = ({
 
         <div className="event-tags">
           <LocalOffer fontSize="small" />
-          <div className="tags-container">
-            {uniqueTags.map((tag, index) => {
-              const label = typeof tag === 'string' ? tag : toPlain(tag);
-              return (
-                <Tooltip 
-                  key={index}
-                  title={isTagInUserInterests(label) ? "Matches your interests!" : label}
-                  placement="top" 
-                  TransitionComponent={Zoom}
-                >
-                  <span className={`tag ${isTagInUserInterests(label) ? 'matching' : ''}`}>
-                    #{label}
-                  </span>
-                </Tooltip>
+          <div 
+            className={`tags-wrapper ${hasTagOverflow ? 'has-overflow' : ''}`}
+            ref={tagsWrapperRef}
+          >
+            <div className="tags-container" ref={tagsContainerRef}>
+              {uniqueTags.map((tag, index) => {
+                const label = typeof tag === 'string' ? tag : toPlain(tag);
+                return (
+                  <Tooltip 
+                    key={index}
+                    title={isTagInUserInterests(label) ? "Matches your interests!" : label}
+                    placement="top" 
+                    TransitionComponent={Zoom}
+                  >
+                    <span className={`tag ${isTagInUserInterests(label) ? 'matching' : ''}`}>
+                      #{label}
+                    </span>
+                  </Tooltip>
               );
-            })}
-           </div>
-         </div>
+              })}
+            </div>
+          </div>
+        </div>
 
         <div className="event-details">
           <Tooltip title="Event Date & Time" placement="top" TransitionComponent={Zoom}>
@@ -444,17 +461,6 @@ const EventCard = ({
                 >
                   {isFavorite ? <FavoriteIcon fontSize="small" /> : <FavoriteBorderIcon fontSize="small" />}
                   {isFavorite ? 'Saved' : 'Save'}
-                </button>
-              </span>
-            </Tooltip>
-            <Tooltip title="Share with friends" placement="top" TransitionComponent={Zoom}>
-              <span style={{ display: 'inline-flex' }}>
-                <button 
-                  className="share-button"
-                  onClick={() => onShare(event)}
-                >
-                  <Share fontSize="small" />
-                  Share
                 </button>
               </span>
             </Tooltip>

@@ -126,11 +126,13 @@ $video-indicator-color: white;
         align-items: center;
 
         small {
-          color: themed("textColorSoft");
+          color: themed("textColor");
           font-size: 13px;
           padding: 4px 8px;
           background-color: themed("bgSoft");
           border-radius: 6px;
+          font-weight: 500;
+          opacity: 0.8;
         }
       }
     }
@@ -156,22 +158,41 @@ $video-indicator-color: white;
         min-height: auto;
         overflow: hidden;
 
-        .rank-badge {
+        .follow-btn-top {
           position: absolute;
           top: 12px;
           right: 12px;
-          background: linear-gradient(135deg, #5271ff, #7c9cff);
-          color: white;
-          padding: 6px 10px;
-          height: 28px;
-          min-width: 28px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 10px;
-          font-size: 13px;
-          font-weight: 700;
-          box-shadow: 0 4px 12px rgba(82, 113, 255, 0.25);
+          padding: 4px 8px;
+          font-size: 11px;
+          border: none;
+          background-color: transparent;
+          color: themed("primary");
+          cursor: pointer;
+          transition: all 200ms ease;
+          font-weight: 500;
+          z-index: 10;
+
+          &:hover:not(:disabled) {
+            color: themed("primaryHover");
+          }
+
+          &.following {
+            color: themed("primary");
+          }
+
+          &.friends {
+            color: #ff6b9d;
+            font-weight: 600;
+
+            &:hover:not(:disabled) {
+              color: #ff5a8c;
+            }
+          }
+
+          &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+          }
         }
 
         &:hover {
@@ -188,10 +209,32 @@ $video-indicator-color: white;
           align-items: flex-start;
 
           .artist-avatar {
+            position: relative;
             flex-shrink: 0;
             display: flex;
             align-items: center;
             justify-content: center;
+            width: fit-content;
+
+            .rank-badge {
+              position: absolute;
+              top: -6px;
+              right: -6px;
+              background: linear-gradient(135deg, #5271ff, #7c9cff);
+              color: white;
+              padding: 4px 8px;
+              height: 24px;
+              min-width: 24px;
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              border-radius: 8px;
+              font-size: 11px;
+              font-weight: 700;
+              box-shadow: 0 4px 12px rgba(82, 113, 255, 0.25);
+              z-index: 5;
+            }
+
             img {
               width: var(--fa-avatar-size);
               height: var(--fa-avatar-size);
@@ -345,7 +388,7 @@ $video-indicator-color: white;
           .info-header {
             display: flex;
             align-items: flex-start;
-            justify-content: space-between;
+            justify-content: flex-start;
             gap: 8px;
             width: 100%;
             min-width: 0;
@@ -405,14 +448,11 @@ $video-indicator-color: white;
             }
 
             &.friends {
-              background: linear-gradient(135deg, #ff6b9d, #ff8fab);
-              border-color: #ff6b9d;
-              color: white;
+              color: #ff6b9d;
               font-weight: 600;
 
               &:hover:not(:disabled) {
-                background: linear-gradient(135deg, #ff5a8c, #ff789a);
-                box-shadow: 0 3px 10px rgba(255, 107, 157, 0.3);
+                color: #ff5a8c;
               }
             }
 
@@ -636,7 +676,19 @@ $video-indicator-color: white;
 
       .artist-preview {
         gap: 8px;
-        .artist-avatar img { width: 56px; height: 56px; }
+        .artist-avatar {
+          position: relative;
+          width: fit-content;
+
+          .rank-badge {
+            top: -6px;
+            right: -6px;
+            font-size: 10px;
+            padding: 3px 6px;
+          }
+
+          img { width: 56px; height: 56px; }
+        }
         .recent-posts-container {
           .recent-posts {
             gap: 6px;
@@ -669,9 +721,37 @@ $video-indicator-color: white;
 
         .follow-btn {
           flex-shrink: 0;
-          padding: 5px 10px;
-          font-size: 11px;
-          border-width: 1px;
+          padding: 4px 8px;
+          font-size: 12px;
+          border: none;
+          background-color: transparent;
+          color: themed("primary");
+          cursor: pointer;
+          transition: all 200ms ease;
+          font-weight: 500;
+
+          &:hover:not(:disabled) {
+            color: themed("primaryHover");
+          }
+
+          &.following {
+            color: themed("primary");
+          }
+
+          &.friends {
+            color: #ff69b4;
+          }
+
+          &:disabled {
+            opacity: 0.6;
+          }
+        }
+
+        .follow-btn-top {
+          top: 8px;
+          right: 8px;
+          font-size: 10px;
+          padding: 2px 6px;
         }
 
         .key-metrics {

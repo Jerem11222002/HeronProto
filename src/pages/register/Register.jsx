@@ -1,6 +1,7 @@
 import { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/authContext";
+import { DarkModeContext } from "../../context/darkModeContext";
 import "./register.scss";
 import umakLogo from "../../assets/umak-logo-black-r.png"; // <-- new import
 
@@ -25,6 +26,7 @@ const Register = () => {
   const [error, setError] = useState(null);
 
   const { setCurrentUser } = useContext(AuthContext);
+  const { setDarkMode } = useContext(DarkModeContext);
   const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
   const handleRegister = async (e) => {
@@ -75,6 +77,11 @@ const Register = () => {
   
         localStorage.setItem("token", data.token);
         localStorage.setItem("currentUser", JSON.stringify(user));
+        // Set default light theme for new users to prevent system preference from auto-enabling dark mode
+        localStorage.setItem("theme", "light");
+        localStorage.setItem("darkMode", "false");
+        // Explicitly set context to light mode for immediate visual effect
+        if (setDarkMode) setDarkMode(false);
         setCurrentUser(user);
   
         navigate(`/interests/${user.id}`, { 

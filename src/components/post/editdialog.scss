@@ -1,0 +1,341 @@
+@import "../../style.scss";
+
+.edit-dialog {
+  @include themify($themes) {
+    .MuiDialog-paper {
+      border-radius: 16px !important;
+      overflow: hidden;
+      max-width: 500px;
+      border: 1px solid themed('border');
+      background: themed('bg');
+      box-shadow: 0 8px 32px themed('shadow') !important;
+
+      @include mobile {
+        border-radius: 10px !important;
+        margin: 8px;
+        max-width: calc(100vw - 16px);
+      }
+    }
+
+    .MuiDialogTitle-root {
+      padding: 16px 18px !important;
+      border-bottom: 1px solid themed('border');
+      background: themed('bgSoft');
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: themed('textColor');
+    }
+
+    .MuiDialogContent-root {
+      padding: 0 0 8px 0 !important;
+      background: themed('bg');
+
+      label {
+        color: themed('textColor');
+        font-weight: 600;
+        display: block;
+        margin-bottom: 6px;
+      }
+    }
+
+    .MuiDivider-root {
+      border-color: themed('border');
+      opacity: 0.5;
+      margin: 16px 0;
+    }
+
+    .MuiButton-root {
+      text-transform: none;
+      font-size: 0.97rem;
+      font-weight: 600;
+      border-radius: 10px;
+      transition: all 0.2s;
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+
+    .MuiButton-contained {
+      background: themed('primary');
+      color: themed('buttonText');
+      padding: 10px 20px;
+
+      &:hover:not(:disabled) {
+        background: themed('primaryHover');
+        box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+      }
+
+      &:disabled {
+        background: themed('bgSoft');
+        color: themed('textColorSoft');
+      }
+    }
+
+    .MuiButton-outlined {
+      border-color: themed('border');
+      color: themed('textColor');
+
+      &:hover:not(:disabled) {
+        border-color: themed('primary');
+        background: themed('bgHover');
+      }
+    }
+
+    .MuiTextField-root {
+      .MuiOutlinedInput-root {
+        color: themed('textColor');
+        background: themed('bgSoft');
+        border-radius: 12px;
+        transition: all 0.2s ease;
+        font-size: 1rem;
+
+        fieldset {
+          border-color: themed('border');
+        }
+
+        &:hover fieldset {
+          border-color: themed('textColorSoft');
+        }
+
+        &.Mui-focused fieldset {
+          border-color: themed('primary');
+          border-width: 2px;
+        }
+
+        &.Mui-disabled {
+          background: themed('bgSoft');
+          opacity: 0.6;
+        }
+      }
+
+      .MuiOutlinedInput-input {
+        color: themed('textColor');
+        padding: 12px 14px;
+
+        &::placeholder {
+          color: themed('textColorSoft');
+          opacity: 0.7;
+        }
+      }
+
+      .MuiOutlinedInput-multiline {
+        padding: 12px 14px;
+      }
+    }
+
+    .MuiIconButton-root {
+      color: themed('primary');
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: themed('bgSoft');
+      }
+    }
+
+    .MuiPopover-paper {
+      border-radius: 12px !important;
+      border: 1px solid themed('border');
+      background: themed('bg');
+      box-shadow: 0 8px 24px themed('shadow') !important;
+      overflow: visible !important;
+
+      // Scrollbar styling for emoji picker
+      &::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: themed('border');
+        border-radius: 4px;
+
+        &:hover {
+          background: themed('textColorSoft');
+        }
+      }
+    }
+
+    // Emoji grid scrollable container - Chrome/Safari (Desktop - Subtle)
+    .emoji-picker-desktop {
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: transparent;
+        margin: 4px 0;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: rgba(128, 128, 128, 0.3);
+        border-radius: 3px;
+        min-height: 40px;
+
+        &:hover {
+          background: rgba(128, 128, 128, 0.5);
+        }
+      }
+    }
+
+    // Firefox scrollbar support (Desktop - Subtle)
+    .emoji-picker-desktop {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(128, 128, 128, 0.3) transparent;
+
+      &:hover {
+        scrollbar-color: rgba(128, 128, 128, 0.5) transparent;
+      }
+    }
+
+    // Mobile emoji picker - centered and responsive
+    @media (max-width: 768px) {
+      .emoji-grid-wrapper {
+        max-height: 50vh !important;
+        overflow-y: auto !important;
+      }
+
+      .emoji-grid-container {
+        width: 85vw !important;
+        max-width: 85vw !important;
+        grid-template-columns: repeat(5, 1fr) !important;
+      }
+    }
+
+    // Emoji picker wrapper scrolling
+    .emoji-grid-wrapper {
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: rgba(128, 128, 128, 0.3);
+        border-radius: 3px;
+
+        &:hover {
+          background: rgba(128, 128, 128, 0.5);
+        }
+      }
+    }
+
+    .emoji-grid-wrapper {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(128, 128, 128, 0.3) transparent;
+
+      &:hover {
+        scrollbar-color: rgba(128, 128, 128, 0.5) transparent;
+      }
+    }
+
+    // General emoji container scrollbar
+    .emoji-grid-container {
+      &::-webkit-scrollbar {
+        width: 5px;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: rgba(128, 128, 128, 0.2);
+        border-radius: 3px;
+
+        &:hover {
+          background: rgba(128, 128, 128, 0.4);
+        }
+      }
+    }
+
+    .emoji-grid-container {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(128, 128, 128, 0.2) transparent;
+
+      &:hover {
+        scrollbar-color: rgba(128, 128, 128, 0.4) transparent;
+      }
+    }
+
+    // Character count styling
+    .char-count {
+      font-size: 0.8rem;
+      color: themed('textColorSoft');
+
+      &.warning {
+        color: #ff9800;
+      }
+
+      &.error {
+        color: #ff6b6b;
+        font-weight: 600;
+      }
+    }
+
+    // Tag pills styling
+    .tag-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      background: themed('primary');
+      color: themed('buttonText');
+      font-size: 0.85rem;
+      font-weight: 500;
+      animation: fadeIn 0.2s ease;
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: scale(0.9);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+    }
+
+    // Info box styling
+    .info-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      background: themed('bgSoft');
+      border-left: 3px solid themed('primary');
+
+      .info-icon {
+        color: themed('primary');
+        font-size: 1.2rem;
+        flex-shrink: 0;
+      }
+
+      .info-text {
+        font-size: 0.85rem;
+        color: themed('textColorSoft');
+        line-height: 1.4;
+      }
+    }
+
+    // Emoji picker button styling
+    .emoji-picker-btn {
+      color: themed('primary');
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: themed('bgSoft');
+        transform: scale(1.05);
+      }
+    }
+  }
+}
+

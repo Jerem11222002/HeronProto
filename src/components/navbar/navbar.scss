@@ -836,6 +836,81 @@ $shadows: (
       left: auto;
     }
 
+  // ULTRA-SMALL SCREENS (390px and below - iPhone 12 Pro, etc.)
+  // Maximum screen space efficiency while maintaining usability
+  @media (max-width: 390px) {
+    @include themify($themes) {
+      height: 56px; // Compact navbar height
+      padding: 0 8px; // Minimal horizontal padding
+      gap: 4px; // Reduce gaps between sections
+      
+      .left {
+        gap: 6px; // Very tight gaps between navbar items
+        flex: 1 1 auto;
+        
+        .heron-logo,
+        .logo {
+          font-size: 16px; // Smaller logo
+          font-weight: 700;
+          margin: 0;
+        }
+        
+        .nav-links {
+          display: none !important; // Hide nav links entirely on ultra-small
+        }
+        
+        .search-container {
+          display: none !important; // Hide search container
+          
+          .search-input-wrapper {
+            display: none !important;
+          }
+        }
+      }
+      
+      .right {
+        gap: 4px; // Very tight icon spacing
+        
+        .nav-icon {
+          font-size: 16px !important; // Smaller icons
+          padding: 4px !important; // Minimal padding around icons
+          
+          svg {
+            width: 16px !important;
+            height: 16px !important;
+          }
+        }
+        
+        .user {
+          display: none !important; // Hide user profile button
+          
+          img {
+            width: 28px !important;
+            height: 28px !important;
+          }
+          
+          span {
+            display: none !important; // Hide username
+          }
+        }
+      }
+      
+      // Ensure dropdowns are properly sized
+      .right .dropdown-menu,
+      .right .friends-dropdown,
+      .right .notification-dropdown-wrapper {
+        position: fixed;
+        left: 4px;
+        right: 4px;
+        top: calc(56px + 8px); // Adjust for compact navbar
+        width: auto;
+        max-width: calc(100vw - 8px);
+        border-radius: 10px;
+        z-index: 1200;
+      }
+    }
+  }
+
   // Mobile / very small screens: make dropdowns full-width and flow so nothing disappears
   @include mobile {
     .nav-links { display: none !important; } // hide desktop links

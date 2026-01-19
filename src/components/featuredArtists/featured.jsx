@@ -280,10 +280,18 @@ const ArtistItem = memo(({ artist, rank, currentUserId, currentUser, userRelatio
 
   return (
     <div className="featured-item" role="article" aria-label={`${artist.name} card`}>
-      <div className="rank-badge">#{rank}</div>
+      <button
+        className={`follow-btn follow-btn-top ${isFollowing ? 'following' : ''} ${isMutualFriend ? 'friends' : ''}`}
+        onClick={handleFollowToggle}
+        disabled={isFollowLoading}
+        title={isMutualFriend ? 'Friends' : isFollowing ? 'Unfollow' : 'Follow'}
+      >
+        {isMutualFriend ? '👯 Friends' : isFollowing ? '✓ Following' : '+ Follow'}
+      </button>
 
       <div className="artist-preview" aria-hidden="false">
         <div className="artist-avatar">
+          <div className="rank-badge">#{rank}</div>
           <Link to={`/profile/${artist._id}`} aria-label={`${artist.name} profile`}>
             <img
               src={artist.profilePic || getDefaultAvatar(artist.gender)}
@@ -320,14 +328,6 @@ const ArtistItem = memo(({ artist, rank, currentUserId, currentUser, userRelatio
               <span className="name">{artist.name}</span>
             </Link>
           </div>
-          <button
-            className={`follow-btn ${isFollowing ? 'following' : ''} ${isMutualFriend ? 'friends' : ''}`}
-            onClick={handleFollowToggle}
-            disabled={isFollowLoading}
-            title={isMutualFriend ? 'Friends' : isFollowing ? 'Unfollow' : 'Follow'}
-          >
-            {isMutualFriend ? '👯 Friends' : isFollowing ? '✓ Following' : '+ Follow'}
-          </button>
         </div>
 
         <span className="username">@{artist.username}</span>
@@ -501,9 +501,7 @@ const Featured = () => {
             currentFilter={timeFilter}
             onFilterChange={handleFilterChange}
           />
-          {uniqueArtists.length ? (
-            <small>{uniqueArtists.length} artists featured</small>
-          ) : (
+          {!uniqueArtists.length && (
             <div className="featured empty">
               <span>{t('no-featured-artists')}</span>
               <small>{t('try-different-filter')}</small>

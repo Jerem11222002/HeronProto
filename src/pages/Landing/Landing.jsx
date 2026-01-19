@@ -240,7 +240,7 @@ const Landing = () => {
             <div className="quickLinks">
               <Link to="/login" className="link">Login</Link>
               <span className="sep">·</span>
-              <Link to="/admin/login" className="link muted">Admin Login</Link>
+              <Link to="/login" className="link muted">Admin Login</Link>
             </div>
           </div>
 

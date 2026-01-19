@@ -123,6 +123,7 @@ const Navbar = () => {
         const topPx = (navOffset || 64) + 8;
         // Cap maxHeight to 60vh (same as notification dropdown) minus navbar height
         const maxH = typeof window !== 'undefined' ? Math.min(window.innerHeight - topPx - 16, Math.max(window.innerHeight * 0.6, 200)) : 400;
+        const bgColor = darkMode ? '#222' : '#fff';
         return {
           position: 'fixed',
           left: '50%',
@@ -136,21 +137,21 @@ const Navbar = () => {
           overflowY: 'auto', // Enable scrolling
           borderRadius: 8,
           boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-          background: '#fff',
+          background: bgColor,
           padding: 8,
           boxSizing: 'border-box'
         };
       })()
     : undefined;
 
-  // Added: mobile inline style for user dropdown — similar size but nudged left so it doesn't overflow right edge
+  // Added: mobile inline style for user dropdown - similar size but nudged left so it doesn't overflow right edge
   const mobileUserMenuStyle = isMobile
     ? (() => {
         const topPx = (navOffset || 64) + 8;
         const maxH = typeof window !== 'undefined' ? Math.max(window.innerHeight - topPx - 16, 120) : 320;
+        const bgColor = darkMode ? '#222' : '#fff';
         return {
           position: 'fixed',
-          // center then nudge left a bit to avoid overflowing right edge
           left: '50%',
           top: `${topPx}px`,
           transform: 'translateX(-55%)',
@@ -161,7 +162,7 @@ const Navbar = () => {
           overflowY: 'auto',
           borderRadius: 8,
           boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-          background: '#fff',
+          background: bgColor,
           padding: 6,
           boxSizing: 'border-box'
         };

@@ -19,32 +19,14 @@
         font-weight: 600;
         color: themed("textColor");
       }
-  
-      .view-all {
-        color: themed("primary");
-        font-size: 14px;
-        cursor: pointer;
-        font-weight: 600;
-        padding: 4px 8px;
-        border-radius: 6px;
-        background: transparent;
-        transition: background-color 0.12s, color 0.12s;
-  
-        &:hover { 
-          text-decoration: underline; 
-          color: themed("primaryHover");
-        }
-        &:focus-visible {
-          outline: 3px solid rgba(82, 113, 255, 0.18);
-          outline-offset: 2px;
-        }
-      }
     }
   
     .title-description {
       p {
-        color: themed("textColorSoft");
+        color: themed("textColor");
         font-size: 14px;
+        font-weight: 500;
+        opacity: 0.85;
       }
     }
   }

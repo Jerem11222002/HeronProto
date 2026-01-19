@@ -872,12 +872,6 @@ const Comments = ({ postId, onCommentUpdate }) => {
           })
         }
       </div>
-
-      {showPreview && (
-        <Link to={`/post/${postId}`} className="view-all-comments-btn">
-          View all comments
-        </Link>
-      )}
     </section>
   );
 };

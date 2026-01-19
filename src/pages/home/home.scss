@@ -255,14 +255,130 @@
     .home-container {
       .left {
         .feed-filters {
-          margin: 0 -10px;
-          border-radius: 0;
+          margin: 0;
+          border-radius: 12px;
         }
 
         .feed-content {
           .feed-item {
-            margin: 0 -10px;
-            border-radius: 0;
+            margin: 0;
+            border-radius: 12px;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Ultra-small screens (390px and below)
+@media (max-width: 390px) {
+  .home {
+    padding: 8px;
+
+    .home-container {
+      gap: 0;
+      margin: 0;
+      padding: 0;
+
+      .left {
+        gap: 12px;
+
+        .featured-section,
+        .share-section {
+          border-radius: 12px;
+          margin: 0;
+        }
+
+        .feed-filters {
+          margin: 0;
+          padding: 12px;
+          border-radius: 12px;
+          gap: 8px;
+        }
+
+        .feed-content {
+          gap: 12px;
+
+          .feed-item {
+            margin: 0;
+            padding: 0;
+            border-radius: 12px;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Small phones (391px to 480px)
+@media (min-width: 391px) and (max-width: 480px) {
+  .home {
+    padding: 12px;
+
+    .home-container {
+      gap: 0;
+      margin: 0;
+      padding: 0;
+
+      .left {
+        gap: 16px;
+
+        .featured-section,
+        .share-section {
+          border-radius: 12px;
+          margin: 0;
+        }
+
+        .feed-filters {
+          margin: 0;
+          padding: 12px;
+          border-radius: 12px;
+          gap: 10px;
+        }
+
+        .feed-content {
+          gap: 16px;
+
+          .feed-item {
+            margin: 0;
+            padding: 0;
+            border-radius: 12px;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Small tablets (481px to 768px)
+@media (min-width: 481px) and (max-width: 768px) {
+  .home {
+    padding: 12px;
+
+    .home-container {
+      gap: 0;
+      margin: 0;
+      padding: 0;
+
+      .left {
+        gap: 16px;
+
+        .featured-section,
+        .share-section {
+          margin: 0;
+        }
+
+        .feed-filters {
+          margin: 0;
+          border-radius: 12px;
+        }
+
+        .feed-content {
+          gap: 16px;
+
+          .feed-item {
+            margin: 0;
+            border-radius: 12px;
           }
         }
       }

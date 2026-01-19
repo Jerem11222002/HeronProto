@@ -69,8 +69,9 @@ const Events = () => {
   const [recommendedLoading, setRecommendedLoading] = useState(false);
   const [recommendedError, setRecommendedError] = useState(null);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false);
   const [filterByPrice, setFilterByPrice] = useState('all'); // 'all', 'free', 'paid'
+  const [showSavedOnly, setShowSavedOnly] = useState(false);
   const [favorites, setFavorites] = useState(new Set(JSON.parse(localStorage.getItem('eventFavorites')) || []));
 
   const fetchRecommended = async () => {
@@ -184,6 +185,25 @@ const Events = () => {
     localStorage.setItem('eventFavorites', JSON.stringify([...newFavorites]));
   };
 
+  const resetFilters = () => {
+    setSearchTerm('');
+    setSelectedOrganization('all');
+    setSelectedCategory('all');
+    setSelectedEventType('all');
+    setFilterByPrice('all');
+    setShowSavedOnly(false);
+    setCurrentPage(1);
+  };
+
+  const activeFiltersCount = [
+    searchTerm !== '',
+    selectedOrganization !== 'all',
+    selectedCategory !== 'all',
+    selectedEventType !== 'all',
+    filterByPrice !== 'all',
+    showSavedOnly
+  ].filter(Boolean).length;
+
   const handleCreateEvent = () => {
     setEditingEvent(null);
     setFormData(initialFormData);
@@ -251,6 +271,11 @@ const Events = () => {
   };
 
   const filteredEvents = events
+    .filter(event => {
+      // Show only saved events if filter is active
+      if (showSavedOnly) return favorites.has(event._id);
+      return true;
+    })
     .filter(event => 
       event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       event.description.toLowerCase().includes(searchTerm.toLowerCase())
@@ -311,92 +336,146 @@ const Events = () => {
             </Button>
           )}
           <div className="events-filters">
-            {/* Recommended toggle */}
-            <button
-              type="button"
-              className={`recommended-btn ${recommendedMode ? 'active' : ''}`}
-              onClick={() => setRecommendedMode(v => !v)}
-              title={recommendedMode ? t('all-events') : t('recommended-events')}
+            {/* Search Bar and Primary Filters Row */}
+            <div className="filters-row">
+              {/* Search Bar */}
+              <div className="filters-search-bar">
+                <label htmlFor="eventSearch" className="sr-only">{t('search-events')}</label>
+                <input
+                  id="eventSearch"
+                  name="eventSearch"
+                  type="text"
+                  placeholder={t('search-events')}
+                  aria-label={t('search-events')}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  disabled={recommendedMode}
+                  className="search-input"
+                />
+              </div>
+
+              {/* Primary Filter Buttons */}
+              <div className="filters-primary">
+                {/* Recommended Toggle */}
+                <button
+                  type="button"
+                  className={`filter-chip ${recommendedMode ? 'active' : ''}`}
+                  onClick={() => setRecommendedMode(v => !v)}
+                  title={recommendedMode ? t('all-events') : t('recommended-events')}
+                >
+                  <span className="filter-icon">⭐</span>
+                  <span className="button-text-full">{recommendedMode ? t('all-events') : t('recommended-events')}</span>
+                  <span className="button-text-short">{recommendedMode ? 'All' : 'Recommended'}</span>
+                </button>
+
+                {/* Saved Events Filter */}
+                <button
+                  type="button"
+                  className={`filter-chip ${showSavedOnly ? 'active' : ''}`}
+                  onClick={() => setShowSavedOnly(v => !v)}
+                  disabled={recommendedMode}
+                  title="Show saved events only"
+                >
+                  <span className="filter-icon">💾</span>
+                  <span className="button-text-full">Saved ({favorites.size})</span>
+                  <span className="button-text-short">Saved</span>
+                </button>
+
+                {/* view/list buttons removed */}
+
+                {/* Advanced Filters Toggle */}
+                <button
+                  type="button"
+                  className="filters-toggle"
+                  onClick={() => setIsFiltersModalOpen(true)}
+                  disabled={recommendedMode}
+                  title="Open advanced filters"
+                >
+                  ⚙️ Filters {activeFiltersCount > 0 && <span className="filter-count">{activeFiltersCount}</span>}
+                </button>
+              </div>
+            </div>
+
+            <Dialog
+              open={isFiltersModalOpen}
+              onClose={() => setIsFiltersModalOpen(false)}
+              maxWidth="sm"
+              fullWidth
             >
-              {recommendedMode ? t('all-events') : t('recommended-events')}
-            </button>
-            {recommendedMode && recommendedLoading && <span className="recommended-loader">Loading...</span>}
-            {recommendedMode && recommendedError && <span className="recommended-error">{recommendedError}</span>}
-            <label htmlFor="eventSearch" className="sr-only">{t('search-events')}</label>
-            <input
-              id="eventSearch"
-              name="eventSearch"
-              type="text"
-              placeholder={t('search-events')}
-              aria-label={t('search-events')}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              disabled={recommendedMode}
-            />
-             <select
-               value={selectedOrganization}
-               onChange={(e) => setSelectedOrganization(e.target.value)}
-               disabled={recommendedMode}
-             >
-               {organizations.map(org => (
-                 <option key={org} value={org}>
-                   {org === 'all' ? t('filter-by-organization') : org}
-                 </option>
-               ))}
-             </select>
-             <select
-               value={selectedCategory}
-               onChange={(e) => setSelectedCategory(e.target.value)}
-               disabled={recommendedMode}
-             >
-               {categories.map(cat => (
-                 <option key={cat} value={cat}>
-                   {cat === 'all' ? t('filter-by-category') : cat}
-                 </option>
-               ))}
-             </select>
-             {/* NEW: Event Type Filter */}
-             <select
-               value={selectedEventType}
-               onChange={e => setSelectedEventType(e.target.value)}
-               disabled={recommendedMode}
-             >
-               <option value="all">All Types</option>
-               <option value={EVENT_TYPES.WATCH_ONLY}>{t('watch-only')}</option>
-               <option value={EVENT_TYPES.AUDITION}>{t('audition')}</option>
-             </select>
-             {/* Price Filter */}
-             <select
-               value={filterByPrice}
-               onChange={(e) => setFilterByPrice(e.target.value)}
-               disabled={recommendedMode}
-               title="Filter by price"
-             >
-               <option value="all">All Events</option>
-               <option value="free">Free Only</option>
-               <option value="paid">Paid Only</option>
-             </select>
-             {/* View Mode Toggle */}
-             <div className="view-mode-toggle">
-               <button
-                 type="button"
-                 className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
-                 onClick={() => setViewMode('grid')}
-                 title="Grid view"
-                 disabled={recommendedMode}
-               >
-                 ⊞ Grid
-               </button>
-               <button
-                 type="button"
-                 className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
-                 onClick={() => setViewMode('list')}
-                 title="List view"
-                 disabled={recommendedMode}
-               >
-                 ≡ List
-               </button>
-             </div>
+              <DialogTitle>Advanced Filters</DialogTitle>
+              <DialogContent>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingTop: '8px' }}>
+                  {/* Organization Filter */}
+                  <TextField
+                    select
+                    fullWidth
+                    label={t('filter-by-organization')}
+                    value={selectedOrganization}
+                    onChange={(e) => setSelectedOrganization(e.target.value)}
+                  >
+                    {organizations.map(org => (
+                      <MenuItem key={org} value={org}>
+                        {org === 'all' ? t('filter-by-organization') : org}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+
+                  {/* Category Filter */}
+                  <TextField
+                    select
+                    fullWidth
+                    label={t('filter-by-category')}
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                  >
+                    {categories.map(cat => (
+                      <MenuItem key={cat} value={cat}>
+                        {cat === 'all' ? t('filter-by-category') : cat}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+
+                  {/* Event Type Filter */}
+                  <TextField
+                    select
+                    fullWidth
+                    label="Event Type"
+                    value={selectedEventType}
+                    onChange={e => setSelectedEventType(e.target.value)}
+                  >
+                    <MenuItem value="all">All Types</MenuItem>
+                    <MenuItem value={EVENT_TYPES.WATCH_ONLY}>👁️ {t('watch-only')}</MenuItem>
+                    <MenuItem value={EVENT_TYPES.AUDITION}>🎤 {t('audition')}</MenuItem>
+                  </TextField>
+
+                  {/* Price Filter */}
+                  <TextField
+                    select
+                    fullWidth
+                    label="Price"
+                    value={filterByPrice}
+                    onChange={(e) => setFilterByPrice(e.target.value)}
+                  >
+                    <MenuItem value="all">💰 All Events</MenuItem>
+                    <MenuItem value="free">🆓 Free Only</MenuItem>
+                    <MenuItem value="paid">💵 Paid Only</MenuItem>
+                  </TextField>
+                </div>
+              </DialogContent>
+              <DialogActions>
+                {activeFiltersCount > 0 && (
+                  <Button onClick={resetFilters} color="error">
+                    ↺ Reset
+                  </Button>
+                )}
+                <Button onClick={() => setIsFiltersModalOpen(false)} variant="contained" color="primary">
+                  Done
+                </Button>
+              </DialogActions>
+            </Dialog>
+
+            {recommendedMode && recommendedLoading && <span className="recommended-loader">⏳ Loading recommendations...</span>}
+            {recommendedMode && recommendedError && <span className="recommended-error">⚠️ {recommendedError}</span>}
            </div>
         </div>
       </div>

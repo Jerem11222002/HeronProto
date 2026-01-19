@@ -108,7 +108,9 @@ $current-theme: null !default;
 
 // Breakpoints
 $breakpoints: (
-  mobile: 480px,
+  xs: 320px,          // Ultra-small phones (iPhone 12 Pro, etc.)
+  sm: 375px,          // Small phones
+  mobile: 480px,      // Standard mobile
   small-tablet: 600px,
   tablet: 768px,
   laptop: 1024px,
@@ -124,6 +126,18 @@ $breakpoints: (
     }
   } @else {
     @error "Invalid breakpoint: #{$breakpoint}";
+  }
+}
+
+@mixin ultra-small {
+  @include responsive('xs') {
+    @content;
+  }
+}
+
+@mixin small-phone {
+  @include responsive('sm') {
+    @content;
   }
 }
 
@@ -238,12 +252,10 @@ $breakpoints: (
 }
 
 // CSS Custom Properties
-:root {
-  @each $theme-name, $theme in $themes {
-    .theme-#{$theme-name} {
-      @each $key, $value in $theme {
-        --#{$key}: #{$value};
-      }
+@each $theme-name, $theme in $themes {
+  .theme-#{$theme-name} {
+    @each $key, $value in $theme {
+      --#{$key}: #{$value};
     }
   }
 }

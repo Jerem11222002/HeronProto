@@ -43,10 +43,11 @@ import AdminAccounts from "./pages/admin/Accounts/AdminAccounts";
 
 // Terms and Conditions import
 import Terms from "./pages/Pledge/Terms";
+import Privacy from "./pages/Pledge/Privacy";
 import ForgotPassword from "./pages/forgot-password/ForgotPassword";
 import ResetPassword from "./pages/reset-password/ResetPassword";
-
-// Layout Components
+// Landing import (disabled - will redirect to login instead)
+// import Landing from "./pages/Landing/Landing";
 const Layout = ({ darkMode }) => (
   <div className={`theme-${darkMode ? "dark" : "light"} app-layout`}>
     <div className="navbar">
@@ -93,6 +94,16 @@ const AdminRoute = ({ children }) => {
   return <>{children}</>;
 };
 
+// Route that requires authentication but can be accessed from unauthenticated state
+const AuthRequiredRoute = ({ children, redirectTo = "/login" }) => {
+  const { currentUser, loading } = useContext(AuthContext);
+  if (loading) return <div className="loading-spinner">Loading...</div>;
+  if (!currentUser || !localStorage.getItem('token')) {
+    return <Navigate to={redirectTo} replace />;
+  }
+  return <>{children}</>;
+};
+
 function AppContent() {
   const { currentUser, isAdmin, loading } = useContext(AuthContext);
   const { darkMode } = useContext(DarkModeContext);
@@ -114,10 +125,10 @@ function AppContent() {
         { path: '*', element: <div className="loading-spinner">Loading...</div> }
       ])
     : createBrowserRouter([
-    // User Routes: show Landing for anonymous visitors, app layout for authenticated users
+    // User Routes: show app layout for authenticated users, redirect to login for anonymous
     {
       path: "/",
-      element: currentUser ? <ProtectedRoute><Layout darkMode={darkMode} /></ProtectedRoute> : <Landing />,
+      element: currentUser ? <ProtectedRoute><Layout darkMode={darkMode} /></ProtectedRoute> : <Navigate to="/login" replace />,
       children: currentUser ? [
         {
           index: true,
@@ -208,6 +219,16 @@ function AppContent() {
       ) : <Register />
     },
     {
+      path: "/events",
+      element: currentUser && !isAdmin ? (
+        <ProtectedRoute><Layout darkMode={darkMode}><Events /></Layout></ProtectedRoute>
+      ) : currentUser && isAdmin ? (
+        <Navigate to="/admin/events" replace />
+      ) : (
+        <Navigate to={`/login?redirect=/events`} replace />
+      )
+    },
+    {
       path: "/interests/:userId",
       element: currentUser ? (
         isAdmin ? <Navigate to="/admin/dashboard" replace /> :
@@ -231,6 +252,10 @@ function AppContent() {
       path: "/terms",
       element: <Terms />
     },
+    {
+      path: "/privacy",
+      element: <Privacy />
+    },
     // Add this route outside of admin/user routes:
     {
       path: "/post/:postId",
@@ -245,10 +270,11 @@ function AppContent() {
       path: '/reset-password',
       element: <ResetPassword />
     },
-    {
-      path: "/landing",
-      element: <Landing />
-    }
+    // Landing route disabled - uncomment Landing import and this route to re-enable
+    // {
+    //   path: "/landing",
+    //   element: <Landing />
+    // }
   ]);
 
   // DEV: runtime scan for CSS rules using fixed px units — logs warnings to console

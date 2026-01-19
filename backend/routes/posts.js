@@ -650,6 +650,95 @@ router.put("/:id/like", authenticate, async (req, res) => {
   }
 });
 
+// Update post (description and tags only)
+router.patch("/:id", authenticate, async (req, res) => {
+  try {
+    const { desc, tags } = req.body;
+    const postId = req.params.id;
+
+    // Validate input
+    if (!desc || desc.trim().length === 0) {
+      return res.status(400).json({ 
+        success: false,
+        message: "Description cannot be empty" 
+      });
+    }
+
+    if (desc.length > 2000) {
+      return res.status(400).json({ 
+        success: false,
+        message: "Description cannot exceed 2000 characters" 
+      });
+    }
+
+    // Find the post
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ 
+        success: false,
+        message: "Post not found" 
+      });
+    }
+
+    // Check authorization - only post owner can edit
+    if (post.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ 
+        success: false,
+        message: "Not authorized to edit this post" 
+      });
+    }
+
+    // Update description
+    post.desc = desc.trim();
+
+    // Update tags if provided
+    if (Array.isArray(tags) && tags.length > 0) {
+      // Validate and sanitize tags
+      const validTags = tags
+        .filter(tag => typeof tag === 'string' && tag.trim().length > 0)
+        .map(tag => tag.trim())
+        .slice(0, 10); // Max 10 tags
+      
+      post.tags = validTags;
+    } else if (tags && !Array.isArray(tags)) {
+      return res.status(400).json({ 
+        success: false,
+        message: "Tags must be an array" 
+      });
+    }
+
+    // Save the updated post
+    await post.save();
+
+    // Emit real-time update via socket
+    req.io?.emit(`post:${post._id}:updated`, {
+      postId: post._id,
+      desc: post.desc,
+      tags: post.tags,
+      updatedAt: post.updatedAt
+    });
+
+    res.json({ 
+      success: true,
+      message: "Post updated successfully",
+      post: {
+        _id: post._id,
+        desc: post.desc,
+        tags: post.tags,
+        updatedAt: post.updatedAt
+      }
+    });
+
+  } catch (error) {
+    console.error("Error updating post:", error);
+    res.status(500).json({ 
+      success: false,
+      message: "Failed to update post",
+      error: error.message 
+    });
+  }
+});
+
 // Delete post
 router.delete("/:id", authenticate, async (req, res) => {
   try {

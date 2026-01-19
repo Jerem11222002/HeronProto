@@ -17,6 +17,7 @@ import Snackbar from "@mui/material/Snackbar";
 import MuiAlert from "@mui/material/Alert";
 import Comments from "../comments/Comments";
 import ShareDialog from "./sharedialog";
+import EditDialog from "./editdialog";
 import { useSocket } from '../../context/SocketContext';
 import { getDefaultAvatar, getImageUrl } from "../../utils/imageUtils";
 
@@ -66,6 +67,30 @@ const getMediaUrl = (media, img) => {
   const base = process.env.REACT_APP_API_URL || 'http://localhost:5000';
   if (path.startsWith('/')) return `${base}${path}`;
   return `${base}/uploads/${path.split(/[/\\]/).pop()}`;
+};
+
+// Helper function to check if a post has valid media
+const hasValidMedia = (post) => {
+  if (!post) return false;
+  
+  // For shared posts, check if the shared post has media
+  if (post.sharedPost && typeof post.sharedPost === 'object') {
+    const sharedMedia = post.sharedPost.media || post.sharedPost.img;
+    const sharedMediaType = post.sharedPost.mediaType;
+    if (typeof sharedMedia !== 'string' || sharedMedia.trim().length === 0) return false;
+    // Must have both media AND a valid mediaType
+    return sharedMediaType && (sharedMediaType === 'image' || sharedMediaType === 'video');
+  }
+  
+  // For regular posts, check the post's media AND mediaType
+  const media = post.media || post.img;
+  const mediaType = post.mediaType;
+  
+  if (typeof media !== 'string' || media.trim().length === 0) return false;
+  
+  // CRITICAL: Must have a valid mediaType (image or video)
+  // Posts with media but no mediaType are orphaned/broken entries
+  return mediaType && (mediaType === 'image' || mediaType === 'video');
 };
 
 // Shared Post Renderer
@@ -153,6 +178,8 @@ const Post = ({ post, onDeletePost, onAddSharedPost, showOnly, fullScreen, showD
     popularity: post?.engagementMetrics?.popularity || 0
   });
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [postMenuAnchor, setPostMenuAnchor] = useState(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   // Snackbar state
   const [snackbar, setSnackbar] = useState({
@@ -267,6 +294,17 @@ const Post = ({ post, onDeletePost, onAddSharedPost, showOnly, fullScreen, showD
     setShareDialogOpen(false);
   };
 
+  const handleEditDialogClose = () => {
+    setEditDialogOpen(false);
+  };
+
+  const handleEditSave = (updatedPost) => {
+    // Update the post data in the component
+    post.desc = updatedPost.desc;
+    post.tags = updatedPost.tags;
+    showSnackbar("Post updated successfully!", "success");
+  };
+
   const handleShareConfirm = async (caption) => {
     try {
       const response = await axios.post(
@@ -350,6 +388,20 @@ const Post = ({ post, onDeletePost, onAddSharedPost, showOnly, fullScreen, showD
         onDeletePost?.(post._id);
       }
     } catch (error) {}
+    setPostMenuAnchor(null);
+  };
+
+  const handlePostMenuOpen = (event) => {
+    setPostMenuAnchor(event.currentTarget);
+  };
+
+  const handlePostMenuClose = () => {
+    setPostMenuAnchor(null);
+  };
+
+  const handleEditPost = () => {
+    setEditDialogOpen(true);
+    setPostMenuAnchor(null);
   };
 
   // Tag context menu handlers
@@ -434,7 +486,7 @@ const Post = ({ post, onDeletePost, onAddSharedPost, showOnly, fullScreen, showD
   }, [post.engagementScore]);
 
   const renderMedia = () => {
-    if (!post.media && !post.img) return null;
+    if (!hasValidMedia(post)) return null;
     if (imageError) return null;
     const mediaUrl = getMediaUrl(post.media || post.img);
     if (post.mediaType === 'video') {
@@ -525,7 +577,19 @@ const Post = ({ post, onDeletePost, onAddSharedPost, showOnly, fullScreen, showD
             </div>
           </div>
           {currentUser.id === post.userId && (
-            <MoreHorizIcon onClick={handleDelete} style={{ cursor: "pointer" }} />
+            <>
+              <MoreHorizIcon onClick={handlePostMenuOpen} style={{ cursor: "pointer" }} />
+              <Menu
+                anchorEl={postMenuAnchor}
+                open={Boolean(postMenuAnchor)}
+                onClose={handlePostMenuClose}
+                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                transformOrigin={{ vertical: "top", horizontal: "right" }}
+              >
+                <MenuItem onClick={handleEditPost}>Edit Post</MenuItem>
+                <MenuItem onClick={handleDelete} sx={{ color: "#d32f2f" }}>Delete Post</MenuItem>
+              </Menu>
+            </>
           )}
         </div>
         <div className="content">
@@ -566,8 +630,8 @@ const Post = ({ post, onDeletePost, onAddSharedPost, showOnly, fullScreen, showD
             <span className="count">{engagementMetrics.shares}</span>
             <span className="label">shares</span>
           </div>
-          {/* Show Full Post Button - now in metrics row */}
-          {(post.media || post.img) && (
+          {/* Show Full Post Button - only if post has valid media */}
+          {hasValidMedia(post) && (
             <Link
               to={`/post/${post._id}`}
               className="show-full-post-btn"
@@ -628,6 +692,12 @@ const Post = ({ post, onDeletePost, onAddSharedPost, showOnly, fullScreen, showD
           onClose={handleShareDialogClose}
           post={post}
           onShare={handleShareConfirm}
+        />
+        <EditDialog
+          open={editDialogOpen}
+          onClose={handleEditDialogClose}
+          post={post}
+          onEdit={handleEditSave}
         />
         <Snackbar
           open={snackbar.open}

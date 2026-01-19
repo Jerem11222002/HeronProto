@@ -1,6 +1,6 @@
 import { useState, useContext, useRef, useEffect } from "react";
 import { AuthContext } from "../../context/authContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { saveAuthData, clearAuthData } from "../../utils/tokenManager";
 import umakLogo from "../../assets/umak-logo-black-r.png";
 import "./login.scss";
@@ -14,6 +14,7 @@ const Login = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const usernameRef = useRef(null);
 
   // Debug: Log error state changes
@@ -121,10 +122,16 @@ const Login = () => {
         }
         navigate("/admin/dashboard");
       } else {
+        // Check if there's a redirect parameter (e.g., from /events)
+        const redirect = searchParams.get('redirect');
+        
         if (!user.interestsSelected) {
           navigate(`/interests/${user._id}`);
         } else if (!user.profileSetup) {
           navigate("/setup-profile");
+        } else if (redirect) {
+          // Redirect to the requested page after login
+          navigate(redirect);
         } else {
           navigate("/");
         }

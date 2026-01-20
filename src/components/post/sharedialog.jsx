@@ -22,9 +22,9 @@ const getMediaUrl = (post) => {
 };
 
 const ShareDialog = ({ open, onClose, post, onShare, currentUser }) => {
-  // lightweight debug: only log essential fields and small strings
+  // Disabled debug logging to prevent console spam
   const mediaUrl = getMediaUrl(post);
-  logger.debug('ShareDialog', { postId: post?._id, mediaUrl, mediaType: post?.mediaType });
+  // logger.debug('ShareDialog', { postId: post?._id, mediaUrl, mediaType: post?.mediaType });
   const [caption, setCaption] = useState("");
   const captionRef = useRef(null);
 

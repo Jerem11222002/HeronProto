@@ -11,8 +11,15 @@ import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import BarChartIcon from '@mui/icons-material/BarChart';
 import ReactPlayer from 'react-player';
+import ClickAwayListener from "@mui/material/ClickAwayListener";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogActions from "@mui/material/DialogActions";
+import Button from "@mui/material/Button";
 import Snackbar from "@mui/material/Snackbar";
 import MuiAlert from "@mui/material/Alert";
 import Comments from "../comments/Comments";
@@ -180,6 +187,7 @@ const Post = ({ post, onDeletePost, onAddSharedPost, showOnly, fullScreen, showD
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [postMenuAnchor, setPostMenuAnchor] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   // Snackbar state
   const [snackbar, setSnackbar] = useState({
@@ -375,7 +383,6 @@ const Post = ({ post, onDeletePost, onAddSharedPost, showOnly, fullScreen, showD
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("Are you sure you want to delete this post?")) return;
     try {
       const response = await axios.delete(
         `${API_URL}/api/posts/${post._id}`,
@@ -386,9 +393,23 @@ const Post = ({ post, onDeletePost, onAddSharedPost, showOnly, fullScreen, showD
       if (response.status === 200) {
         socket?.emit('post:delete', post._id);
         onDeletePost?.(post._id);
+        showSnackbar("Post deleted successfully!", "success");
       }
-    } catch (error) {}
+    } catch (error) {
+      showSnackbar("Failed to delete post.", "error");
+    } finally {
+      setPostMenuAnchor(null);
+      setDeleteConfirmOpen(false);
+    }
+  };
+
+  const handleDeleteConfirmOpen = () => {
+    setDeleteConfirmOpen(true);
     setPostMenuAnchor(null);
+  };
+
+  const handleDeleteConfirmClose = () => {
+    setDeleteConfirmOpen(false);
   };
 
   const handlePostMenuOpen = (event) => {
@@ -577,19 +598,27 @@ const Post = ({ post, onDeletePost, onAddSharedPost, showOnly, fullScreen, showD
             </div>
           </div>
           {currentUser.id === post.userId && (
-            <>
+            <div style={{ position: "relative" }}>
               <MoreHorizIcon onClick={handlePostMenuOpen} style={{ cursor: "pointer" }} />
-              <Menu
-                anchorEl={postMenuAnchor}
-                open={Boolean(postMenuAnchor)}
-                onClose={handlePostMenuClose}
-                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-                transformOrigin={{ vertical: "top", horizontal: "right" }}
-              >
-                <MenuItem onClick={handleEditPost}>Edit Post</MenuItem>
-                <MenuItem onClick={handleDelete} sx={{ color: "#d32f2f" }}>Delete Post</MenuItem>
-              </Menu>
-            </>
+              {Boolean(postMenuAnchor) && (
+                <ClickAwayListener onClickAway={handlePostMenuClose}>
+                  <div className="post-menu-dropdown">
+                    <div
+                      className="post-menu-item"
+                      onClick={handleEditPost}
+                    >
+                      Edit Post
+                    </div>
+                    <div
+                      className="post-menu-item post-menu-delete"
+                      onClick={handleDeleteConfirmOpen}
+                    >
+                      Delete Post
+                    </div>
+                  </div>
+                </ClickAwayListener>
+              )}
+            </div>
           )}
         </div>
         <div className="content">
@@ -699,6 +728,51 @@ const Post = ({ post, onDeletePost, onAddSharedPost, showOnly, fullScreen, showD
           post={post}
           onEdit={handleEditSave}
         />
+        <Dialog
+          open={deleteConfirmOpen}
+          onClose={handleDeleteConfirmClose}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: '12px',
+            }
+          }}
+        >
+          <DialogTitle sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
+            Delete Post
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText sx={{ color: 'inherit', mt: 1 }}>
+              Are you sure you want to delete this post? This action cannot be undone.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions sx={{ padding: '16px', gap: '8px' }}>
+            <Button
+              onClick={handleDeleteConfirmClose}
+              variant="outlined"
+              sx={{
+                textTransform: 'none',
+                fontSize: '0.95rem',
+                fontWeight: 600,
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDelete}
+              variant="contained"
+              color="error"
+              sx={{
+                textTransform: 'none',
+                fontSize: '0.95rem',
+                fontWeight: 600,
+              }}
+            >
+              Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
         <Snackbar
           open={snackbar.open}
           autoHideDuration={3000}

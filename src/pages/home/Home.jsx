@@ -6,9 +6,7 @@ import FeaturedTitle from "../../components/featuredArtists/FeaturedTitle";
 import Posts from "../../components/posts/Posts";
 import Share from "../../components/share/Share";
 import EventCard from "../../components/evenCard/EventCard";
-// import SharedPost from "../../components/sharedposts/SharedPost"; // <-- Remove this import
 import { useAuth } from "../../context/authContext";
-import { debounce } from "../../utils/debounce";
 import { useInView } from 'react-intersection-observer';
 import "./home.scss";
 
@@ -195,13 +193,17 @@ const Home = () => {
   const [timeRange, setTimeRange] = useState('all');
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [newPostsCount, setNewPostsCount] = useState(0);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const navigate = useNavigate();
   const fetchRequestRef = useRef({});
   const renderCount = useRef(0);
+  const lastLoadMoreTimeRef = useRef(0);  // Track last time we requested more
 
   const { ref: loadMoreRef, inView } = useInView({
     threshold: 0.5,
-    triggerOnce: false
+    triggerOnce: false,
+    delay: 500  // Delay before triggering to avoid rapid successive calls
   });
 
   const handleAddSharedPost = useCallback((sharedPost) => {
@@ -353,7 +355,15 @@ const Home = () => {
       const result = await promise;
       delete fetchRequestRef.current[requestKey];
 
-      setFeedItems(prev => (page === 1 ? result.combinedItems : [...prev, ...result.combinedItems]));
+      // On initial load (page 1), replace entire feed
+      if (page === 1) {
+        setFeedItems(result.combinedItems);
+        setIsInitialLoad(false);
+      } else {
+        // On pagination, only append to bottom (never prepend, never reorder)
+        setFeedItems(prev => [...prev, ...result.combinedItems]);
+      }
+      
       setHasMore(result.hasMore);
     } catch (err) {
       setError(err.message);
@@ -361,30 +371,23 @@ const Home = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentUser?._id, sortBy, timeRange, page, getUpcomingEvents]);
+  }, [currentUser?._id, page, getUpcomingEvents]);
   
-  const debouncedFetch = useMemo(() => debounce(fetchCombinedFeed, 500), [fetchCombinedFeed]);
-
+  // Only fetch on explicit triggers: page change or filter reset
   useEffect(() => {
-    let isSubscribed = true;
+    if (!currentUser?._id) return;
+    if (page === 1 && isInitialLoad) {
+      // Initial load on mount only
+      fetchCombinedFeed();
+    }
+  }, [currentUser?._id]);
 
-    const fetchData = async () => {
-      if (!currentUser?._id || !isSubscribed) return;
-
-      try {
-        await debouncedFetch();
-      } catch (error) {
-        console.error('Fetch error:', error);
-      }
-    };
-
-    fetchData();
-
-    return () => {
-      isSubscribed = false;
-      debouncedFetch.cancel?.();
-    };
-  }, [debouncedFetch, currentUser?._id]);
+  // Fetch when page changes (infinite scroll)
+  useEffect(() => {
+    if (!currentUser?._id || page === 1 || isInitialLoad) return;
+    // Page changed due to scroll, fetch more
+    fetchCombinedFeed();
+  }, [page, currentUser?._id, isInitialLoad, fetchCombinedFeed]);
 
   const handlePostUpdate = useCallback(updatedItem => {
     setFeedItems(prev => prev.map(item => (item._id === updatedItem._id ? updatedItem : item)));
@@ -395,18 +398,25 @@ const Home = () => {
       try {
         if (action === 'join') {
           await markEventInterest(event._id);
-          debouncedFetch();
+          // Refresh feed after joining event
+          setPage(1);
+          setIsInitialLoad(true);
         }
       } catch (error) {
         console.error('Event interaction failed:', error);
       }
     },
-    [markEventInterest, debouncedFetch]
+    [markEventInterest]
   );
 
   const loadMore = useCallback(() => {
     if (!loading && hasMore) {
-      setPage(prev => prev + 1);
+      const now = Date.now();
+      // Prevent rapid successive requests (minimum 1 second between requests)
+      if (now - lastLoadMoreTimeRef.current > 1000) {
+        lastLoadMoreTimeRef.current = now;
+        setPage(prev => prev + 1);
+      }
     }
   }, [loading, hasMore]);
 
@@ -419,47 +429,107 @@ const Home = () => {
   const handleSortChange = useCallback(e => {
     setSortBy(e.target.value);
     setPage(1);
+    setIsInitialLoad(true);
+    setNewPostsCount(0);
   }, []);
 
   const handleTimeRangeChange = useCallback(e => {
     setTimeRange(e.target.value);
     setPage(1);
+    setIsInitialLoad(true);
+    setNewPostsCount(0);
   }, []);
 
   // --- UPDATED: Always render Posts for all posts (including shared) ---
-  const memoizedFeedItems = useMemo(
-    () =>
-      feedItems.map(item => (
-        <div key={`${item.type}-${item._id}`} className="feed-item">
-          {item.type === 'event' ? (
-            <EventCard
-              event={item}
-              isAdmin={isAdmin}
-              isHomePage={true}
-              currentUserInterests={currentUser?.interests}
-              matchingInterests={item.matchingInterests}
-              contentPreferences={currentUser?.contentPreferences}
-              onJoin={() => handleEventInteraction(item, 'join')}
-            />
-          ) : (
-            <Posts 
-              userPosts={[{
-                ...item,
-                user: item.user || {
-                  _id: item.userId,
-                  profilePic: item.profilePic,
-                  sex: item.userSex || 'male',
-                  name: item.name
-                }
-              }]} 
-              onPostUpdate={handlePostUpdate}
-              onAddSharedPost={handleAddSharedPost}
-            />
-          )}
-        </div>
-      )),
-    [feedItems, isAdmin, currentUser?.interests, handleEventInteraction, handlePostUpdate, handleAddSharedPost]
-  );
+  const memoizedFeedItems = useMemo(() => {
+    // Apply client-side sorting/filtering to feedItems
+    let itemsToRender = [...feedItems];
+    
+    // Apply time range filter
+    const now = new Date();
+    const timeRangeMs = {
+      'all': Infinity,
+      'today': 24 * 60 * 60 * 1000,
+      'week': 7 * 24 * 60 * 60 * 1000,
+      'month': 30 * 24 * 60 * 60 * 1000
+    }[timeRange] || Infinity;
+
+    itemsToRender = itemsToRender.filter(item => {
+      const itemDate = new Date(item.createdAt || item.date);
+      const age = now - itemDate;
+      return age <= timeRangeMs;
+    });
+
+    // Apply sorting
+    switch (sortBy) {
+      case 'recent':
+        itemsToRender.sort((a, b) => 
+          new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date)
+        );
+        break;
+      
+      case 'relevance':
+        itemsToRender.sort((a, b) => (b.score || 0) - (a.score || 0));
+        break;
+      
+      case 'hybrid':
+      default:
+        // Already sorted by backend, but ensure it's stable
+        itemsToRender.sort((a, b) => {
+          // Prioritize by direct match count
+          if ((a.directMatchCount || 0) !== (b.directMatchCount || 0)) {
+            return (b.directMatchCount || 0) - (a.directMatchCount || 0);
+          }
+          // Then by score
+          return (b.score || 0) - (a.score || 0);
+        });
+        break;
+    }
+
+    return itemsToRender.map(item => (
+      <div key={`${item.type}-${item._id}`} className="feed-item">
+        {item.type === 'event' ? (
+          <EventCard
+            event={item}
+            isAdmin={isAdmin}
+            isHomePage={true}
+            currentUserInterests={currentUser?.interests}
+            matchingInterests={item.matchingInterests}
+            contentPreferences={currentUser?.contentPreferences}
+            onJoin={() => handleEventInteraction(item, 'join')}
+          />
+        ) : (
+          // Wrap post in a stable container with fixed shape to prevent re-renders
+          <Posts 
+            key={`post-${item._id}`}
+            userPosts={[{
+              _id: item._id,
+              title: item.title,
+              desc: item.desc,
+              img: item.img,
+              media: item.media,
+              mediaType: item.mediaType,
+              likes: item.likes,
+              comments: item.comments,
+              shares: item.shares,
+              userId: item.userId || item.user?._id,
+              user: {
+                _id: item.userId || item.user?._id,
+                profilePic: item.profilePic,
+                sex: item.userSex || item.user?.sex || 'male',
+                name: item.name || item.user?.name
+              },
+              createdAt: item.createdAt,
+              sharedPost: item.sharedPost,
+              shared: item.shared
+            }]} 
+            onPostUpdate={handlePostUpdate}
+            onAddSharedPost={handleAddSharedPost}
+          />
+        )}
+      </div>
+    ));
+  }, [feedItems, isAdmin, currentUser?.interests, sortBy, timeRange, handleEventInteraction, handlePostUpdate, handleAddSharedPost]);
 
   return (
     <div className="home">
@@ -509,6 +579,23 @@ const Home = () => {
             </select>
           </div>
 
+          {/* New posts notification banner - appears when feed updates available */}
+          {newPostsCount > 0 && !isInitialLoad && (
+            <div className="new-posts-banner" role="region" aria-live="polite">
+              <button 
+                onClick={() => {
+                  setPage(1);
+                  setIsInitialLoad(true);
+                  setNewPostsCount(0);
+                  setFeedItems([]);  // Clear feed to show loading
+                }}
+                className="new-posts-btn"
+              >
+                {newPostsCount === 1 ? '1 new post' : `${newPostsCount} new posts`}
+              </button>
+            </div>
+          )}
+
           <div 
             className="feed-content" 
             role="feed" 
@@ -556,7 +643,8 @@ const Home = () => {
                   className="scroll-trigger"
                   aria-hidden="true"
                 >
-                  {loading && hasMore && <LoadingSpinner />}
+                  {/* Only show loading on initial load, not on pagination */}
+                  {loading && page === 1 && hasMore && <LoadingSpinner />}
                 </div>
               </>
             )}

@@ -95,6 +95,37 @@
           }
         }
 
+        .new-posts-banner {
+          background-color: themed("bg");
+          padding: 12px;
+          border-radius: 12px;
+          text-align: center;
+          box-shadow: 0 2px 8px themed("shadow");
+          animation: slideDown 0.3s ease-out;
+
+          .new-posts-btn {
+            padding: 10px 20px;
+            background-color: themed("primary");
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+
+            &:hover {
+              background-color: themed("primaryHover");
+              transform: translateY(-2px);
+              box-shadow: 0 4px 12px rgba(themed("primary"), 0.3);
+            }
+
+            &:active {
+              transform: translateY(0);
+            }
+          }
+        }
+
         .feed-content {
           display: flex;
           flex-direction: column;
@@ -237,6 +268,7 @@
             display: flex;
             justify-content: center;
             opacity: 0.8;
+            pointer-events: none;  // Prevent scroll trigger from interfering with interactions
           }
         }
       }
@@ -247,6 +279,17 @@
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

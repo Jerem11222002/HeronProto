@@ -89,12 +89,8 @@ const Posts = ({ userPosts, onPostUpdate, userId, userData = null, onAddSharedPo
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        logger.debug('Posts.fetch.start', {
-          userId,
-          userPostsCount: Array.isArray(userPosts) ? userPosts.length : 0,
-          hasToken: !!localStorage.getItem("token"),
-          currentUserId: currentUser?._id
-        });
+        // Disabled verbose logging to prevent console spam
+        // logger.debug('Posts.fetch.start', {...});
 
         const token = localStorage.getItem("token");
         if (!token) {
@@ -120,10 +116,8 @@ const Posts = ({ userPosts, onPostUpdate, userId, userData = null, onAddSharedPo
             name: post.user?.name || post.name
           }));
 
-          logger.debug('Posts.processed', {
-            count: processedPosts.length,
-            sampleId: processedPosts[0]?._id || null
-          });
+          // Disabled verbose logging to prevent console spam
+          // logger.debug('Posts.processed', {...});
 
           setPosts(validateAndDeduplicatePosts(processedPosts));
           setLoading(false);
@@ -190,7 +184,7 @@ const Posts = ({ userPosts, onPostUpdate, userId, userData = null, onAddSharedPo
     };
 
     fetchPosts();
-  }, [userId, userPosts, sortBy, filters, currentUser?._id, userData]);
+  }, [userId, currentUser?._id, userData]);
 
   const handleSortChange = (newSortBy) => {
     setSortBy(newSortBy);

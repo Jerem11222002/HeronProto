@@ -369,6 +369,42 @@
         padding-top: 20px;
       }
 
+      // Post menu dropdown styles
+      .post-menu-dropdown {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background-color: themed("bg");
+        border-radius: 8px;
+        border: 1px solid themed("border");
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        z-index: 1300;
+        min-width: 150px;
+        margin-top: 4px;
+        overflow: hidden;
+      }
+
+      .post-menu-item {
+        padding: 10px 16px;
+        cursor: pointer;
+        font-size: 14px;
+        color: themed("textColor");
+        transition: background-color 0.2s ease;
+        border-bottom: 1px solid themed("border");
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        &:hover {
+          background-color: themed("bgSoft");
+        }
+
+        &.post-menu-delete {
+          color: #d32f2f;
+        }
+      }
+
       // Remove or comment out the old .show-full-post-btn-container styles
     }
 

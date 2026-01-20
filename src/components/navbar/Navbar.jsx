@@ -133,9 +133,8 @@ const Navbar = () => {
           zIndex: 2000,
           width: '92vw',
           maxWidth: '420px',
-          height: `${maxH}px`, // Use fixed height instead of maxHeight
-          overflow: 'hidden', // Hide overflow
-          overflowY: 'auto', // Enable scrolling
+          height: `${maxH}px`,
+          overflow: 'hidden', // Only hide overflow - don't enable scrolling on wrapper
           borderRadius: 8,
           boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
           background: bgColor,
@@ -644,14 +643,23 @@ const Navbar = () => {
           )}
           {/* Friends Dropdown */}
           {showFriendsDropdown && (
-            <FriendsDropdown
-              friends={friends}
-              loading={loadingFriends}
-              onFriendClick={handleFriendClick}
-              unreadCounts={unreadCounts}
-              messagePreviews={messagePreviews}
-              darkMode={darkMode}
-            />
+            <div style={{ position: 'relative' }}>
+              <div style={isMobile ? mobileFriendsStyle : {
+                position: 'absolute',
+                top: 'calc(100% + 8px)',
+                right: '12px',
+                zIndex: 1205
+              }}>
+                <FriendsDropdown
+                  friends={friends}
+                  loading={loadingFriends}
+                  onFriendClick={handleFriendClick}
+                  unreadCounts={unreadCounts}
+                  messagePreviews={messagePreviews}
+                  darkMode={darkMode}
+                />
+              </div>
+            </div>
           )}
           <NotificationBell />
           <div className="user" onClick={() => setDropdownOpen(!dropdownOpen)}>

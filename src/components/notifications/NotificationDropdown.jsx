@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import NotificationItem from './NotificationItem';
 import { CircularProgress } from '@mui/material';
+import { DarkModeContext } from '../../context/darkModeContext';
 import './notifications.scss';
 
 const NotificationDropdown = ({ onClose }) => {
+  const { darkMode } = useContext(DarkModeContext);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -125,6 +127,7 @@ const NotificationDropdown = ({ onClose }) => {
     ? (()=>{
         const topPx = (navOffset || 64) + 8;
         const maxH = typeof window !== 'undefined' ? Math.max(window.innerHeight - topPx - 16, 120) : 400;
+        const bgColor = darkMode ? '#1a1a1a' : '#fff';
         return {
           position: 'fixed',
           left: '50%',
@@ -137,7 +140,7 @@ const NotificationDropdown = ({ onClose }) => {
           overflowY: 'auto',
           borderRadius: 8,
           boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-          background: '#fff',
+          background: bgColor,
           padding: 8,
           boxSizing: 'border-box'
         };

@@ -193,7 +193,10 @@ app.use((req, res, next) => {
   ];
 
   if (publicPaths.some(path => req.path.startsWith(path))) {
-    console.log('🔓 Skipping auth check for:', req.path);
+    // Only log API endpoints, not static assets to reduce noise in logs
+    if (req.path.startsWith('/api/') || req.path === '/') {
+      console.log('🔓 Skipping auth check for:', req.path);
+    }
     return next();
   }
 

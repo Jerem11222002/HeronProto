@@ -54,6 +54,11 @@ const FriendsDropdown = ({
     return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
   };
 
+  // Prevent scroll from bubbling up from header/search areas
+  const handleHeaderTouchStart = (e) => {
+    e.stopPropagation();
+  };
+
   return (
     <div className="friends-dropdown">
       <div className="dropdown-header">
@@ -62,7 +67,7 @@ const FriendsDropdown = ({
       </div>
 
       {/* Search Bar */}
-      <div className="dropdown-search">
+      <div className="dropdown-search" onTouchStart={handleHeaderTouchStart}>
         <SearchIcon className="search-icon" />
         <input
           type="text"
@@ -73,7 +78,7 @@ const FriendsDropdown = ({
         />
       </div>
 
-      {/* Friends List */}
+      {/* Friends List - Only this scrolls */}
       <div className="friends-list">
         {loading ? (
           <div className="dropdown-loading">Loading conversations...</div>

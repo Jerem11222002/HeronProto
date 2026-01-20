@@ -951,13 +951,13 @@ const Profile = () => {
   return (
     <motion.div className="profile" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <div className="images">
-        {(userData?.coverPic || isOwnProfile) && (
+        {userData?.coverPic && (
           <div className="cover-container">
             <motion.img
               initial={{ scale: 1.1 }}
               animate={{ scale: 1 }}
               transition={{ duration: 0.5 }}
-              src={userData?.coverPic || ""}
+              src={userData?.coverPic}
               alt="Cover"
               className="cover"
               onError={(e) => {

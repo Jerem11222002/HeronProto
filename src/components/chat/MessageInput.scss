@@ -57,6 +57,8 @@
       color: themed("textColor");
       font-family: inherit;
       transition: all 0.2s;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(82, 113, 255, 0.15) transparent;
 
       &::placeholder {
         color: themed("textColorSoft");
@@ -65,6 +67,25 @@
       &:focus {
         border-color: #5271ff;
         box-shadow: 0 0 0 2px rgba(82, 113, 255, 0.10);
+      }
+
+      // Webkit scrollbar styling
+      &::-webkit-scrollbar {
+        width: 5px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: rgba(82, 113, 255, 0.15);
+        border-radius: 2px;
+        transition: background 0.2s;
+
+        &:hover {
+          background: rgba(82, 113, 255, 0.3);
+        }
       }
     }
 
@@ -75,24 +96,37 @@
       width: 40px;
       height: 40px;
       padding: 0;
-      border: none;
-      background-color: #5271ff;
+      border: 1.5px solid rgba(107, 133, 255, 0.6);
+      background: linear-gradient(135deg, #5271ff, #3d4dcc);
       color: white;
       border-radius: 10px;
       cursor: pointer;
       font-weight: 600;
-      transition: all 0.2s;
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
       flex-shrink: 0;
+      box-shadow: 0 4px 14px rgba(82, 113, 255, 0.45), 
+                  0 0 20px rgba(82, 113, 255, 0.25);
 
       &:hover:not(:disabled) {
-        background-color: #4056b4;
-        transform: translateY(-2px);
+        background: linear-gradient(135deg, #6b85ff, #4a5dd9);
+        transform: translateY(-3px);
+        border-color: rgba(107, 133, 255, 0.9);
+        box-shadow: 0 8px 24px rgba(82, 113, 255, 0.55),
+                    0 0 28px rgba(82, 113, 255, 0.35);
+      }
+
+      &:active:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px rgba(82, 113, 255, 0.45),
+                    0 0 20px rgba(82, 113, 255, 0.25);
       }
 
       &:disabled {
-        background: themed("textColorSoft");
-        opacity: 0.4;
+        background: linear-gradient(135deg, rgba(82, 113, 255, 0.25), rgba(61, 77, 204, 0.25));
+        border-color: rgba(82, 113, 255, 0.2);
+        color: rgba(255, 255, 255, 0.5);
         cursor: not-allowed;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
       }
     }
   }

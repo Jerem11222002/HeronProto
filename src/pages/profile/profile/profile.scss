@@ -61,9 +61,10 @@
       width: 100%;
       height: clamp(250px, 30vw, 350px);
       position: relative;
-      background-color: themed("bgSoft");
+      background: linear-gradient(135deg, rgba(82, 113, 255, 0.1), rgba(82, 113, 255, 0.05));
       overflow: visible;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      background-color: themed("bgSoft");
 
       .cover-container {
         position: relative;

@@ -94,14 +94,14 @@ const NotificationItem = ({ notification, onUpdate }) => {
           <DefaultUserSVG size={40} />
         ) : (
           <img 
-            src={getImageUrl(notification.senderPic)}
+            src={notification.senderPic || '/assets/person/Default.jpg'}
             alt={notification.senderName || 'User'}
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.style.display = 'none';
-              // Optionally, you can render SVG here if you want
-            }}
             loading="lazy"
+            onError={(e) => {
+              if (e.target.src !== '/assets/person/Default.jpg') {
+                e.target.src = '/assets/person/Default.jpg';
+              }
+            }}
           />
         )}
         <span className="notification-type-icon" aria-hidden="true">

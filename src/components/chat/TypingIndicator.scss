@@ -1,0 +1,55 @@
+// src/components/chat/TypingIndicator.scss
+@use '../../style.scss' as *;
+
+.typing-indicator {
+  @include themify($themes) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 18px;
+    font-size: 14px;
+    color: themed("textColorSoft");
+    max-width: 75%;
+
+    .typing-user {
+      white-space: nowrap;
+    }
+
+    .typing-dots {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+
+      span {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: themed("textColorSoft");
+        animation: typing 1.4s infinite;
+
+        &:nth-child(1) {
+          animation-delay: 0s;
+        }
+
+        &:nth-child(2) {
+          animation-delay: 0.2s;
+        }
+
+        &:nth-child(3) {
+          animation-delay: 0.4s;
+        }
+      }
+    }
+  }
+}
+
+@keyframes typing {
+  0%, 60%, 100% {
+    opacity: 0.5;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-10px);
+  }
+}

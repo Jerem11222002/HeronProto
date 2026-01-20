@@ -11,9 +11,9 @@
         overflow: hidden;
         background: themed("bg");
         position: fixed;
-        bottom: 24px; // Distance from the bottom of the screen
-        max-height: 500px; // Set a maximum height
-        z-index: 2000; // Ensure it appears above other content
+        bottom: 24px;
+        max-height: 500px;
+        z-index: 2000;
         animation: fadeIn 0.25s;
 
         // Accent stripe
@@ -30,7 +30,8 @@
         .header {
           display: flex;
           align-items: center;
-          gap: 16px;
+          justify-content: space-between;
+          gap: 12px;
           padding: 18px 22px 18px 32px;
           background: themed("bgSoft");
           border-bottom: 1px solid themed("border");
@@ -39,60 +40,148 @@
             display: flex;
             align-items: center;
             gap: 12px;
+            flex: 1;
+            min-width: 0;
       
             .avatar {
               width: 40px;
               height: 40px;
               border-radius: 50%;
               object-fit: cover;
+              flex-shrink: 0;
             }
       
+            div {
+              display: flex;
+              flex-direction: column;
+              gap: 4px;
+              min-width: 0;
+            }
+
             .friend-name {
               font-weight: 600;
               font-size: 16px;
               color: themed("textColor");
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
             }
       
             .status-dot {
               display: inline-block;
-              width: 10px; height: 10px;
+              width: 10px;
+              height: 10px;
               border-radius: 50%;
-              margin-left: 8px;
               background: #bbb;
       
               &.online { background: #4caf50; }
               &.offline { background: #bbb; }
             }
           }
+
+          .header-actions {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+          }
       
+          .header-btn,
           .close-button {
-            margin-left: auto;
-            font-size: 22px;
             background: none;
             border: none;
             color: themed("textColorSoft");
             cursor: pointer;
-            padding: 6px 10px;
+            padding: 6px 8px;
             border-radius: 50%;
-            transition: background 0.2s, color 0.2s;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
       
             &:hover { 
-              background: themed("bgHover"); 
-              color: #e74c3c; 
+              background: themed("bgHover");
+              color: themed("primary");
             }
           }
+
+          .close-button {
+            font-size: 22px;
+            line-height: 1;
+            padding: 4px 8px;
+
+            &:hover {
+              color: #e74c3c;
+            }
+          }
+        }
+
+        .error-banner {
+          padding: 10px 16px;
+          background: #fee;
+          border-bottom: 1px solid #fcc;
+          color: #c33;
+          font-size: 13px;
+          text-align: center;
         }
       
         .messages {
           flex: 1;
           overflow-y: auto;
-          padding: 18px 22px;
+          padding: 18px 2px 18px 16px;
           background: themed("bg");
           display: flex;
           flex-direction: column;
-          gap: 14px; // space between messages
+          gap: 8px;
           min-height: 120px;
           max-height: 320px;
+          scroll-behavior: smooth;
+
+          // Subtle scrollbar styling
+          scrollbar-width: thin;
+          scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+
+          &::-webkit-scrollbar {
+            width: 6px;
+          }
+
+          &::-webkit-scrollbar-track {
+            background: transparent;
+          }
+
+          &::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 3px;
+            transition: background 0.2s;
+
+            &:hover {
+              background: rgba(0, 0, 0, 0.3);
+            }
+          }
+
+          .date-separator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 12px 0;
+            font-size: 12px;
+            color: themed("textColorSoft");
+            
+            &::before,
+            &::after {
+              content: "";
+              flex: 1;
+              height: 1px;
+              background: themed("border");
+            }
+
+            &::before {
+              margin-right: 12px;
+            }
+
+            &::after {
+              margin-left: 12px;
+            }
+          }
         }
       
         .empty-state {
@@ -105,8 +194,14 @@
   }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px);}
-  to { opacity: 1; transform: translateY(0);}
+  from { 
+    opacity: 0; 
+    transform: translateY(20px);
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 600px) {

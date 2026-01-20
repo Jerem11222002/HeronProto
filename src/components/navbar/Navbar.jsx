@@ -18,6 +18,7 @@ import ChatPopup from "../chat/ChatPopup";
 import Badge from "@mui/material/Badge";
 import MailIcon from "@mui/icons-material/Mail"; // Optional, for badge fallback
 import notificationSound from '../../assets/sounds/notification.mp3'; // Add a sound file
+import FriendsDropdown from './FriendsDropdown';
 
 // Create a simple initials avatar as a data-URL SVG (no external file required)
 const createInitialsAvatar = (name = "User", { bg = "#8a8a8a", fg = "#fff", size = 128 } = {}) => {
@@ -643,75 +644,14 @@ const Navbar = () => {
           )}
           {/* Friends Dropdown */}
           {showFriendsDropdown && (
-            <div className="friends-dropdown" style={isMobile ? mobileFriendsStyle : undefined}>
-              <div className="dropdown-header">Chats</div>
-              {loadingFriends ? (
-                <div className="dropdown-loading"><CircularProgress size={20} /></div>
-              ) : (
-                // Sort friends by latest message
-                (() => {
-                  const sortedFriends = [...friends].sort((a, b) => {
-                    // Get the latest message timestamp for each friend
-                    const aMsgs = messagePreviews[a._id] || [];
-                    const bMsgs = messagePreviews[b._id] || [];
-                    const aLatest = aMsgs.length > 0 ? new Date(aMsgs[aMsgs.length - 1].createdAt).getTime() : 0;
-                    const bLatest = bMsgs.length > 0 ? new Date(bMsgs[bMsgs.length - 1].createdAt).getTime() : 0;
-                    // Sort descending (most recent first)
-                    return bLatest - aLatest;
-                  });
-
-                  return sortedFriends.length > 0 ? (
-                    sortedFriends.map(friend => (
-                      <div
-                        key={friend._id}
-                        className="friend-item"
-                        onClick={() => handleFriendClick(friend)}
-                      >
-                        <img
-                          src={getImageUrl(friend.profilePicture)}
-                          alt={friend.name}
-                          onError={e => {
-                            e.target.onerror = null;
-                            e.target.src = createSilhouetteIcon({ bg: "#f6f8fb", fg: "#8b99ad", size: 128 });
-                          }}
-                        />
-                        <div className="friend-info">
-                          <span className="friend-name">{friend.name}</span>
-                          {/* Unread badge */}
-                          {unreadCounts[friend._id] > 0 && (
-                            <span className="unread-dot">{unreadCounts[friend._id]}</span>
-                          )}
-                          {/* Message preview */}
-                          <div className="message-preview">
-                            {messagePreviews[friend._id] && messagePreviews[friend._id].length > 0 ? (
-                              [...(messagePreviews[friend._id] || [])]
-                                .slice(-2)
-                                .reverse()
-                                .map((msg, idx) => (
-                                  <div
-                                    key={msg._id || idx}
-                                    className={msg.read ? "preview-read" : "preview-unread"}
-                                  >
-                                    <span>
-                                      {msg.sender === currentUser._id ? "You: " : ""}
-                                      {msg.text}
-                                    </span>
-                                  </div>
-                                ))
-                            ) : (
-                              <span className="no-preview">No messages</span>
-                            )}
-                          </div>
-                        </div>
-                        {friend.isOnline && <span className="online-dot" />}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="no-friends">No friends found</div>
-                  );
-                })()
-              )}
-            </div>
+            <FriendsDropdown
+              friends={friends}
+              loading={loadingFriends}
+              onFriendClick={handleFriendClick}
+              unreadCounts={unreadCounts}
+              messagePreviews={messagePreviews}
+              darkMode={darkMode}
+            />
           )}
           <NotificationBell />
           <div className="user" onClick={() => setDropdownOpen(!dropdownOpen)}>

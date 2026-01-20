@@ -1,0 +1,125 @@
+// src/components/chat/MessageSearch.scss
+@use '../../style.scss' as *;
+
+.message-search {
+  @include themify($themes) {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: themed("bg");
+    border-left: 1px solid themed("border");
+    animation: slideInRight 0.3s ease;
+
+    .search-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px;
+      border-bottom: 1px solid themed("border");
+
+      .search-input-wrapper {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: themed("bgSoft");
+        border-radius: 8px;
+        border: 1px solid themed("border");
+
+        .search-icon {
+          color: themed("textColorSoft");
+          font-size: 20px;
+        }
+
+        input {
+          flex: 1;
+          border: none;
+          background: none;
+          outline: none;
+          color: themed("textColor");
+          font-size: 14px;
+
+          &::placeholder {
+            color: themed("textColorSoft");
+          }
+        }
+      }
+
+      .close-btn {
+        background: none;
+        border: none;
+        color: themed("textColorSoft");
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        transition: background 0.2s;
+
+        &:hover {
+          background: themed("bgHover");
+        }
+      }
+    }
+
+    .search-results {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+
+      .no-results,
+      .empty-state {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: themed("textColorSoft");
+        text-align: center;
+        font-size: 14px;
+      }
+
+      .results-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+
+        .search-result-item {
+          padding: 12px;
+          background: themed("bgSoft");
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s;
+          border: 1px solid transparent;
+
+          &:hover {
+            background: rgba(82, 113, 255, 0.1);
+            border-color: themed("primary");
+          }
+
+          .result-text {
+            margin: 0 0 6px 0;
+            color: themed("textColor");
+            font-size: 14px;
+            line-height: 1.4;
+            word-break: break-word;
+          }
+
+          .result-time {
+            font-size: 12px;
+            color: themed("textColorSoft");
+          }
+        }
+      }
+    }
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

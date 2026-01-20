@@ -643,22 +643,20 @@ const Navbar = () => {
           )}
           {/* Friends Dropdown */}
           {showFriendsDropdown && (
-            <div style={{ position: 'relative' }}>
-              <div style={isMobile ? mobileFriendsStyle : {
-                position: 'absolute',
-                top: 'calc(100% + 8px)',
-                right: '12px',
-                zIndex: 1205
-              }}>
-                <FriendsDropdown
-                  friends={friends}
-                  loading={loadingFriends}
-                  onFriendClick={handleFriendClick}
-                  unreadCounts={unreadCounts}
-                  messagePreviews={messagePreviews}
-                  darkMode={darkMode}
-                />
-              </div>
+            <div style={isMobile ? mobileFriendsStyle : {
+              position: 'absolute',
+              top: 'calc(100% + 8px)',
+              right: '12px',
+              zIndex: 1205
+            }}>
+              <FriendsDropdown
+                friends={friends}
+                loading={loadingFriends}
+                onFriendClick={handleFriendClick}
+                unreadCounts={unreadCounts}
+                messagePreviews={messagePreviews}
+                darkMode={darkMode}
+              />
             </div>
           )}
           <NotificationBell />

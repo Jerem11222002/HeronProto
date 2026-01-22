@@ -272,6 +272,23 @@ const UserSchema = new mongoose.Schema({
     index: true
   },
 
+  // Profile views tracking
+  profileViews: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  viewers: [{
+    viewerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    viewedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+
   // Password reset
   passwordResetToken: {
     type: String,

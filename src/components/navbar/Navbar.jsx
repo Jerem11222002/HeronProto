@@ -413,6 +413,19 @@ const Navbar = () => {
     if (currentUser) fetchSummary();
   }, [currentUser]);
 
+  // Listen for openChatWithUser event from profile page
+  useEffect(() => {
+    const handleOpenChat = (event) => {
+      const friendData = event.detail;
+      if (friendData && friendData._id) {
+        openChatWithFriend(friendData);
+      }
+    };
+
+    window.addEventListener('openChatWithUser', handleOpenChat);
+    return () => window.removeEventListener('openChatWithUser', handleOpenChat);
+  }, []);
+
   // Real-time update for message previews and chat popups via socket
   useEffect(() => {
     if (!socket || !currentUser) return;

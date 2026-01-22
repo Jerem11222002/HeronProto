@@ -446,4 +446,86 @@ router.put('/bio/:userId', auth, async (req, res) => {
   }
 });
 
+// Track profile view
+router.post('/track-view/:userId', auth, async (req, res) => {
+  try {
+    const viewerId = req.user.userId;
+    const profileOwnerId = req.params.userId;
+
+    // Don't count self-views
+    if (viewerId === profileOwnerId) {
+      return res.status(200).json({ success: true, message: 'Self view not counted' });
+    }
+
+    // Update the profile owner's profileViews counter
+    const user = await User.findById(profileOwnerId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Initialize views counter if not present
+    if (!user.profileViews) {
+      user.profileViews = 0;
+    }
+
+    // Track unique viewers (optional: store array of viewer IDs to avoid duplicates)
+    if (!user.viewers) {
+      user.viewers = [];
+    }
+
+    // Check if this viewer already viewed recently (within 24 hours)
+    const lastView = user.viewers.find(v => v.viewerId === viewerId);
+    const now = new Date();
+    
+    if (!lastView) {
+      // New viewer
+      user.viewers.push({
+        viewerId: viewerId,
+        viewedAt: now
+      });
+      user.profileViews = (user.profileViews || 0) + 1;
+    } else {
+      // Check if last view was more than 24 hours ago
+      const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      if (new Date(lastView.viewedAt) < dayAgo) {
+        user.profileViews = (user.profileViews || 0) + 1;
+        lastView.viewedAt = now;
+      }
+    }
+
+    await user.save();
+    res.status(200).json({ success: true, message: 'View tracked', views: user.profileViews });
+  } catch (err) {
+    console.error('Error tracking profile view:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error tracking view',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined 
+    });
+  }
+});
+
+// Get profile views count
+router.get('/views/:userId', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    res.status(200).json({ 
+      success: true, 
+      views: user.profileViews || 0,
+      viewersCount: user.viewers ? user.viewers.length : 0
+    });
+  } catch (err) {
+    console.error('Error fetching profile views:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error fetching views',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined 
+    });
+  }
+});
+
 module.exports = router;

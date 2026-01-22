@@ -13,6 +13,15 @@
   box-sizing: border-box !important;
 }
 
+/* Utility class for mobile-only elements */
+.mobile-only {
+  display: none;
+
+  @media (max-width: 799px) {
+    display: flex !important;
+  }
+}
+
 .profile {
   @include themify($themes) {
     background-color: themed("bgSoft");
@@ -338,6 +347,163 @@
           line-height: 1.6;
           margin: 0 auto 20px;
           text-align: center;
+
+          .bio-view {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            
+            .bio-edit-btn {
+              opacity: 0;
+              transition: opacity 0.2s;
+              
+              &:hover {
+                color: #5271ff;
+              }
+            }
+
+            &:hover .bio-edit-btn {
+              opacity: 1;
+            }
+          }
+
+          .inline-bio-editor {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+
+            .bio-textarea {
+              width: 100%;
+              padding: 12px;
+              border: 2px solid #5271ff;
+              border-radius: 12px;
+              background: rgba(themed("bg"), 0.6);
+              color: themed("textColor");
+              font-size: 14px;
+              font-family: inherit;
+              resize: vertical;
+              min-height: 80px;
+              transition: all 0.2s;
+
+              &:focus {
+                outline: none;
+                border-color: #5271ff;
+                box-shadow: 0 0 0 3px rgba(82, 113, 255, 0.1);
+              }
+            }
+
+            .bio-footer {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              gap: 12px;
+
+              .char-count {
+                font-size: 12px;
+                color: themed("textColorSoft");
+              }
+
+              .bio-actions {
+                display: flex;
+                gap: 8px;
+              }
+            }
+          }
+        }
+
+        // Profile Strength Indicator
+        .profile-strength {
+          width: 100%;
+          max-width: 300px;
+          margin: 15px auto 20px;
+          padding: 15px;
+          background: rgba(themed("bgSoft"), 0.5);
+          border-radius: 15px;
+          backdrop-filter: blur(10px);
+
+          .strength-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+
+            .strength-icon {
+              font-size: 20px;
+              color: #5271ff;
+            }
+
+            .strength-label {
+              font-size: 14px;
+              font-weight: 600;
+              color: themed("textColor");
+            }
+          }
+
+          .strength-bar-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(themed("textColor"), 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+
+            .strength-bar {
+              height: 100%;
+              border-radius: 4px;
+              transition: width 0.3s ease;
+
+              &.strength-excellent {
+                background: linear-gradient(90deg, #4caf50, #8bc34a);
+              }
+
+              &.strength-good {
+                background: linear-gradient(90deg, #2196f3, #03a9f4);
+              }
+
+              &.strength-fair {
+                background: linear-gradient(90deg, #ff9800, #ffc107);
+              }
+
+              &.strength-poor {
+                background: linear-gradient(90deg, #ff5722, #ff7043);
+              }
+
+              &.strength-very-poor {
+                background: linear-gradient(90deg, #f44336, #e53935);
+              }
+            }
+          }
+
+          .strength-text {
+            display: block;
+            text-align: center;
+            font-size: 16px;
+            font-weight: 700;
+
+            &.strength-excellent {
+              color: #4caf50;
+            }
+
+            &.strength-good {
+              color: #2196f3;
+            }
+
+            &.strength-fair {
+              color: #ff9800;
+            }
+
+            &.strength-poor {
+              color: #ff5722;
+            }
+
+            &.strength-very-poor {
+              color: #f44336;
+            }
+          }
         }
 
         .stats {
@@ -397,6 +563,51 @@
           }
         }
 
+        .mutual-followers-indicator {
+          width: 100%;
+          display: flex;
+          justify-content: center;
+          padding: 8px 0;
+
+          .mutual-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: linear-gradient(135deg, rgba(82, 113, 255, 0.1), rgba(82, 113, 255, 0.05));
+            border: 1px solid rgba(82, 113, 255, 0.2);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+
+            &:hover {
+              background: linear-gradient(135deg, rgba(82, 113, 255, 0.15), rgba(82, 113, 255, 0.1));
+              border-color: rgba(82, 113, 255, 0.4);
+              transform: translateY(-2px);
+              box-shadow: 0 6px 12px rgba(82, 113, 255, 0.1);
+            }
+
+            .mutual-icon {
+              color: #5271ff;
+              font-size: 18px;
+            }
+
+            .mutual-count {
+              font-weight: 700;
+              color: themed("textColor");
+              font-size: 14px;
+              min-width: 24px;
+            }
+
+            .mutual-label {
+              color: themed("textColorSoft");
+              font-size: 12px;
+              font-weight: 600;
+            }
+          }
+        }
+
+        /* Profile Information Section */
         .info {
           display: flex;
           flex-wrap: wrap;
@@ -408,6 +619,9 @@
           border-radius: 25px;
           backdrop-filter: blur(10px);
           width: 100%;
+          visibility: visible;
+          opacity: 1;
+          max-height: none;
 
           .item {
             display: flex;
@@ -445,11 +659,12 @@
           }
         }
 
+        /* Social Links Section */
         .socialLinks {
           display: flex;
           gap: 20px;
           margin-top: 20px;
-          justify-content: center; // Added for consistency
+          justify-content: center;
 
           .social-icon {
             color: #5271ff;
@@ -463,6 +678,68 @@
               color: white;
               transform: translateY(-4px);
               box-shadow: 0 8px 20px rgba(82, 113, 255, 0.3);
+            }
+          }
+        }
+
+        // Quick Action Buttons
+        .quick-actions {
+          display: flex;
+          gap: 12px;
+          margin-top: 20px;
+          justify-content: center;
+          flex-wrap: wrap;
+
+          .quick-action-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border: 2px solid rgba(themed("border"), 0.2);
+            border-radius: 25px;
+            background: rgba(themed("bg"), 0.6);
+            color: themed("textColor");
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+            svg {
+              font-size: 18px;
+              transition: transform 0.2s;
+            }
+
+            &:hover {
+              background: #5271ff;
+              color: white;
+              border-color: #5271ff;
+              box-shadow: 0 4px 16px rgba(82, 113, 255, 0.3);
+
+              svg {
+                transform: scale(1.1);
+              }
+            }
+
+            &.message-btn {
+              &:hover {
+                background: #2196f3;
+                border-color: #2196f3;
+                box-shadow: 0 4px 16px rgba(33, 150, 243, 0.3);
+              }
+            }
+
+            &.follow-btn {
+              &.following {
+                background: rgba(#4caf50, 0.1);
+                border-color: #4caf50;
+                color: #4caf50;
+
+                &:hover {
+                  background: #4caf50;
+                  color: white;
+                }
+              }
             }
           }
         }
@@ -568,6 +845,109 @@
         font-size: 18px;
         background: rgba(themed("bgSoft"), 0.4);
         border-radius: 20px;
+      }
+    }
+
+    // Achievements & Badges Section
+    .achievements-section {
+      max-width: 1600px;
+      margin: 50px auto 0;
+      padding: 0 clamp(15px, 4vw, 30px);
+      grid-column: 2;
+
+      .achievements-container {
+        background: rgba(themed("bg"), 0.8);
+        backdrop-filter: blur(20px);
+        border-radius: 30px;
+        padding: 40px;
+        box-shadow: 
+          0 20px 50px rgba(0, 0, 0, 0.1),
+          0 10px 20px rgba(0, 0, 0, 0.05),
+          inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+
+        .achievements-title {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          font-size: 24px;
+          font-weight: 700;
+          color: themed("textColor");
+          margin-bottom: 30px;
+          padding-bottom: 20px;
+          border-bottom: 2px solid rgba(themed("border"), 0.1);
+
+          .badge-icon {
+            font-size: 28px;
+            color: #ffd700;
+          }
+        }
+
+        .badges-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+          gap: 20px;
+          min-height: 150px;
+
+          .badge {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(82, 113, 255, 0.1), rgba(82, 113, 255, 0.05));
+            border: 2px solid rgba(82, 113, 255, 0.3);
+            border-radius: 16px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+
+            &:hover {
+              transform: translateY(-8px);
+              border-color: rgba(82, 113, 255, 0.6);
+              background: linear-gradient(135deg, rgba(82, 113, 255, 0.2), rgba(82, 113, 255, 0.1));
+              box-shadow: 0 12px 24px rgba(82, 113, 255, 0.2);
+            }
+
+            .badge-icon-wrapper {
+              width: 60px;
+              height: 60px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              background: linear-gradient(135deg, #5271ff, #3f57ff);
+              border-radius: 50%;
+              box-shadow: 0 4px 12px rgba(82, 113, 255, 0.3);
+
+              .badge-icon-large {
+                font-size: 32px;
+                color: white;
+              }
+            }
+
+            .badge-name {
+              font-size: 13px;
+              font-weight: 700;
+              color: themed("textColor");
+              letter-spacing: 0.3px;
+            }
+          }
+
+          .no-badges {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 150px;
+            padding: 40px;
+            text-align: center;
+
+            p {
+              color: themed("textColorSoft");
+              font-size: 16px;
+              font-weight: 500;
+            }
+          }
+        }
       }
     }
 
@@ -884,6 +1264,52 @@
           }
         }
       }
+
+      .profile-strength {
+        max-width: 250px;
+        padding: 12px;
+
+        .strength-header {
+          font-size: 12px;
+        }
+      }
+
+      .quick-actions {
+        gap: 8px;
+        margin-top: 15px;
+
+        .quick-action-btn {
+          padding: 8px 16px;
+          font-size: 13px;
+
+          svg {
+            font-size: 16px;
+          }
+        }
+      }
+
+      .achievements-section {
+        padding: 0 15px;
+        margin-top: 30px;
+
+        .achievements-container {
+          padding: 25px;
+
+          .achievements-title {
+            font-size: 20px;
+            margin-bottom: 20px;
+
+            .badge-icon {
+              font-size: 24px;
+            }
+          }
+
+          .badges-grid {
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+          }
+        }
+      }
     }
 
     .profileContainer {
@@ -989,6 +1415,7 @@
             margin: 0 auto 8px;
             display: -webkit-box;
             -webkit-line-clamp: 3;     /* clamp to 3 lines */
+            line-clamp: 3;
             -webkit-box-orient: vertical;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -1007,6 +1434,29 @@
             scroll-padding: 12px;
             .stat-card { min-width: 88px; padding: 8px 10px; border-radius: 10px; }
           }
+
+          .mutual-followers-indicator {
+            width: 100%;
+            padding: 6px 0;
+            margin-top: 4px;
+
+            .mutual-badge {
+              padding: 8px 12px;
+              font-size: 12px;
+
+              .mutual-icon {
+                font-size: 16px;
+              }
+
+              .mutual-count {
+                font-size: 12px;
+              }
+
+              .mutual-label {
+                font-size: 11px;
+              }
+            }
+          }
         }
 
         /* compact info items */
@@ -1020,6 +1470,23 @@
 
               svg { font-size: 20px; }
               span, a { font-size: 14px; }
+            }
+          }
+
+          .info-section-wrapper,
+          .social-section-wrapper {
+            .section-header {
+              display: flex;
+            }
+
+            .info,
+            .socialLinks {
+              padding: 10px 0;
+              gap: 8px;
+              margin: 0;
+              background: transparent;
+              border-radius: 0;
+              backdrop-filter: none;
             }
           }
         }
@@ -1038,8 +1505,133 @@
               padding: 8px 12px;
             }
           }
+
+          .profile-strength {
+            max-width: 200px;
+            padding: 10px;
+            margin: 10px auto;
+
+            .strength-header {
+              font-size: 11px;
+
+              .strength-icon {
+                font-size: 18px;
+              }
+            }
+
+            .strength-bar-container {
+              height: 6px;
+              margin-bottom: 6px;
+            }
+
+            .strength-text {
+              font-size: 14px;
+            }
+          }
+
+          .quick-actions {
+            gap: 8px;
+            margin-top: 12px;
+            width: 100%;
+            justify-content: center;
+
+            .quick-action-btn {
+              padding: 10px 16px;
+              font-size: 12px;
+              flex: 1;
+              min-width: 100px;
+              max-width: 150px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 6px;
+
+              svg {
+                font-size: 16px;
+              }
+
+              span {
+                display: inline;
+                font-weight: 600;
+              }
+            }
+          }
+
+          .inline-bio-editor {
+            .bio-textarea {
+              min-height: 60px;
+              font-size: 13px;
+              padding: 10px;
+            }
+
+            .bio-footer {
+              flex-direction: column;
+              gap: 8px;
+
+              .bio-actions {
+                width: 100%;
+
+                button {
+                  flex: 1;
+                }
+              }
+            }
+          }
         }
       }
+
+      .achievements-section {
+        padding: 0 10px;
+        margin-top: 20px;
+        max-width: 100%;
+
+        .achievements-container {
+          padding: 15px;
+
+          .achievements-title {
+            font-size: 16px;
+            margin-bottom: 15px;
+            padding-bottom: 12px;
+
+            .badge-icon {
+              font-size: 20px;
+            }
+          }
+
+          .badges-grid {
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 12px;
+            min-height: 120px;
+
+            .badge {
+              padding: 15px 10px;
+
+              .badge-icon-wrapper {
+                width: 50px;
+                height: 50px;
+
+                .badge-icon-large {
+                  font-size: 24px;
+                }
+              }
+
+              .badge-name {
+                font-size: 11px;
+              }
+            }
+
+            .no-badges {
+              min-height: 100px;
+              padding: 20px;
+
+              p {
+                font-size: 13px;
+              }
+            }
+          }
+        }
+      }
+
     }
 
     /* Extra tiny screens: reduce avatar & spacing */
@@ -1048,7 +1640,7 @@
         .profileContainer .center {
           padding-top: 28px;
           .username { font-size: 18px; }
-          .bio { -webkit-line-clamp: 2; font-size: 13px; }
+          .bio { -webkit-line-clamp: 2; line-clamp: 2; font-size: 13px; }
         }
         .images .profile-pic-container {
           width: 68px !important;
@@ -1110,7 +1702,7 @@
         .profileContainer .center {
           padding-top: 28px;
           .username { font-size: 18px; }
-          .bio { -webkit-line-clamp: 2; font-size: 13px; }
+          .bio { -webkit-line-clamp: 2; line-clamp: 2; font-size: 13px; }
         }
         .images .profile-pic-container {
           width: 68px !important;

@@ -18,6 +18,14 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CollectionsIcon from "@mui/icons-material/Collections";
 import PhotoLibraryIcon from "@mui/icons-material/PhotoLibrary";
 import VideoLibraryIcon from "@mui/icons-material/VideoLibrary";
+import MessageIcon from "@mui/icons-material/Message";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import StarIcon from "@mui/icons-material/Star";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import GroupsIcon from "@mui/icons-material/Groups";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ShareIcon from "@mui/icons-material/Share";
 import Posts from "../../components/posts/Posts";
 import { AuthContext } from "../../context/authContext";
 import { useSocket } from '../../context/SocketContext';
@@ -26,6 +34,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import IconButton from "@mui/material/IconButton";
+import Divider from "@mui/material/Divider";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import FullscreenIcon from "@mui/icons-material/Fullscreen";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -38,6 +47,8 @@ import ImageList from "@mui/material/ImageList";
 import ImageListItem from "@mui/material/ImageListItem";
 import Snackbar from "@mui/material/Snackbar";
 import MuiAlert from "@mui/material/Alert";
+import Tooltip from "@mui/material/Tooltip";
+import Collapse from "@mui/material/Collapse";
 
 const formatMediaUrl = (url) => {
   if (!url) return null;
@@ -79,16 +90,18 @@ const LoadingSpinner = () => (
 );
 
 // Component for showing stats
-const StatCard = ({ icon, count, label }) => (
-  <motion.div 
-    className="stat-card"
-    whileHover={{ scale: 1.05 }}
-    whileTap={{ scale: 0.95 }}
-  >
-    {icon}
-    <span className="count">{count}</span>
-    <span className="label">{label}</span>
-  </motion.div>
+const StatCard = ({ icon, count, label, tooltip }) => (
+  <Tooltip title={tooltip} arrow placement="top">
+    <motion.div 
+      className="stat-card"
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+    >
+      {icon}
+      <span className="count">{count}</span>
+      <span className="label">{label}</span>
+    </motion.div>
+  </Tooltip>
 );
 
 const Profile = () => {
@@ -135,6 +148,12 @@ const Profile = () => {
   const [editingBio, setEditingBio] = useState('');
   const [showProfileFullSize, setShowProfileFullSize] = useState(false);
   const [showCoverFullSize, setShowCoverFullSize] = useState(false);
+  const [inlineEditingBio, setInlineEditingBio] = useState(false);
+  const [inlineBioText, setInlineBioText] = useState('');
+  const [bioCharCount, setBioCharCount] = useState(0);
+  const [profileViews, setProfileViews] = useState(0);
+  const [mutualFollowers, setMutualFollowers] = useState([]);
+  const [mutualCount, setMutualCount] = useState(0);
 
   // Memoized Values
   const isOwnProfile = useMemo(() => 
@@ -328,6 +347,60 @@ const Profile = () => {
   }
 }, [resolvedUserId, API_URL, isOwnProfile, currentUser]);
 
+  // Track profile view
+  const trackProfileView = useCallback(async () => {
+    if (!resolvedUserId || isOwnProfile) return; // Don't track own profile
+    
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      await axios.post(
+        `${API_URL}/api/profile/track-view/${resolvedUserId}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    } catch (err) {
+      console.log('Profile view tracking failed:', err);
+    }
+  }, [resolvedUserId, isOwnProfile, API_URL]);
+
+  // Calculate mutual followers/connections
+  const calculateMutualFollowers = useCallback(() => {
+    if (!userData || !currentUser) return;
+    
+    const userFollowers = userData?.followers || [];
+    const currentUserFollowing = currentUser?.following || [];
+    
+    const mutual = userFollowers.filter(follower => 
+      currentUserFollowing.some(following => following._id === follower._id || following === follower._id)
+    );
+    
+    setMutualFollowers(mutual);
+    setMutualCount(mutual.length);
+  }, [userData, currentUser]);
+
+  // Fetch profile view count
+  const fetchProfileViews = useCallback(async () => {
+    if (!resolvedUserId) return;
+    
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const res = await axios.get(
+        `${API_URL}/api/profile/views/${resolvedUserId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (res.data?.views !== undefined) {
+        setProfileViews(res.data.views);
+      }
+    } catch (err) {
+      console.log('Failed to fetch profile views:', err);
+    }
+  }, [resolvedUserId, API_URL]);
+
   // Refetch only the friends list (without full profile reload)
   const refetchFriendsList = useCallback(async () => {
     if (!resolvedUserId) return;
@@ -411,6 +484,21 @@ const Profile = () => {
       isActive = false;
     };
   }, [resolvedUserId, fetchProfileData]);
+
+    // Track profile view and fetch view count
+    useEffect(() => {
+      if (userData) {
+        trackProfileView();
+        fetchProfileViews();
+      }
+    }, [userData, trackProfileView, fetchProfileViews]);
+
+    // Calculate mutual followers when data changes
+    useEffect(() => {
+      if (userData && currentUser && !isOwnProfile) {
+        calculateMutualFollowers();
+      }
+    }, [userData, currentUser, isOwnProfile, calculateMutualFollowers]);
 
     useEffect(() => {
     // Cleanup function to handle component unmount
@@ -914,6 +1002,123 @@ const Profile = () => {
   }, [API_URL, currentUser?._id, editingBio, emitProfileUpdate]);
   // --- END MOVE ---
 
+  // Profile Strength Calculator
+  const calculateProfileStrength = useCallback(() => {
+    let strength = 0;
+    let maxPoints = 0;
+
+    // Profile picture (20 points)
+    if (userData?.profilePic) strength += 20;
+    maxPoints += 20;
+
+    // Cover picture (10 points)
+    if (userData?.coverPic) strength += 10;
+    maxPoints += 10;
+
+    // Bio (15 points)
+    if (userData?.bio && userData.bio.length > 20) strength += 15;
+    maxPoints += 15;
+
+    // City/Location (10 points)
+    if (userData?.city) strength += 10;
+    maxPoints += 10;
+
+    // Website (10 points)
+    if (userData?.website) strength += 10;
+    maxPoints += 10;
+
+    // Social links (15 points)
+    if (userData?.social?.facebook) strength += 5;
+    if (userData?.social?.instagram) strength += 5;
+    if (userData?.social?.twitter) strength += 5;
+    maxPoints += 15;
+
+    // Posts (10 points)
+    if (userPosts.length > 0) strength += 10;
+    maxPoints += 10;
+
+    // Followers (10 points)
+    if ((userData?.followers?.length || 0) > 0) strength += 10;
+    maxPoints += 10;
+
+    const percentage = Math.round((strength / maxPoints) * 100);
+    return { strength: percentage, category: getStrengthCategory(percentage) };
+  }, [userData, userPosts.length]);
+
+  const getStrengthCategory = (percentage) => {
+    if (percentage >= 90) return 'excellent';
+    if (percentage >= 70) return 'good';
+    if (percentage >= 50) return 'fair';
+    if (percentage >= 30) return 'poor';
+    return 'very-poor';
+  };
+
+  // Inline bio editor handlers
+  const handleStartInlineEditBio = () => {
+    setInlineBioText(userData?.bio || '');
+    setBioCharCount(userData?.bio?.length || 0);
+    setInlineEditingBio(true);
+  };
+
+  const handleSaveInlineBio = useCallback(async () => {
+    try {
+      setError(null);
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('Not authenticated');
+
+      const res = await axios.put(
+        `${API_URL}/api/profile/bio/${currentUser._id}`,
+        { bio: inlineBioText },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (res.data?.success) {
+        setUserData(prev => ({
+          ...prev,
+          bio: inlineBioText
+        }));
+        
+        emitProfileUpdate({
+          userId: currentUser._id,
+          updates: { bio: inlineBioText }
+        });
+
+        setSuccessMessage('Bio updated successfully');
+        setInlineEditingBio(false);
+      } else {
+        throw new Error(res.data?.message || 'Failed to update bio');
+      }
+    } catch (err) {
+      console.error('Bio update error:', err);
+      setError(err.response?.data?.message || err.message || 'Failed to update bio');
+    }
+  }, [API_URL, currentUser?._id, inlineBioText, emitProfileUpdate]);
+
+  const handleCancelInlineEditBio = () => {
+    setInlineEditingBio(false);
+    setInlineBioText('');
+    setBioCharCount(0);
+  };
+
+  // Quick action handlers
+  const handleSendMessage = useCallback(() => {
+    // Open chat popup with this user - similar to navbar behavior
+    if (userData?._id) {
+      const friendData = {
+        _id: userData._id,
+        name: userData.name || userData.username,
+        username: userData.username,
+        profilePic: userData.profilePic
+      };
+      window.dispatchEvent(new CustomEvent('openChatWithUser', { detail: friendData }));
+    }
+  }, [userData?._id]);
+
+  const handleConnect = useCallback(() => {
+    // Could be same as follow or open a "connect" dialog
+    handleFollow();
+  }, [handleFollow]);
+
   // Derived media list for gallery view
   const filteredGalleryMedia = useMemo(() => {
     if (!Array.isArray(userPosts)) return [];
@@ -951,8 +1156,8 @@ const Profile = () => {
   return (
     <motion.div className="profile" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <div className="images">
-        {userData?.coverPic && (
-          <div className="cover-container">
+        <div className="cover-container">
+          {userData?.coverPic && (
             <motion.img
               initial={{ scale: 1.1 }}
               animate={{ scale: 1 }}
@@ -965,48 +1170,53 @@ const Profile = () => {
                 e.target.src = ""; // fallback to blank or gradient
               }}
             />
-            {isOwnProfile && (
-              <motion.div className="cover-upload" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
-                <input
-                  type="file"
-                  id="coverPic"
-                  name="coverPic"
-                  accept="image/*"
-                  onChange={handleCoverPicUpdate}
-                  style={{ display: 'none' }}
-                  disabled={uploadLoading}
-                  aria-label="Choose a new cover photo"
-                />
-                <IconButton
-                  aria-label="Change cover photo"
-                  onClick={handleCoverMenuOpen}
-                  size="large"
-                  className="upload-icon-btn"
-                >
-                  <CameraAltIcon />
-                </IconButton>
-                <Menu
-                  anchorEl={coverMenuAnchor}
-                  open={Boolean(coverMenuAnchor)}
-                  onClose={handleCoverMenuClose}
-                >
-                  <MenuItem onClick={() => { document.getElementById('coverPic').click(); handleCoverMenuClose(); }}>
-                    <CameraAltIcon fontSize="small" /> Change Cover
-                  </MenuItem>
-                  <MenuItem onClick={() => { setShowCoverFullSize(true); handleCoverMenuClose(); }}>
-                    <FullscreenIcon fontSize="small" /> View Full Size
-                  </MenuItem>
-                  <MenuItem onClick={() => { fetchPreviousImages(); setShowPrevCoverDialog(true); handleCoverMenuClose(); }}>
-                    <CollectionsIcon fontSize="small" /> Choose from Previous
-                  </MenuItem>
-                  <MenuItem onClick={() => { handleRemoveCoverPhoto(); handleCoverMenuClose(); }}>
-                    <DeleteIcon fontSize="small" /> Remove Cover
-                  </MenuItem>
-                </Menu>
-              </motion.div>
-            )}
-          </div>
-        )}
+          )}
+          {isOwnProfile && (
+            <motion.div className="cover-upload" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
+              <input
+                type="file"
+                id="coverPic"
+                name="coverPic"
+                accept="image/*"
+                onChange={handleCoverPicUpdate}
+                style={{ display: 'none' }}
+                disabled={uploadLoading}
+                aria-label="Choose a new cover photo"
+              />
+              <IconButton
+                aria-label="Change cover photo"
+                onClick={handleCoverMenuOpen}
+                size="large"
+                className="upload-icon-btn"
+              >
+                <CameraAltIcon />
+              </IconButton>
+              <Menu
+                anchorEl={coverMenuAnchor}
+                open={Boolean(coverMenuAnchor)}
+                onClose={handleCoverMenuClose}
+              >
+                <MenuItem onClick={() => { document.getElementById('coverPic').click(); handleCoverMenuClose(); }}>
+                  <CameraAltIcon fontSize="small" /> {userData?.coverPic ? 'Change Cover' : 'Add Cover'}
+                </MenuItem>
+                <MenuItem onClick={() => { fetchPreviousImages(); setShowPrevCoverDialog(true); handleCoverMenuClose(); }}>
+                  <CollectionsIcon fontSize="small" /> Choose from Previous
+                </MenuItem>
+                {userData?.coverPic && (
+                  <>
+                    <MenuItem onClick={() => { setShowCoverFullSize(true); handleCoverMenuClose(); }}>
+                      <FullscreenIcon fontSize="small" /> View Full Size
+                    </MenuItem>
+                    <Divider />
+                    <MenuItem onClick={() => { handleRemoveCoverPhoto(); handleCoverMenuClose(); }}>
+                      <DeleteIcon fontSize="small" /> Remove Cover
+                    </MenuItem>
+                  </>
+                )}
+              </Menu>
+            </motion.div>
+          )}
+        </div>
 
         <div className="profile-pic-container">
           <motion.img
@@ -1226,19 +1436,82 @@ const Profile = () => {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.5 }}
           >
-            {userData?.bio || t('no-bio-available')}
-            {isOwnProfile && (
-              <IconButton
-                aria-label={t('edit-bio')}
-                onClick={handleOpenEditBio}
-                size="small"
-                style={{ marginLeft: 8 }}
-              >
-                <EditIcon fontSize="small" />
-              </IconButton>
+            {inlineEditingBio ? (
+              <div className="inline-bio-editor">
+                <textarea
+                  value={inlineBioText}
+                  onChange={(e) => {
+                    setInlineBioText(e.target.value);
+                    setBioCharCount(e.target.value.length);
+                  }}
+                  maxLength={1000}
+                  placeholder="Tell us about yourself..."
+                  className="bio-textarea"
+                />
+                <div className="bio-footer">
+                  <span className="char-count">{bioCharCount}/1000</span>
+                  <div className="bio-actions">
+                    <Button 
+                      size="small" 
+                      onClick={handleCancelInlineEditBio}
+                      variant="outlined"
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      size="small" 
+                      onClick={handleSaveInlineBio}
+                      variant="contained"
+                      color="primary"
+                    >
+                      Save
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bio-view">
+                {userData?.bio || <em>{t('no-bio-available')}</em>}
+                {isOwnProfile && (
+                  <IconButton
+                    aria-label={t('edit-bio')}
+                    onClick={handleStartInlineEditBio}
+                    size="small"
+                    className="bio-edit-btn"
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                )}
+              </div>
             )}
           </motion.p>
-  
+
+          {/* Profile Strength Indicator */}
+          {isOwnProfile && (
+            <motion.div 
+              className="profile-strength"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.52 }}
+            >
+              <div className="strength-header">
+                <TrendingUpIcon className="strength-icon" />
+                <span className="strength-label">Profile Strength</span>
+              </div>
+              <div className="strength-bar-container">
+                <motion.div 
+                  className={`strength-bar strength-${calculateProfileStrength().category}`}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${calculateProfileStrength().strength}%` }}
+                  transition={{ duration: 0.8, delay: 0.6 }}
+                />
+              </div>
+              <span className={`strength-text strength-${calculateProfileStrength().category}`}>
+                {calculateProfileStrength().strength}%
+              </span>
+            </motion.div>
+          )}
+
           <motion.div 
             className="stats"
             initial={{ y: 20, opacity: 0 }}
@@ -1249,99 +1522,143 @@ const Profile = () => {
               icon={<PeopleIcon />}
               count={userData?.followers?.length || 0}
               label={t('followers-label')}
+              tooltip="People who follow your profile"
             />
             <StatCard 
               icon={<PersonAddIcon />}
               count={userData?.following?.length || 0}
               label={t('following-label')}
+              tooltip="People you are following"
             />
             <StatCard 
               icon={<PostAddIcon />}
               count={userPosts.length}
               label={t('posts-label')}
+              tooltip={`${userPosts.length} post${userPosts.length !== 1 ? 's' : ''} shared`}
+            />
+            <StatCard 
+              icon={<VisibilityIcon />}
+              count={profileViews}
+              label="Profile Views"
+              tooltip="Times your profile has been viewed"
             />
           </motion.div>
   
-          <motion.div 
-            className="info"
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.7 }}
-          >
-            {userData?.city && (
-              <div className="item">
-                <PlaceIcon />
-                <span>{userData.city}</span>
-              </div>
-            )}
-            {userData?.website && (
-              <div className="item">
-                <LanguageIcon />
-                <a href={userData.website} target="_blank" rel="noopener noreferrer">
-                  {userData.website}
-                </a>
-              </div>
-            )}
-            {userData?.email && (
-              <div className="item">
-                <EmailIcon />
-                <span>{userData.email}</span>
-              </div>
-            )}
-            {userData?.joinDate && (
-              <div className="item">
-                <CalendarMonthIcon />
-                <span>{t('joined')} {new Date(userData.joinDate).toLocaleDateString()}</span>
-              </div>
-            )}
-          </motion.div>
-  
-          <motion.div 
-            className="socialLinks"
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.8 }}
-          >
-            {userData.social?.facebook && (
-              <motion.a 
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-                href={userData.social.facebook}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="social-icon"
-              >
-                <FacebookIcon fontSize="large" />
-              </motion.a>
-            )}
-          </motion.div>
-  
-          {!isOwnProfile && (
+          {/* Mutual Followers Indicator */}
+          {!isOwnProfile && mutualCount > 0 && (
             <motion.div 
-              layout 
-              className="follow-container"
+              className="mutual-followers-indicator"
+              initial={{ y: 10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.65 }}
+            >
+              <Tooltip 
+                title={`Mutual followers: ${mutualFollowers.map(f => f.name || f.username).join(', ')}`}
+                arrow
+                placement="top"
+              >
+                <div className="mutual-badge">
+                  <GroupsIcon className="mutual-icon" />
+                  <span className="mutual-count">{mutualCount}</span>
+                  <span className="mutual-label">Mutual Followers</span>
+                </div>
+              </Tooltip>
+            </motion.div>
+          )}
+  
+          {/* Profile Information - only show if has content */}
+          {(userData?.city || userData?.website || userData?.email || userData?.joinDate) && (
+            <motion.div 
+              className="info"
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.9 }}
+              transition={{ delay: 0.7 }}
             >
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleFollow}
-                className={`follow-button ${isFollowing ? "following" : ""} ${isMutualFollow ? "mutual" : ""}`}
-                disabled={followLoading}
-              >
-                {followLoading ? (
-                  <LoadingSpinner />
-                ) : isMutualFollow ? (
-                  t('friends-button')
-                ) : isFollowing ? (
-                  t('following-button')
-                ) : (
-                  t('follow-button')
-                )}
-              </motion.button>
+              {userData?.city && (
+                <div className="item">
+                  <PlaceIcon />
+                  <span>{userData.city}</span>
+                </div>
+              )}
+              {userData?.website && (
+                <div className="item">
+                  <LanguageIcon />
+                  <a href={userData.website} target="_blank" rel="noopener noreferrer">
+                    {userData.website}
+                  </a>
+                </div>
+              )}
+              {userData?.email && (
+                <div className="item">
+                  <EmailIcon />
+                  <span>{userData.email}</span>
+                </div>
+              )}
+              {userData?.joinDate && (
+                <div className="item">
+                  <CalendarMonthIcon />
+                  <span>{t('joined')} {new Date(userData.joinDate).toLocaleDateString()}</span>
+                </div>
+              )}
+            </motion.div>
+          )}
   
+          {/* Social Links - only show if has content */}
+          {userData.social?.facebook && (
+            <motion.div 
+              className="socialLinks"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.8 }}
+            >
+              {userData.social?.facebook && (
+                <motion.a 
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                  href={userData.social.facebook}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="social-icon"
+                >
+                  <FacebookIcon fontSize="large" />
+                </motion.a>
+              )}
+            </motion.div>
+          )}
+  
+          {!isOwnProfile && (
+            <>
+              {/* Quick Action Buttons */}
+              <motion.div 
+                className="quick-actions"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.85 }}
+              >
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleSendMessage}
+                  className="quick-action-btn message-btn"
+                  title="Send Message"
+                >
+                  <MessageIcon />
+                  <span>Message</span>
+                </motion.button>
+                
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleConnect}
+                  className={`quick-action-btn follow-btn ${isFollowing ? 'following' : ''}`}
+                  title={isFollowing ? 'Following' : 'Follow'}
+                >
+                  <PersonAddIcon />
+                  <span>{isFollowing ? 'Following' : 'Follow'}</span>
+                </motion.button>
+              </motion.div>
+
+              {/* Follow Status Messages */}
               <AnimatePresence>
                 {(error || successMessage) && (
                   <motion.div
@@ -1354,8 +1671,131 @@ const Profile = () => {
                   </motion.div>
                 )}
               </AnimatePresence>
-            </motion.div>
+            </>
           )}
+        </div>
+      </motion.div>
+
+      {/* Achievement Badges Section */}
+      <motion.div 
+        className="achievements-section"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 1.0 }}
+      >
+        <div className="achievements-container">
+          <h3 className="achievements-title">
+            <StarIcon className="badge-icon" />
+            Achievements & Badges
+          </h3>
+          <div className="badges-grid">
+            {/* Profile Complete Badge */}
+            {calculateProfileStrength().strength >= 80 && (
+              <motion.div 
+                className="badge"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                title="Profile Strength: 80%+"
+              >
+                <div className="badge-icon-wrapper">
+                  <CheckCircleIcon className="badge-icon-large" />
+                </div>
+                <span className="badge-name">Profile Complete</span>
+              </motion.div>
+            )}
+
+            {/* Social Butterfly Badge */}
+            {(userData?.followers?.length || 0) >= 50 && (
+              <motion.div 
+                className="badge"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                title="50+ Followers"
+              >
+                <div className="badge-icon-wrapper">
+                  <PeopleIcon className="badge-icon-large" />
+                </div>
+                <span className="badge-name">Social Butterfly</span>
+              </motion.div>
+            )}
+
+            {/* Content Creator Badge */}
+            {userPosts.length >= 20 && (
+              <motion.div 
+                className="badge"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                title="20+ Posts"
+              >
+                <div className="badge-icon-wrapper">
+                  <PostAddIcon className="badge-icon-large" />
+                </div>
+                <span className="badge-name">Content Creator</span>
+              </motion.div>
+            )}
+
+            {/* Early Adopter Badge */}
+            {userData?.joinDate && (new Date() - new Date(userData.joinDate)) > (365 * 24 * 60 * 60 * 1000) && (
+              <motion.div 
+                className="badge"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                title="Member for 1+ Year"
+              >
+                <div className="badge-icon-wrapper">
+                  <CalendarMonthIcon className="badge-icon-large" />
+                </div>
+                <span className="badge-name">Early Adopter</span>
+              </motion.div>
+            )}
+
+            {/* Network Builder Badge */}
+            {(userData?.following?.length || 0) >= 30 && (
+              <motion.div 
+                className="badge"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                title="30+ Following"
+              >
+                <div className="badge-icon-wrapper">
+                  <PersonAddIcon className="badge-icon-large" />
+                </div>
+                <span className="badge-name">Network Builder</span>
+              </motion.div>
+            )}
+
+            {/* All Connected Badge */}
+            {userData?.social && Object.values(userData.social).filter(v => v).length >= 2 && (
+              <motion.div 
+                className="badge"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                title="Multiple Social Links"
+              >
+                <div className="badge-icon-wrapper">
+                  <FacebookIcon className="badge-icon-large" />
+                </div>
+                <span className="badge-name">All Connected</span>
+              </motion.div>
+            )}
+
+            {/* No badges yet */}
+            {calculateProfileStrength().strength < 80 && 
+             (userData?.followers?.length || 0) < 50 && 
+             userPosts.length < 20 && 
+             (!userData?.joinDate || (new Date() - new Date(userData.joinDate)) <= (365 * 24 * 60 * 60 * 1000)) &&
+             (userData?.following?.length || 0) < 30 &&
+             (!userData?.social || Object.values(userData.social).filter(v => v).length < 2) && (
+              <div className="no-badges">
+                <p>
+                  {isOwnProfile 
+                    ? "Complete your profile and engage with the community to unlock badges!"
+                    : `${userData?.name || userData?.username} is working on earning badges!`
+                  }
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </motion.div>
   

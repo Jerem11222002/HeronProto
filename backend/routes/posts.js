@@ -130,7 +130,7 @@ const upload = multer({
     }
     cb(null, true);
   },
-}).single('media');
+}).array('media', 10); // Changed from .single('media') to .array('media', 10) to allow up to 10 files
 
 const uploadMiddleware = (req, res) => {
   return new Promise((resolve, reject) => {
@@ -240,6 +240,16 @@ router.get("/", authenticate, async (req, res) => {
       img: post.img ? `/uploads/${path.basename(post.img)}` : null,
       media: post.media ? `/uploads/${path.basename(post.media)}` : null,
       mediaType: post.mediaType,
+      // Include mediaArray for carousel support
+      mediaArray: Array.isArray(post.mediaArray) && post.mediaArray.length > 0
+        ? post.mediaArray.map(mediaItem => ({
+            url: `/uploads/${path.basename(mediaItem.url)}`,
+            type: mediaItem.type,
+            size: mediaItem.size || 0,
+            duration: mediaItem.duration || 0,
+            thumbnail: mediaItem.thumbnail ? `/uploads/${path.basename(mediaItem.thumbnail)}` : null
+          }))
+        : [],
       profilePic: post.userId?.profilePicture,
       likes: Array.isArray(post.likes) ? post.likes.map(id => id.toString()) : [],
       tags: Array.isArray(post.tags) ? post.tags : [],
@@ -452,11 +462,11 @@ router.post("/", authenticate, async (req, res) => {
     
     console.log('Creating post:', {
       desc,
-      file: req.file,
+      files: req.files,
       tags
     });
 
-    if (!desc && !req.file) {
+    if (!desc && (!req.files || req.files.length === 0)) {
       return res.status(400).json({ message: "Post must contain text or media" });
     }
 
@@ -467,10 +477,17 @@ router.post("/", authenticate, async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Determine media type
-    let mediaType = null;
-    if (req.file) {
-      mediaType = req.file.mimetype.startsWith("video/") ? "video" : "image";
+    // Process multiple files
+    const mediaArray = [];
+    if (req.files && req.files.length > 0) {
+      req.files.forEach((file) => {
+        const mediaType = file.mimetype.startsWith("video/") ? "video" : "image";
+        mediaArray.push({
+          url: `/uploads/${file.filename}`,
+          type: mediaType,
+          size: file.size
+        });
+      });
     }
 
     const newPost = new Post({
@@ -478,18 +495,20 @@ router.post("/", authenticate, async (req, res) => {
       name: user.name,
       desc,
       profilePic: user.profilePicture,
-      media: req.file ? `/uploads/${req.file.filename}` : null,
-      mediaType,
+      media: mediaArray.length > 0 ? mediaArray[0].url : null, // Keep first media as primary for backward compatibility
+      mediaArray: mediaArray.length > 0 ? mediaArray : [], // New field for multiple media
+      mediaCount: mediaArray.length,
+      mediaType: mediaArray.length > 0 ? mediaArray[0].type : null,
       tags: tags ? JSON.parse(tags) : []
     });
 
-    // If it's a video, initialize videoMetadata
-    if (mediaType === "video") {
+    // If it has videos, initialize videoMetadata
+    if (mediaArray.some(m => m.type === "video")) {
       newPost.videoMetadata = {
-        duration: 0, // Will be updated after processing
+        duration: 0,
         thumbnail: null,
         quality: "original",
-        size: req.file.size
+        size: mediaArray.reduce((sum, m) => sum + m.size, 0)
       };
     }
 
@@ -974,6 +993,16 @@ router.get("/feed", authenticate, async (req, res) => {
         ...item,
         img: formatMediaUrl(req, item.img || item.media || item.image),
         media: formatMediaUrl(req, item.media || item.img || item.image),
+        // Include mediaArray for carousel support
+        mediaArray: Array.isArray(item.mediaArray) && item.mediaArray.length > 0
+          ? item.mediaArray.map(mediaItem => ({
+              url: formatMediaUrl(req, mediaItem.url),
+              type: mediaItem.type,
+              size: mediaItem.size || 0,
+              duration: mediaItem.duration || 0,
+              thumbnail: mediaItem.thumbnail ? formatMediaUrl(req, mediaItem.thumbnail) : null
+            }))
+          : [],
         // Add fallback for legacy posts with only 'image' field
         // If all are missing, both will be null
         user: {
@@ -1472,6 +1501,16 @@ router.get("/:id", authenticate, async (req, res) => {
       img: post.img ? buildUrl(post.img) : (post.media && post.mediaType === 'image' ? buildUrl(post.media) : null),
       media: post.media ? buildUrl(post.media) : null,
       mediaType: post.mediaType,
+      // include mediaArray for carousel support in fullscreen view
+      mediaArray: Array.isArray(post.mediaArray) && post.mediaArray.length > 0
+        ? post.mediaArray.map(item => ({
+            url: buildUrl(item.url),
+            type: item.type,
+            size: item.size || 0,
+            duration: item.duration || 0,
+            thumbnail: item.thumbnail ? buildUrl(item.thumbnail) : null
+          }))
+        : [],
       // prefer userId.profilePicture -> userId.profilePic -> post.profilePic
       profilePic: post.userId?.profilePicture ? buildUrl(post.userId.profilePicture)
                   : post.userId?.profilePic ? buildUrl(post.userId.profilePic)
@@ -1504,6 +1543,16 @@ router.get("/:id", authenticate, async (req, res) => {
         img: sp.img ? buildUrl(sp.img) : (sp.media && sp.mediaType === 'image' ? buildUrl(sp.media) : null),
         media: sp.media ? buildUrl(sp.media) : null,
         mediaType: sp.mediaType,
+        // include mediaArray for shared post carousel support
+        mediaArray: Array.isArray(sp.mediaArray) && sp.mediaArray.length > 0
+          ? sp.mediaArray.map(item => ({
+              url: buildUrl(item.url),
+              type: item.type,
+              size: item.size || 0,
+              duration: item.duration || 0,
+              thumbnail: item.thumbnail ? buildUrl(item.thumbnail) : null
+            }))
+          : [],
         // prefer user profilePicture -> user profilePic -> sp.profilePic
         profilePic: sp.userId?.profilePicture ? buildUrl(sp.userId.profilePicture)
                     : sp.userId?.profilePic ? buildUrl(sp.userId.profilePic)

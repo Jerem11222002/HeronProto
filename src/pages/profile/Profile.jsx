@@ -1838,12 +1838,13 @@ const Profile = () => {
           
           {userPosts.length > 0 ? (
             <Posts 
-            userPosts={userPosts}
-            onPostUpdate={fetchProfileData}
-            userId={resolvedUserId} // Make sure this is always defined
-            userData={userData}  // Pass user data here
-
-          />        ) : (
+              userPosts={userPosts}
+              onPostUpdate={fetchProfileData}
+              userId={resolvedUserId} // Make sure this is always defined
+              userData={userData}  // Pass user data here
+              onDeletePost={(postId) => setUserPosts(prev => prev.filter(post => String(post?._id) !== String(postId)))}
+            />
+          ) : (
             <motion.p 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

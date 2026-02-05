@@ -14,6 +14,8 @@ import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
+import KeyboardArrowLeftIcon from "@mui/icons-material/KeyboardArrowLeft";
+import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import Menu from "@mui/material/Menu";
@@ -33,6 +35,7 @@ export default function FullScreenPostPage() {
   const [anchorEl, setAnchorEl] = useState(null);
   const [commentCount, setCommentCount] = useState(0);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const mediaRef = useRef(null);
 
   useEffect(() => {
@@ -372,8 +375,42 @@ export default function FullScreenPostPage() {
       <div className="fullscreen-post-main">
         <div className="fullscreen-post-media" ref={mediaRef}>
           <div className="fullscreen-post-media-inner">
-            <Post post={originalPost} showOnly="media" fullScreen />
+            <Post 
+              post={originalPost} 
+              showOnly="media" 
+              fullScreen 
+              hideCarouselControls={true}
+              currentMediaIndex={currentMediaIndex}
+              setCurrentMediaIndex={setCurrentMediaIndex}
+            />
           </div>
+          
+          {/* Carousel Navigation Controls - Side Arrows */}
+          {originalPost.mediaArray && originalPost.mediaArray.length > 1 && (
+            <>
+              <button
+                className="carousel-arrow prev"
+                onClick={() => setCurrentMediaIndex((prev) => (prev - 1 + originalPost.mediaArray.length) % originalPost.mediaArray.length)}
+                aria-label="Previous media"
+                title="Previous"
+              >
+                <KeyboardArrowLeftIcon />
+              </button>
+              
+              <button
+                className="carousel-arrow next"
+                onClick={() => setCurrentMediaIndex((prev) => (prev + 1) % originalPost.mediaArray.length)}
+                aria-label="Next media"
+                title="Next"
+              >
+                <KeyboardArrowRightIcon />
+              </button>
+              
+              <div className="carousel-counter-inline">
+                {currentMediaIndex + 1} / {originalPost.mediaArray.length}
+              </div>
+            </>
+          )}
         </div>
 
         <div className="fullscreen-post-comments">

@@ -393,6 +393,10 @@ const Home = () => {
     setFeedItems(prev => prev.map(item => (item._id === updatedItem._id ? updatedItem : item)));
   }, []);
 
+  const handleDeletePost = useCallback((postId) => {
+    setFeedItems(prev => prev.filter(item => item.type === 'event' || String(item._id) !== String(postId)));
+  }, []);
+
   const handleEventInteraction = useCallback(
     async (event, action) => {
       try {
@@ -508,6 +512,7 @@ const Home = () => {
               desc: item.desc,
               img: item.img,
               media: item.media,
+              mediaArray: item.mediaArray,
               mediaType: item.mediaType,
               likes: item.likes,
               comments: item.comments,
@@ -525,11 +530,12 @@ const Home = () => {
             }]} 
             onPostUpdate={handlePostUpdate}
             onAddSharedPost={handleAddSharedPost}
+            onDeletePost={handleDeletePost}
           />
         )}
       </div>
     ));
-  }, [feedItems, isAdmin, currentUser?.interests, sortBy, timeRange, handleEventInteraction, handlePostUpdate, handleAddSharedPost]);
+  }, [feedItems, isAdmin, currentUser?.interests, sortBy, timeRange, handleEventInteraction, handlePostUpdate, handleAddSharedPost, handleDeletePost]);
 
   return (
     <div className="home">

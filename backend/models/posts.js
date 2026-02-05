@@ -19,7 +19,8 @@ const PostSchema = new mongoose.Schema(
     },
     desc: { 
       type: String, 
-      required: true,
+      required: false,
+      default: "",
       trim: true,
       index: 'text'
     },
@@ -31,6 +32,38 @@ const PostSchema = new mongoose.Schema(
         if (media.startsWith('http')) return media;
         return `/uploads/${media.split(/[\/\\]/).pop()}`;
       }
+    },
+    mediaArray: {
+      type: [{
+        url: {
+          type: String,
+          required: true
+        },
+        type: {
+          type: String,
+          enum: ['image', 'video'],
+          required: true
+        },
+        size: {
+          type: Number,
+          default: 0
+        },
+        duration: {
+          type: Number,
+          default: 0
+        },
+        thumbnail: {
+          type: String,
+          default: null
+        }
+      }],
+      default: []
+    },
+    mediaCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 10
     },
     mediaType: {
       type: String,

@@ -10,6 +10,9 @@ import ShareOutlinedIcon from "@mui/icons-material/ShareOutlined";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import BarChartIcon from '@mui/icons-material/BarChart';
+import KeyboardArrowLeftIcon from "@mui/icons-material/KeyboardArrowLeft";
+import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
+import CloseIcon from "@mui/icons-material/Close";
 import ReactPlayer from 'react-player';
 import ClickAwayListener from "@mui/material/ClickAwayListener";
 import Menu from "@mui/material/Menu";
@@ -20,6 +23,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
 import Snackbar from "@mui/material/Snackbar";
 import MuiAlert from "@mui/material/Alert";
 import Comments from "../comments/Comments";
@@ -76,12 +80,35 @@ const getMediaUrl = (media, img) => {
   return `${base}/uploads/${path.split(/[/\\]/).pop()}`;
 };
 
+const inferMediaTypeFromUrl = (url) => {
+  if (typeof url !== 'string') return null;
+  return /\.(mp4|mov|webm|avi|mkv)$/i.test(url) ? 'video' : 'image';
+};
+
+const normalizeMediaArray = (arr) => {
+  if (!Array.isArray(arr)) return [];
+  return arr
+    .map((item) => {
+      if (!item) return null;
+      if (typeof item === 'string') {
+        return { url: item, type: inferMediaTypeFromUrl(item) };
+      }
+      const url = item.url || item.media || item.img;
+      if (!url || typeof url !== 'string') return null;
+      return { ...item, url, type: item.type || inferMediaTypeFromUrl(url) };
+    })
+    .filter(Boolean);
+};
+
 // Helper function to check if a post has valid media
 const hasValidMedia = (post) => {
   if (!post) return false;
+
+  if (normalizeMediaArray(post.mediaArray).length > 0) return true;
   
   // For shared posts, check if the shared post has media
   if (post.sharedPost && typeof post.sharedPost === 'object') {
+    if (normalizeMediaArray(post.sharedPost.mediaArray).length > 0) return true;
     const sharedMedia = post.sharedPost.media || post.sharedPost.img;
     const sharedMediaType = post.sharedPost.mediaType;
     if (typeof sharedMedia !== 'string' || sharedMedia.trim().length === 0) return false;
@@ -155,7 +182,7 @@ const SharedPost = ({ sharedPost }) => {
   );
 };
 
-const Post = ({ post, onDeletePost, onAddSharedPost, showOnly, fullScreen, showDesc = true }) => {
+const Post = ({ post, onDeletePost, onAddSharedPost, showOnly, fullScreen, showDesc = true, currentMediaIndex: externalMediaIndex, setCurrentMediaIndex: setExternalMediaIndex, hideCarouselControls = false }) => {
   const { currentUser } = useContext(AuthContext);
   const { socket } = useSocket();
   const navigate = useNavigate();
@@ -195,6 +222,13 @@ const Post = ({ post, onDeletePost, onAddSharedPost, showOnly, fullScreen, showD
     message: "",
     severity: "success"
   });
+  
+  // Use external media index if provided (for fullscreen), otherwise use internal state
+  const [internalMediaIndex, setInternalMediaIndex] = useState(0);
+  const currentMediaIndex = externalMediaIndex !== undefined ? externalMediaIndex : internalMediaIndex;
+  const setCurrentMediaIndexFunc = setExternalMediaIndex || setInternalMediaIndex;
+  
+  const [showMediaCarousel, setShowMediaCarousel] = useState(false);
 
   const showSnackbar = (message, severity = "success") => {
     setSnackbar({ open: true, message, severity });
@@ -509,10 +543,111 @@ const Post = ({ post, onDeletePost, onAddSharedPost, showOnly, fullScreen, showD
   const renderMedia = () => {
     if (!hasValidMedia(post)) return null;
     if (imageError) return null;
-    const mediaUrl = getMediaUrl(post.media || post.img);
-    if (post.mediaType === 'video') {
+
+    // Get media array from post (prioritize mediaArray, fall back to single media)
+    const baseMediaArray = post.mediaArray && post.mediaArray.length > 0
+      ? post.mediaArray
+      : ((post.media || post.img)
+          ? [{ url: post.media || post.img, type: post.mediaType || (post.img ? 'image' : null) }]
+          : []);
+    const mediaArray = normalizeMediaArray(baseMediaArray);
+
+    if (mediaArray.length === 0) return null;
+
+    // Use Instagram-style carousel for all multi-media posts
+    return renderCarouselStyle(mediaArray);
+  };
+
+  const handleOpenFullPost = () => {
+    navigate(`/post/${post._id}`);
+  };
+
+  const renderCarouselStyle = (mediaArray) => {
+    const currentMedia = mediaArray[currentMediaIndex];
+    const mediaUrl = getMediaUrl(currentMedia.url);
+    const isVideo = currentMedia.type === 'video';
+
+    return (
+      <div className="instagram-carousel">
+        <div className="carousel-main-display">
+          {isVideo ? (
+            <div className="video-container">
+              <ReactPlayer
+                url={mediaUrl}
+                controls={true}
+                width="100%"
+                height="auto"
+                onReady={() => setImageLoading(false)}
+                onError={() => {
+                  setImageLoading(false);
+                  setImageError(true);
+                }}
+              />
+            </div>
+          ) : (
+            <img
+              src={mediaUrl}
+              alt="Post content"
+              className={imageLoading ? 'loading' : 'loaded'}
+              onClick={handleOpenFullPost}
+              onLoad={() => setImageLoading(false)}
+              onError={() => {
+                setImageLoading(false);
+                setImageError(true);
+              }}
+            />
+          )}
+
+          {/* Navigation arrows for multiple media - hidden in fullscreen mode */}
+          {mediaArray.length > 1 && !hideCarouselControls && (
+            <>
+              <button
+                className="carousel-arrow prev"
+                onClick={() => setCurrentMediaIndexFunc((prev) => (prev - 1 + mediaArray.length) % mediaArray.length)}
+                aria-label="Previous media"
+              >
+                <KeyboardArrowLeftIcon />
+              </button>
+              <button
+                className="carousel-arrow next"
+                onClick={() => setCurrentMediaIndexFunc((prev) => (prev + 1) % mediaArray.length)}
+                aria-label="Next media"
+              >
+                <KeyboardArrowRightIcon />
+              </button>
+
+              {/* Counter */}
+              <div className="carousel-counter-inline">
+                {currentMediaIndex + 1} / {mediaArray.length}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Thumbnail indicators at bottom */}
+        {mediaArray.length > 1 && (
+          <div className="carousel-indicators">
+            {mediaArray.map((media, index) => (
+              <button
+                key={index}
+                className={`indicator-dot ${index === currentMediaIndex ? 'active' : ''}`}
+                onClick={() => setCurrentMediaIndexFunc(index)}
+                aria-label={`Go to media ${index + 1}`}
+                title={`${media.type === 'video' ? 'Video' : 'Image'} ${index + 1}`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderSingleMedia = (media) => {
+    const mediaUrl = getMediaUrl(media.url);
+    
+    if (media.type === 'video') {
       return (
-        <div className="video-container">
+        <div className="video-container single-media">
           {imageLoading && <div className="video-loading">Loading...</div>}
           <ReactPlayer
             url={mediaUrl}
@@ -528,22 +663,223 @@ const Post = ({ post, onDeletePost, onAddSharedPost, showOnly, fullScreen, showD
         </div>
       );
     }
+
     return (
-      <div className="image-container">
+      <div className="image-container single-media">
         {imageLoading && <div className="image-loading">Loading...</div>}
         <img
           src={mediaUrl}
           alt="Post content"
           className={imageLoading ? 'loading' : 'loaded'}
-          onLoad={() => {
-            setImageLoading(false);
-          }}
+          onClick={handleOpenFullPost}
+          onLoad={() => setImageLoading(false)}
           onError={() => {
             setImageLoading(false);
             setImageError(true);
           }}
         />
       </div>
+    );
+  };
+
+  const renderTwoMediaLayout = (mediaArray) => {
+    return (
+      <div className="media-grid-layout two-media">
+        {mediaArray.map((media, index) => (
+          <div key={index} className="media-item">
+            {renderMediaItem(media)}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderThreeMediaLayout = (mediaArray) => {
+    return (
+      <div className="media-grid-layout three-media">
+        <div className="media-large">
+          {renderMediaItem(mediaArray[0])}
+        </div>
+        <div className="media-small-column">
+          {mediaArray.slice(1, 3).map((media, index) => (
+            <div key={index} className="media-item">
+              {renderMediaItem(media)}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderFourMediaLayout = (mediaArray) => {
+    return (
+      <div className="media-grid-layout four-media">
+        {mediaArray.slice(0, 4).map((media, index) => (
+          <div key={index} className="media-item">
+            {renderMediaItem(media)}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderMediaGrid = (mediaArray) => {
+    const displayCount = 6;
+    const hasMore = mediaArray.length > displayCount;
+    const displayMedia = mediaArray.slice(0, displayCount);
+
+    return (
+      <div className="media-grid-layout grid">
+        {displayMedia.map((media, index) => (
+          <div key={index} className="media-item">
+            {index === displayCount - 1 && hasMore ? (
+              <div 
+                className="media-overlay show-more"
+                onClick={() => navigate(`/post/${post._id}`)}
+              >
+                <span className="more-count">+{mediaArray.length - displayCount}</span>
+                <span className="more-text">More</span>
+              </div>
+            ) : null}
+            {renderMediaItem(media)}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderMediaItem = (media) => {
+    const mediaUrl = getMediaUrl(media.url);
+    const isVideo = media.type === 'video';
+
+    if (isVideo) {
+      return (
+        <div className="media-item-content video">
+          <div 
+            className="video-thumbnail"
+            onClick={() => {
+              setCurrentMediaIndexFunc(post.mediaArray?.indexOf(media) || 0);
+              setShowMediaCarousel(true);
+            }}
+          >
+            <ReactPlayer
+              url={mediaUrl}
+              width="100%"
+              height="100%"
+              controls={false}
+              light={true}
+              playing={false}
+            />
+            <div className="play-icon">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="media-item-content image">
+        <img
+          src={mediaUrl}
+          alt="Post media"
+          onClick={() => {
+            setCurrentMediaIndexFunc(post.mediaArray?.indexOf(media) || 0);
+            setShowMediaCarousel(true);
+          }}
+        />
+      </div>
+    );
+  };
+
+  // Media Carousel Modal Component
+  const renderMediaCarousel = () => {
+    if (!showMediaCarousel || !post.mediaArray || post.mediaArray.length === 0) {
+      return null;
+    }
+
+    const currentMedia = post.mediaArray[currentMediaIndex];
+    const mediaUrl = getMediaUrl(currentMedia.url);
+    const isVideo = currentMedia.type === 'video';
+
+    return (
+      <Dialog
+        open={showMediaCarousel}
+        onClose={() => setShowMediaCarousel(false)}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '12px',
+            background: '#000'
+          }
+        }}
+      >
+        <div className="carousel-container">
+          <IconButton
+            onClick={() => setShowMediaCarousel(false)}
+            sx={{ position: 'absolute', top: 8, right: 8, zIndex: 10 }}
+          >
+            <CloseIcon sx={{ color: '#fff' }} />
+          </IconButton>
+
+          <div className="carousel-main">
+            {isVideo ? (
+              <ReactPlayer
+                url={mediaUrl}
+                controls={true}
+                width="100%"
+                height="100%"
+              />
+            ) : (
+              <img src={mediaUrl} alt="Post media" />
+            )}
+          </div>
+
+          {post.mediaArray.length > 1 && (
+            <>
+              <IconButton
+                onClick={() => setCurrentMediaIndexFunc((prev) => (prev - 1 + post.mediaArray.length) % post.mediaArray.length)}
+                sx={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#fff' }}
+              >
+                <KeyboardArrowLeftIcon />
+              </IconButton>
+
+              <IconButton
+                onClick={() => setCurrentMediaIndexFunc((prev) => (prev + 1) % post.mediaArray.length)}
+                sx={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', color: '#fff' }}
+              >
+                <KeyboardArrowRightIcon />
+              </IconButton>
+
+              <div className="carousel-counter">
+                {currentMediaIndex + 1} / {post.mediaArray.length}
+              </div>
+
+              <div className="carousel-thumbnails">
+                {post.mediaArray.map((media, index) => (
+                  <div
+                    key={index}
+                    className={`thumbnail ${index === currentMediaIndex ? 'active' : ''}`}
+                    onClick={() => setCurrentMediaIndexFunc(index)}
+                  >
+                    <img src={getMediaUrl(media.url)} alt={`Thumbnail ${index + 1}`} />
+                    {media.type === 'video' && (
+                      <div className="video-badge">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                          <path d="M8 5v14l11-7z" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </Dialog>
     );
   };
 
@@ -659,16 +995,6 @@ const Post = ({ post, onDeletePost, onAddSharedPost, showOnly, fullScreen, showD
             <span className="count">{engagementMetrics.shares}</span>
             <span className="label">shares</span>
           </div>
-          {/* Show Full Post Button - only if post has valid media */}
-          {hasValidMedia(post) && (
-            <Link
-              to={`/post/${post._id}`}
-              className="show-full-post-btn"
-              aria-label="Show full post"
-            >
-              Show Full Post
-            </Link>
-          )}
         </div>
         <div className="info">
           <div 
@@ -789,6 +1115,7 @@ const Post = ({ post, onDeletePost, onAddSharedPost, showOnly, fullScreen, showD
             {snackbar.message}
           </MuiAlert>
         </Snackbar>
+        {renderMediaCarousel()}
       </div>
     </div>
   );

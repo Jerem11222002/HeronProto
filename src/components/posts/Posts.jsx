@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState, useContext, useCallback } from "react";
 import axios from "axios";
 import Post from "../post/Post";
 import { AuthContext } from "../../context/authContext";
@@ -75,7 +75,7 @@ const resolveSharedPost = (raw) => {
   return candidate;
 };
 
-const Posts = ({ userPosts, onPostUpdate, userId, userData = null, onAddSharedPost }) => {
+const Posts = ({ userPosts, onPostUpdate, userId, userData = null, onAddSharedPost, onDeletePost }) => {
   const { currentUser } = useContext(AuthContext);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -197,6 +197,13 @@ const Posts = ({ userPosts, onPostUpdate, userId, userData = null, onAddSharedPo
     }));
   };
 
+  const handleDeletePost = useCallback((postId) => {
+    setPosts(prev => prev.filter(post => String(post?._id) !== String(postId)));
+    if (typeof onDeletePost === "function") {
+      onDeletePost(postId);
+    }
+  }, [onDeletePost]);
+
   if (loading) {
     return (
       <div className="posts-loading">
@@ -260,6 +267,7 @@ const Posts = ({ userPosts, onPostUpdate, userId, userData = null, onAddSharedPo
               post={post} 
               onPostUpdate={onPostUpdate}
               onAddSharedPost={onAddSharedPost} // <-- Pass the callback here
+              onDeletePost={handleDeletePost}
             />
           ))
         )}

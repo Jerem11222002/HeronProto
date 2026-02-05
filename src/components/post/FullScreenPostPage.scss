@@ -148,12 +148,14 @@
   @include themify($themes) {
     flex: 2.2;
     display: flex;
-    align-items: flex-start;
+    flex-direction: column;
+    align-items: center;
     justify-content: center;
     background: #18191a;
     overflow-y: auto;
     min-width: 0;
     padding: 0;
+    position: relative;
   }
 }
 
@@ -172,7 +174,69 @@
     max-height: 80vh;
     min-height: 50vh;
     overflow: hidden;
+    position: relative;
   }
+}
+
+// Carousel controls for fullscreen view - positioned on sides like Post component
+.carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  background-color: rgba(0, 0, 0, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 15;
+  transition: all 0.2s ease;
+  font-size: 24px;
+  padding: 0;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.8);
+    border-color: white;
+    transform: translateY(-50%) scale(1.15);
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
+  }
+
+  &:active {
+    transform: translateY(-50%) scale(0.95);
+  }
+
+  &.prev {
+    left: 16px;
+  }
+
+  &.next {
+    right: 16px;
+  }
+
+  svg {
+    font-size: 26px;
+    fill: white;
+    pointer-events: none;
+  }
+}
+
+// Counter in top right - matching Post component style
+.carousel-counter-inline {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  z-index: 5;
+  backdrop-filter: blur(4px);
 }
 
 .fullscreen-post-comments {
@@ -363,8 +427,17 @@
         border-radius: 12px;
         background: #222;
         box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
       }
     }
+  }
+}
+
+/* Fullscreen view already has arrows + counter; hide indicator dots (bars) */
+.post-fullscreen-media {
+  .carousel-indicators {
+    display: none;
   }
 }
 
@@ -473,6 +546,32 @@
     }
   }
 
+  // Mobile carousel controls optimization
+  .carousel-arrow {
+    width: 36px;
+    height: 36px;
+    font-size: 20px;
+
+    &.prev {
+      left: 8px;
+    }
+
+    &.next {
+      right: 8px;
+    }
+
+    svg {
+      font-size: 20px;
+    }
+  }
+
+  .carousel-counter-inline {
+    top: 8px;
+    right: 8px;
+    font-size: 11px;
+    padding: 4px 10px;
+  }
+
   .fullscreen-post-details {
     @include themify($themes) {
       padding: 16px 20px;
@@ -579,6 +678,33 @@
       max-height: 45vh;
       min-height: 30vh;
     }
+  }
+
+  // Small mobile carousel controls optimization
+  .carousel-arrow {
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
+    border-width: 1.5px;
+
+    &.prev {
+      left: 4px;
+    }
+
+    &.next {
+      right: 4px;
+    }
+
+    svg {
+      font-size: 16px;
+    }
+  }
+
+  .carousel-counter-inline {
+    top: 4px;
+    right: 4px;
+    font-size: 9px;
+    padding: 3px 6px;
   }
 
   .fullscreen-post-details {

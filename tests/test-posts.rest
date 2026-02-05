@@ -1,0 +1,107 @@
+### Post Creation Tests for Multiple Media Uploads
+
+### Variables
+@baseUrl = http://localhost:5000
+@authToken = YOUR_AUTH_TOKEN_HERE
+
+### Test 1: Create post with text only (no media)
+POST {{baseUrl}}/api/posts/
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "desc": "This is a text-only post"
+}
+
+### Test 2: Create post with text and single image
+POST {{baseUrl}}/api/posts/
+Authorization: Bearer {{authToken}}
+Content-Type: multipart/form-data; boundary=----FormBoundary7MA4YWxkTrZu0gW
+
+------FormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="desc"
+
+Single image post test
+------FormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="media"; filename="test-image.jpg"
+Content-Type: image/jpeg
+
+< ./test-image.jpg
+------FormBoundary7MA4YWxkTrZu0gW--
+
+### Test 3: Create post with text and multiple images
+# Note: You'll need to use a tool like curl or Postman for this due to REST client limitations
+# curl -X POST http://localhost:5000/api/posts/ \
+#   -H "Authorization: Bearer YOUR_TOKEN" \
+#   -F "desc=Multiple images test" \
+#   -F "media=@image1.jpg" \
+#   -F "media=@image2.jpg" \
+#   -F "media=@image3.jpg"
+
+### Test 4: Create post with video
+POST {{baseUrl}}/api/posts/
+Authorization: Bearer {{authToken}}
+Content-Type: multipart/form-data; boundary=----FormBoundary7MA4YWxkTrZu0gW
+
+------FormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="desc"
+
+Video post test
+------FormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="media"; filename="test-video.mp4"
+Content-Type: video/mp4
+
+< ./test-video.mp4
+------FormBoundary7MA4YWxkTrZu0gW--
+
+### Test 5: Get all posts
+GET {{baseUrl}}/api/posts/
+Authorization: Bearer {{authToken}}
+
+### Test 6: Get single post
+GET {{baseUrl}}/api/posts/{postId}
+Authorization: Bearer {{authToken}}
+
+### Test 7: Test error - post with no text and no media
+POST {{baseUrl}}/api/posts/
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "desc": ""
+}
+
+### Instructions for testing multiple files:
+# Use curl or Postman for testing multiple file uploads:
+#
+# Single file:
+# curl -X POST http://localhost:5000/api/posts/ \
+#   -H "Authorization: Bearer YOUR_TOKEN" \
+#   -F "desc=Single file test" \
+#   -F "media=@image.jpg"
+#
+# Multiple files:
+# curl -X POST http://localhost:5000/api/posts/ \
+#   -H "Authorization: Bearer YOUR_TOKEN" \
+#   -F "desc=Multiple files test" \
+#   -F "media=@image1.jpg" \
+#   -F "media=@image2.jpg" \
+#   -F "media=@video.mp4"
+#
+# Expected response:
+# {
+#   "_id": "...",
+#   "userId": "...",
+#   "name": "...",
+#   "desc": "...",
+#   "media": "/uploads/filename1",
+#   "mediaArray": [
+#     { "url": "/uploads/filename1", "type": "image", "size": 12345 },
+#     { "url": "/uploads/filename2", "type": "image", "size": 54321 },
+#     { "url": "/uploads/filename3", "type": "video", "size": 999999 }
+#   ],
+#   "mediaCount": 3,
+#   "mediaType": "image",
+#   "createdAt": "...",
+#   "updatedAt": "..."
+# }

@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HeronProto Entity Relationship Diagram</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-top: 0;
+        }
+        .info {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+        .controls {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        button {
+            background-color: #0078d4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 0 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #106ebe;
+        }
+        .legend {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            border-left: 4px solid #0078d4;
+        }
+        .legend h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .legend-item {
+            margin: 10px 0;
+            font-size: 13px;
+            color: #555;
+        }
+        .legend-code {
+            background-color: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>HeronProto Database Architecture</h1>
+        <p class="info">Entity Relationship Diagram (ERD) - Generated March 22, 2026</p>
+        
+        <div class="mermaid">
+erDiagram
+    USER ||--o{ POST : creates
+    USER ||--o{ COMMENT : writes
+    USER ||--o{ NOTIFICATION : sends
+    USER ||--o{ NOTIFICATION : receives
+    USER ||--o{ ACTIVITY : performs
+    USER ||--o{ EVENT_REGISTRATION : registers
+    USER ||--o{ MESSAGE : sends
+    USER ||--o{ CONVERSATION : participates
+    USER ||--o{ INTEREST : has
+    USER ||--o{ EVENT : creates
+    USER ||--o{ VIEWER : gets_viewed_by
+    USER }o--|| USER : follows
+    POST ||--o{ COMMENT : has
+    POST ||--o{ USER : liked_by
+    POST }o--|| POST : shares
+    COMMENT ||--o{ COMMENT : replies_to
+    COMMENT ||--o{ USER : liked_by
+    EVENT ||--o{ EVENT_REGISTRATION : has
+    EVENT ||--o{ USER : interested
+    CONVERSATION ||--o{ MESSAGE : contains
+    CONVERSATION ||--o{ USER : has_participant
+    MESSAGE }o--|| MESSAGE : replies_to
+    MESSAGE }o--|| MESSAGE : forwards_from
+    MESSAGE ||--o{ USER : read_by
+    INTEREST ||--o{ USER : created_by
+    ACTIVITY ||--o{ USER : references
+    POST_SHARE ||--|| POST : shares
+    POST_SHARE ||--|| USER : shared_by
+
+    USER {
+        ObjectId _id PK
+        string username UK
+        string studentId UK
+        string email UK
+        string password
+        string name
+        string bio
+        string gender
+        string[] interests
+        string profilePic
+        string coverPic
+        ObjectId[] followers FK
+        ObjectId[] following FK
+        boolean isAdmin
+        string adminRole
+        object customization
+        timestamp createdAt
+        timestamp updatedAt
+    }
+
+    POST {
+        ObjectId _id PK
+        ObjectId userId FK
+        string name
+        string desc
+        string media
+        object[] mediaArray
+        number mediaCount
+        string mediaType
+        object videoMetadata
+        ObjectId sharedPost FK
+        ObjectId[] likes FK
+        ObjectId[] comments FK
+        string[] tags
+        string organization
+        string contentType
+        string visibility
+        number shares
+        object engagementMetrics
+        timestamp createdAt
+        timestamp updatedAt
+    }
+
+    COMMENT {
+        ObjectId _id PK
+        ObjectId postId FK
+        string userId FK
+        string name
+        string profilePicture
+        string text
+        boolean edited
+        timestamp editedAt
+        string[] likes FK
+        number likeCount
+        boolean isDeleted
+        ObjectId replyTo FK
+        number depth
+        timestamp createdAt
+        timestamp updatedAt
+    }
+
+    EVENT {
+        ObjectId _id PK
+        string title
+        string description
+        date eventDate
+        string image
+        string organization
+        string location
+        string category
+        string status
+        string eventType
+        object requirements
+        object ticketing
+        ObjectId createdBy FK
+        object[] interested
+        object[] registrations
+        object[] participants
+        object[] performances
+        timestamp createdAt
+        timestamp updatedAt
+    }
+
+    EVENT_REGISTRATION {
+        ObjectId _id PK
+        ObjectId eventId FK
+        ObjectId userId FK
+        string name
+        string studentId
+        string email
+        string phone
+        string yearLevel
+        string course
+        string status
+        string auditionTime
+        timestamp registrationDate
+        timestamp updatedAt
+    }
+
+    NOTIFICATION {
+        ObjectId _id PK
+        ObjectId userId FK
+        ObjectId senderId FK
+        string type
+        string message
+        string contentId
+        boolean read
+        timestamp createdAt
+    }
+
+    MESSAGE {
+        ObjectId _id PK
+        ObjectId conversationId FK
+        ObjectId sender FK
+        string text
+        object[] attachments
+        object[] reactions
+        ObjectId replyTo FK
+        ObjectId forwardedFrom FK
+        ObjectId[] readBy FK
+        boolean read
+        boolean edited
+        boolean deleted
+        timestamp createdAt
+    }
+
+    CONVERSATION {
+        ObjectId _id PK
+        ObjectId[] participants FK
+        ObjectId[] messages FK
+        timestamp createdAt
+        timestamp updatedAt
+    }
+
+    INTEREST {
+        ObjectId _id PK
+        string slug UK
+        string name
+        string description
+        string[] relatedTags
+        ObjectId createdBy FK
+        boolean approved
+        boolean autoApproved
+        timestamp createdAt
+        timestamp updatedAt
+    }
+
+    ACTIVITY {
+        ObjectId _id PK
+        ObjectId user FK
+        string description
+        string type
+        timestamp timestamp
+    }
+
+    VIEWER {
+        ObjectId _id PK
+        ObjectId viewerId FK
+        timestamp viewedAt
+    }
+
+    POST_SHARE {
+        ObjectId _id PK
+        ObjectId postId FK
+        ObjectId userId FK
+        timestamp sharedAt
+    }
+        </div>
+
+        <div class="legend">
+            <h3>Legend & Key Information</h3>
+            <div class="legend-item">
+                <strong>PK</strong> = Primary Key (Unique identifier)
+            </div>
+            <div class="legend-item">
+                <strong>FK</strong> = Foreign Key (Reference to another table)
+            </div>
+            <div class="legend-item">
+                <strong>UK</strong> = Unique Key (Must be unique)
+            </div>
+            <div class="legend-item">
+                <strong>||--o{</strong> = One-to-Many relationship (one record relates to zero or more)
+            </div>
+            <div class="legend-item">
+                <strong>}o--||</strong> = Many-to-One relationship
+            </div>
+            
+            <h3 style="margin-top: 20px;">Core Entities</h3>
+            <div class="legend-item">
+                <strong>USER</strong> - Central entity with authentication, profile, interests, and social connections
+            </div>
+            <div class="legend-item">
+                <strong>POST</strong> - User-generated content with media, engagement metrics, and tagging
+            </div>
+            <div class="legend-item">
+                <strong>COMMENT</strong> - Comments/replies on posts with nested reply structure
+            </div>
+            <div class="legend-item">
+                <strong>EVENT</strong> - Organization events with registrations and ticketing
+            </div>
+            <div class="legend-item">
+                <strong>EVENT_REGISTRATION</strong> - Registration records for events
+            </div>
+            <div class="legend-item">
+                <strong>CONVERSATION & MESSAGE</strong> - Direct messaging system with attachments and reactions
+            </div>
+            <div class="legend-item">
+                <strong>NOTIFICATION</strong> - User activity notifications
+            </div>
+            <div class="legend-item">
+                <strong>INTEREST</strong> - Interest/tag catalog
+            </div>
+        </div>
+
+        <div class="controls">
+            <p>💡 <strong>Export Options:</strong></p>
+            <button onclick="downloadPNG()">📥 Download as PNG</button>
+            <button onclick="downloadSVG()">📥 Download as SVG</button>
+            <button onclick="printPage()">🖨️ Print / Save as PDF</button>
+        </div>
+    </div>
+
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+
+        function downloadPNG() {
+            // Using mermaid's render API with puppeteer would require server-side
+            // For now, direct users to use browser screenshot
+            alert('To save as PNG:\n1. Right-click on the diagram\n2. Select "Save image as..."\n\nOr use Print → Save as PDF for better quality.');
+        }
+
+        function downloadSVG() {
+            alert('To save as SVG:\n1. Right-click on the diagram\n2. Select "Save image as..."\n\nThe SVG can then be opened in any editor or converted to other formats.');
+        }
+
+        function printPage() {
+            window.print();
+        }
+    </script>
+</body>
+</html>

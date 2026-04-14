@@ -8,6 +8,7 @@ import Share from "../../components/share/Share";
 import EventCard from "../../components/evenCard/EventCard";
 import { useAuth } from "../../context/authContext";
 import { useInView } from 'react-intersection-observer';
+import useEventCounts from "../../hooks/useEventCounts";
 import "./home.scss";
 
 const INTEREST_MAPPINGS = {
@@ -189,12 +190,11 @@ const Home = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [requiresInterests, setRequiresInterests] = useState(false);
-  const [sortBy, setSortBy] = useState('hybrid');
-  const [timeRange, setTimeRange] = useState('all');
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [newPostsCount, setNewPostsCount] = useState(0);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [activeTab, setActiveTab] = useState('my-feed'); // NEW: tab state
   const navigate = useNavigate();
   const fetchRequestRef = useRef({});
   const renderCount = useRef(0);
@@ -213,8 +213,11 @@ const Home = () => {
   const fetchCombinedFeed = useCallback(async () => {
     if (!currentUser?._id) return;
 
-    const requestKey = `${currentUser._id}-${page}-${sortBy}-${timeRange}`;
+    console.log(`[Home] fetchCombinedFeed: activeTab=${activeTab}, page=${page}`);
+
+    const requestKey = `${currentUser._id}-${page}-${activeTab}`;
     if (fetchRequestRef.current[requestKey]) {
+      console.log(`[Home] Request already in flight for: ${requestKey}`);
       return fetchRequestRef.current[requestKey];
     }
 
@@ -224,163 +227,202 @@ const Home = () => {
 
       const promise = new Promise(async (resolve, reject) => {
         if (!process.env.REACT_APP_API_URL) {
+          console.error('[Home] API URL not configured');
           reject(new Error('API URL not configured'));
           return;
         }
 
-        const response = await fetch(
-          `${process.env.REACT_APP_API_URL}/api/posts/feed?${new URLSearchParams({
-            userId: currentUser._id,
-            sortBy,
-            timeRange,
-            page: page.toString()
-          })}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`,
-              'Accept': 'application/json',
-              'Content-Type': 'application/json'
-            },
-            credentials: 'include'
-          }
-        );
+        // Build query params
+        const params = new URLSearchParams({
+          page: page.toString(),
+          feedType: activeTab
+        });
+        console.log(`[Home] Built params: ${params.toString()}`);
+
+        const url = `${process.env.REACT_APP_API_URL}/api/posts/feed?${params}`;
+        console.log(`[Home] Fetching: ${url}`);
+
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+
+        console.log(`[Home] Response status: ${response.status}`);
 
         if (!response.ok) {
           const errorData = await response.text();
+          console.error(`[Home] Server error: ${response.status} - ${errorData.substring(0, 200)}`);
           reject(new Error(`Server error: ${response.status} - ${errorData}`));
           return;
         }
 
         const postsData = await response.json();
-        // Indicate to UI when backend thinks this is a cold-start user
-        setRequiresInterests(Boolean(postsData.requiresInterests));
-        if (postsData.requiresInterests) {
-          // keep content shown, but optionally log/debug
-          console.debug('Cold-start feed served — prompting user to set interests while showing fallback content.');
+        console.log(`[Home] Parsed response: ${postsData.items?.length} items, totalCount=${postsData.pagination?.totalCount}`);
+        
+        // Indicate to UI when backend thinks this is a cold-start user (my-feed only)
+        if (activeTab === 'my-feed') {
+          setRequiresInterests(Boolean(postsData.requiresInterests));
+          if (postsData.requiresInterests) {
+            console.debug('Cold-start feed served — prompting user to set interests while showing fallback content.');
+          }
         }
 
         if (!postsData.items || !Array.isArray(postsData.items)) {
+          console.error('[Home] Invalid response format:', { hasItems: !!postsData.items, isArray: Array.isArray(postsData.items) });
           reject(new Error('Invalid response format from server'));
           return;
         }
 
-        const upcomingEvents = getUpcomingEvents();
-        const relevantEvents = upcomingEvents.filter(event => {
-          const userInterests = Array.isArray(currentUser.interests) ? currentUser.interests : [];
-          const userOrgs = currentUser.organizations || [];
-          const eventTags = (event.tags || []).map(tag => tag.toLowerCase());
+        console.log(`[Home] Valid response with ${postsData.items.length} items for ${activeTab}`);
 
-          if (userInterests.length === 0) {
-            return eventTags.some(tag => DEFAULT_EVENT_TAGS.includes(tag.toLowerCase()));
-          }
+        // For non-my-feed tabs, items are pure posts, so just format them
+        let combinedItems = postsData.items;
+        
+        if (activeTab === 'my-feed') {
+          // My Feed can include events, so may need additional processing
+          const upcomingEvents = getUpcomingEvents();
+          const relevantEvents = upcomingEvents.filter(event => {
+            const userInterests = Array.isArray(currentUser.interests) ? currentUser.interests : [];
+            const userOrgs = currentUser.organizations || [];
+            const eventTags = (event.tags || []).map(tag => tag.toLowerCase());
 
-          const hasMatchingInterest = eventTags.some(tag =>
-            userInterests.some(interest => {
+            if (userInterests.length === 0) {
+              return eventTags.some(tag => DEFAULT_EVENT_TAGS.includes(tag.toLowerCase()));
+            }
+
+            const hasMatchingInterest = eventTags.some(tag =>
+              userInterests.some(interest => {
+                const mappings = INTEREST_MAPPINGS[interest] || [];
+                return mappings.some(mapping => tag.includes(mapping.toLowerCase()));
+              })
+            );
+
+            const isFromUserOrg = Boolean(event.organization && userOrgs.includes(event.organization));
+            const contentText = `${event.title} ${event.description || ''}`.toLowerCase();
+            const hasMatchingContent = userInterests.some(interest => {
               const mappings = INTEREST_MAPPINGS[interest] || [];
-              return mappings.some(mapping => tag.includes(mapping.toLowerCase()));
-            })
-          );
+              return mappings.some(mapping => contentText.includes(mapping.toLowerCase()));
+            });
 
-          const isFromUserOrg = Boolean(event.organization && userOrgs.includes(event.organization));
-          const contentText = `${event.title} ${event.description || ''}`.toLowerCase();
-          const hasMatchingContent = userInterests.some(interest => {
-            const mappings = INTEREST_MAPPINGS[interest] || [];
-            return mappings.some(mapping => contentText.includes(mapping.toLowerCase()));
+            return hasMatchingInterest || hasMatchingContent || isFromUserOrg;
           });
 
-          return hasMatchingInterest || hasMatchingContent || isFromUserOrg;
-        });
-
-        const processedEvents = relevantEvents
-          .filter(event => {
-            const eventDate = new Date(event.date);
-            const now = new Date();
-            now.setHours(0, 0, 0, 0);
-            eventDate.setHours(0, 0, 0, 0);
-            return !isNaN(eventDate.getTime()) && (eventDate >= now || event.status === 'ongoing');
-          })
-          .map(event => ({
-            ...event,
-            type: 'event',
-            isUpcoming: true
-          }));
+          const processedEvents = relevantEvents
+            .filter(event => {
+              const eventDate = new Date(event.date);
+              const now = new Date();
+              now.setHours(0, 0, 0, 0);
+              eventDate.setHours(0, 0, 0, 0);
+              return !isNaN(eventDate.getTime()) && (eventDate >= now || event.status === 'ongoing');
+            })
+            .map(event => ({
+              ...event,
+              type: 'event',
+              isUpcoming: true
+            }));
           
           const processedPosts = postsData.items
-          .filter(post => Boolean(post))
-          .map(post => {
-            // ensure a user object exists for legacy posts
-            const safeUser = post.user || {};
-            if (!safeUser._id && post.userId) safeUser._id = post.userId;
-            if (!safeUser.name || typeof safeUser.name !== 'string' || safeUser.name.trim() === '') {
-              safeUser.name = 'User';
-            }
-            return { ...post, user: safeUser };
-          });
+            .filter(post => Boolean(post))
+            .map(post => {
+              const safeUser = post.user || {};
+              if (!safeUser._id && post.userId) safeUser._id = post.userId;
+              if (!safeUser.name || typeof safeUser.name !== 'string' || safeUser.name.trim() === '') {
+                safeUser.name = 'User';
+              }
+              return { ...post, user: safeUser };
+            });
 
-        // If backend already included events in postsData.items, respect backend distribution.
-        const backendHasEvents = Array.isArray(postsData.items) && postsData.items.some(i => i && i.type === 'event');
-        
-        let combinedItems;
-        if (backendHasEvents) {
-          // Ensure each item has a type (backend should supply this) and normalize minimal shapes
-          const normalizedBackendItems = postsData.items.map(it => ({
-            ...it,
-            type: it.type || (it.date || it.status ? 'event' : 'post')
-          }));
+          const backendHasEvents = Array.isArray(postsData.items) && postsData.items.some(i => i && i.type === 'event');
+          
+          if (backendHasEvents) {
+            const normalizedBackendItems = postsData.items.map(it => ({
+              ...it,
+              type: it.type || (it.date || it.status ? 'event' : 'post')
+            }));
 
-          // Avoid duplicating events: only append client-side upcoming events that aren't already present
-          const existingEventIds = new Set(normalizedBackendItems.filter(i => i.type === 'event').map(e => String(e._id)));
-          const extraEvents = processedEvents.filter(e => !existingEventIds.has(String(e._id)));
+            const existingEventIds = new Set(normalizedBackendItems.filter(i => i.type === 'event').map(e => String(e._id)));
+            const extraEvents = processedEvents.filter(e => !existingEventIds.has(String(e._id)));
 
-          combinedItems = [...normalizedBackendItems, ...extraEvents];
+            combinedItems = [...normalizedBackendItems, ...extraEvents];
+          } else {
+            combinedItems = distributeContent(
+              filterContent(processedEvents, {
+                interests: currentUser.interests || [],
+                organizations: currentUser.organizations || [],
+                contentPreferences: currentUser.contentPreferences || {}
+              }),
+              filterContent(processedPosts, {
+                interests: currentUser.interests || [],
+                organizations: currentUser.organizations || [],
+                contentPreferences: currentUser.contentPreferences || {}
+              })
+            );
+          }
         } else {
-          combinedItems = distributeContent(
-            filterContent(processedEvents, {
-              interests: currentUser.interests || [],
-              organizations: currentUser.organizations || [],
-              contentPreferences: currentUser.contentPreferences || {}
-            }),
-            filterContent(processedPosts, {
-              interests: currentUser.interests || [],
-              organizations: currentUser.organizations || [],
-              contentPreferences: currentUser.contentPreferences || {}
-            })
-          );
+          // Friends/Following tabs: just format posts
+          console.log(`[Home] Formatting ${postsData.items.length} posts for ${activeTab} tab`);
+          combinedItems = postsData.items
+            .filter(post => Boolean(post))
+            .map(post => {
+              const safeUser = post.user || {};
+              if (!safeUser._id && post.userId) safeUser._id = post.userId;
+              if (!safeUser.name || typeof safeUser.name !== 'string' || safeUser.name.trim() === '') {
+                safeUser.name = 'User';
+              }
+              return { ...post, user: safeUser };
+            });
+          console.log(`[Home] Formatted ${combinedItems.length} items`);
         }
 
-        resolve({ combinedItems, hasMore: postsData.hasMore });
+        console.log(`[Home] Resolving promise with ${combinedItems.length} items`);
+        resolve({ 
+          combinedItems, 
+          hasMore: postsData.pagination?.hasMore || postsData.hasMore 
+        });
       });
 
       fetchRequestRef.current[requestKey] = promise;
       const result = await promise;
       delete fetchRequestRef.current[requestKey];
 
+      console.log(`[Home] Promise resolved with ${result.combinedItems.length} items`);
+
       // On initial load (page 1), replace entire feed
       if (page === 1) {
+        console.log('[Home] Initial load - setting feed');
         setFeedItems(result.combinedItems);
         setIsInitialLoad(false);
       } else {
-        // On pagination, only append to bottom (never prepend, never reorder)
+        // On pagination, only append to bottom
+        console.log('[Home] Pagination - appending to feed');
         setFeedItems(prev => [...prev, ...result.combinedItems]);
       }
       
       setHasMore(result.hasMore);
+      console.log('[Home] Feed state updated');
     } catch (err) {
+      console.error('[Home] Fetch error:', err.message, err);
       setError(err.message);
       if (page === 1) setFeedItems([]);
     } finally {
+      console.log('[Home] Clearing loading');
       setLoading(false);
     }
-  }, [currentUser?._id, page, getUpcomingEvents]);
+  }, [currentUser?._id, page, getUpcomingEvents, activeTab]);
   
   // Only fetch on explicit triggers: page change or filter reset
   useEffect(() => {
     if (!currentUser?._id) return;
     if (page === 1 && isInitialLoad) {
-      // Initial load on mount only
+      // Initial load on mount or tab change
+      console.log('[Home] useEffect triggered - calling fetchCombinedFeed for tab:', activeTab);
       fetchCombinedFeed();
     }
-  }, [currentUser?._id]);
+  }, [currentUser?._id, activeTab, page, isInitialLoad, fetchCombinedFeed]);
 
   // Fetch when page changes (infinite scroll)
   useEffect(() => {
@@ -388,6 +430,17 @@ const Home = () => {
     // Page changed due to scroll, fetch more
     fetchCombinedFeed();
   }, [page, currentUser?._id, isInitialLoad, fetchCombinedFeed]);
+
+  // NEW: Handle tab changes
+  const handleTabChange = useCallback((newTab) => {
+    setActiveTab(newTab);
+    setPage(1);
+    setFeedItems([]);
+    setHasMore(true);
+    setError(null);
+    setIsInitialLoad(true);
+    setNewPostsCount(0);
+  }, []);
 
   const handlePostUpdate = useCallback(updatedItem => {
     setFeedItems(prev => prev.map(item => (item._id === updatedItem._id ? updatedItem : item)));
@@ -430,67 +483,21 @@ const Home = () => {
     }
   }, [inView, loading, hasMore, loadMore]);
 
-  const handleSortChange = useCallback(e => {
-    setSortBy(e.target.value);
-    setPage(1);
-    setIsInitialLoad(true);
-    setNewPostsCount(0);
-  }, []);
+  // Calculate event IDs for participant tracking
+  const eventIds = useMemo(() => {
+    return feedItems
+      .filter(item => item.type === 'event')
+      .map(event => event._id)
+      .filter(Boolean);
+  }, [feedItems]);
 
-  const handleTimeRangeChange = useCallback(e => {
-    setTimeRange(e.target.value);
-    setPage(1);
-    setIsInitialLoad(true);
-    setNewPostsCount(0);
-  }, []);
+  // Fetch participant counts for all events in feed
+  const counts = useEventCounts(eventIds);
 
-  // --- UPDATED: Always render Posts for all posts (including shared) ---
+  // --- Render Posts for all posts (including shared) ---
   const memoizedFeedItems = useMemo(() => {
-    // Apply client-side sorting/filtering to feedItems
-    let itemsToRender = [...feedItems];
-    
-    // Apply time range filter
-    const now = new Date();
-    const timeRangeMs = {
-      'all': Infinity,
-      'today': 24 * 60 * 60 * 1000,
-      'week': 7 * 24 * 60 * 60 * 1000,
-      'month': 30 * 24 * 60 * 60 * 1000
-    }[timeRange] || Infinity;
-
-    itemsToRender = itemsToRender.filter(item => {
-      const itemDate = new Date(item.createdAt || item.date);
-      const age = now - itemDate;
-      return age <= timeRangeMs;
-    });
-
-    // Apply sorting
-    switch (sortBy) {
-      case 'recent':
-        itemsToRender.sort((a, b) => 
-          new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date)
-        );
-        break;
-      
-      case 'relevance':
-        itemsToRender.sort((a, b) => (b.score || 0) - (a.score || 0));
-        break;
-      
-      case 'hybrid':
-      default:
-        // Already sorted by backend, but ensure it's stable
-        itemsToRender.sort((a, b) => {
-          // Prioritize by direct match count
-          if ((a.directMatchCount || 0) !== (b.directMatchCount || 0)) {
-            return (b.directMatchCount || 0) - (a.directMatchCount || 0);
-          }
-          // Then by score
-          return (b.score || 0) - (a.score || 0);
-        });
-        break;
-    }
-
-    return itemsToRender.map(item => (
+    // Backend handles sorting/filtering now, just render items as-is
+    return feedItems.map(item => (
       <div key={`${item.type}-${item._id}`} className="feed-item">
         {item.type === 'event' ? (
           <EventCard
@@ -501,6 +508,7 @@ const Home = () => {
             matchingInterests={item.matchingInterests}
             contentPreferences={currentUser?.contentPreferences}
             onJoin={() => handleEventInteraction(item, 'join')}
+            participantData={counts[item._id] ?? { count: 0, maxParticipants: item.maxParticipants ?? null }}
           />
         ) : (
           // Wrap post in a stable container with fixed shape to prevent re-renders
@@ -535,7 +543,7 @@ const Home = () => {
         )}
       </div>
     ));
-  }, [feedItems, isAdmin, currentUser?.interests, sortBy, timeRange, handleEventInteraction, handlePostUpdate, handleAddSharedPost, handleDeletePost]);
+  }, [feedItems, counts, isAdmin, currentUser?.interests, handleEventInteraction, handlePostUpdate, handleAddSharedPost, handleDeletePost]);
 
   return (
     <div className="home">
@@ -560,29 +568,39 @@ const Home = () => {
             </div>
           )}
 
-          <div className="feed-filters" role="region" aria-label="Feed filters">
-            <select 
-              value={sortBy} 
-              onChange={handleSortChange} 
-              className="filter-select"
-              aria-label="Sort feed by"
-            >
-              <option value="hybrid">Best Match</option>
-              <option value="recent">Most Recent</option>
-              <option value="relevance">Most Relevant</option>
-            </select>
-
-            <select 
-              value={timeRange} 
-              onChange={handleTimeRangeChange} 
-              className="filter-select"
-              aria-label="Filter by time range"
-            >
-              <option value="all">All Time</option>
-              <option value="today">Today</option>
-              <option value="week">This Week</option>
-              <option value="month">This Month</option>
-            </select>
+          {/* TAB NAVIGATION */}
+          <div className="feed-tabs-container">
+            <div className="feed-tabs" role="tablist">
+              <button 
+                role="tab"
+                className={`tab-button ${activeTab === 'my-feed' ? 'active' : ''}`}
+                onClick={() => handleTabChange('my-feed')}
+                aria-selected={activeTab === 'my-feed'}
+                aria-controls="my-feed-panel"
+              >
+                My Feed
+              </button>
+              
+              <button 
+                role="tab"
+                className={`tab-button ${activeTab === 'friends' ? 'active' : ''}`}
+                onClick={() => handleTabChange('friends')}
+                aria-selected={activeTab === 'friends'}
+                aria-controls="friends-panel"
+              >
+                Friends
+              </button>
+              
+              <button 
+                role="tab"
+                className={`tab-button ${activeTab === 'following' ? 'active' : ''}`}
+                onClick={() => handleTabChange('following')}
+                aria-selected={activeTab === 'following'}
+                aria-controls="following-panel"
+              >
+                Following
+              </button>
+            </div>
           </div>
 
           {/* New posts notification banner - appears when feed updates available */}
@@ -627,21 +645,38 @@ const Home = () => {
                 aria-label="No content found"
               >
                 <p>
-                  {currentUser?.interests?.length === 0
-                    ? 'Update your interests to see more relevant events and posts!'
-                    : 'No matching content found. Try following more users or different interests!'}
+                  {activeTab === 'my-feed' 
+                    ? (currentUser?.interests?.length === 0
+                        ? 'Update your interests to see more relevant events and posts!'
+                        : 'No matching content found. Try following more users or different interests!')
+                    : (activeTab === 'friends'
+                        ? 'You haven\'t connected with anyone yet. Follow more artists to see their posts!'
+                        : 'You are not following anyone yet. Follow more artists to see their posts!')}
                 </p>
-                <button 
-                  onClick={() => navigate('/settings')} 
-                  className="update-interests-btn"
-                  aria-label="Update your interests"
-                >
-                  Update Interests
-                </button>
+                {activeTab === 'my-feed' && (
+                  <button 
+                    onClick={() => navigate('/settings')} 
+                    className="update-interests-btn"
+                    aria-label="Update your interests"
+                  >
+                    Update Interests
+                  </button>
+                )}
               </div>
             ) : (
               <>
                 {memoizedFeedItems}
+                
+                {/* PAGINATION EXHAUSTED MESSAGE */}
+                {!hasMore && feedItems.length > 0 && (
+                  <div className="pagination-exhausted" role="status">
+                    <p>
+                      {activeTab === 'my-feed' 
+                        ? 'You are all caught up! Follow more artists for new updates.'
+                        : 'You are all caught up! Follow more artists for new updates.'}
+                    </p>
+                  </div>
+                )}
                 
                 {/* Infinite scroll trigger */}
                 <div 

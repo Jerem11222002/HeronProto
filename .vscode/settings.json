@@ -1,0 +1,32 @@
+{
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/build/**": true,
+    "**/.git/**": true,
+    "**/.qodo/**": true,
+    "**/coverage/**": true,
+    "**/.next/**": true
+  },
+  "files.exclude": {
+    "node_modules": true,
+    ".git": true,
+    ".qodo": true,
+    "coverage": true,
+    "build": true
+  },
+  "search.exclude": {
+    "node_modules": true,
+    ".git": true,
+    "build": true,
+    "coverage": true,
+    "**/*.log": true
+  },
+  "typescript.tsserver.experimental.enableProjectDiagnostics": false,
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
+}

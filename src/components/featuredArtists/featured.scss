@@ -43,6 +43,7 @@ $video-indicator-color: white;
 
     .time-filter {
       display: flex;
+      justify-content: space-evenly;
       gap: 8px;
       padding: 8px;
       background-color: themed("bgSoft");

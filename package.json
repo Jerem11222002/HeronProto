@@ -68,6 +68,14 @@
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "build": "react-scripts build",
     "test": "react-scripts test",
+    "test:recommendations": "jest --testPathPattern=recommendations.test.js --verbose",
+    "test:recommendations:watch": "jest --testPathPattern=recommendations.test.js --watch",
+    "test:recommendations:coverage": "jest --testPathPattern=recommendations.test.js --coverage",
+    "audit:database": "node backend/scripts/auditDatabase.js",
+    "fix:tags:posts": "node backend/scripts/fixPostTags.js",
+    "fix:tags:events": "node backend/scripts/fixEventData.js",
+    "fix:all": "npm run audit:database && npm run fix:tags:posts && npm run fix:tags:events",
+    "evaluate:recommendations": "node backend/scripts/dynamicRecommendationEvaluator.js",
     "eject": "react-scripts eject",
     "migrate": "node backend/migrations/runMigration.js",
     "migrate:interests": "node backend/migrations/fixInterestsStatus.js",
@@ -106,6 +114,7 @@
     "@babel/plugin-proposal-decorators": "^7.25.9",
     "concurrently": "^9.1.2",
     "cross-env": "^7.0.3",
+    "jest": "^27.5.1",
     "nodemon": "^3.1.7",
     "source-map-explorer": "^2.5.3"
   }

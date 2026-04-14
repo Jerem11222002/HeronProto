@@ -29,6 +29,7 @@ const uploadRoutes = require('./backend/routes/upload');
 const adminAnalyticsRouter = require('./backend/routes/adminAnalytics');
 const adminMonitoringRouter = require('./backend/routes/adminMonitoring');
 const adminAccountsRouter = require('./backend/routes/adminAccounts');
+const recommendationEvaluationRouter = require('./backend/routes/recommendationEvaluation');
 
 const path = require("path");
 const fs = require("fs");
@@ -189,6 +190,7 @@ app.use((req, res, next) => {
     '/api/auth/verify-reset-token',
     '/api/admin/auth/login',
     '/api/interests',
+    '/api/recommendations/evaluate',
     '/socket.io'
   ];
 
@@ -262,6 +264,8 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/admin/analytics', adminAnalyticsRouter);
 app.use('/api/admin/monitoring', adminMonitoringRouter);
 app.use('/api/admin/accounts', adminAccountsRouter);
+app.use('/api/recommendations', recommendationEvaluationRouter);
+app.use('/api/metrics', require('./backend/routes/metricsRoutes'));
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 // health check for quick dev diagnostics

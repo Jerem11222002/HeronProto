@@ -1,0 +1,299 @@
+{
+  "user": {
+    "id": "674b9dc89ed5aeb9650f3df3",
+    "username": "cheesecake0101",
+    "email": "eballar041@gmail.com",
+    "interests": [
+      "theatre",
+      "drama",
+      "dance"
+    ]
+  },
+  "recommendations_count": 10,
+  "iso_25010_metrics": {
+    "functional_completeness": 100,
+    "functional_correctness": 90,
+    "functional_appropriateness": 0.85,
+    "total_recommended": 10
+  },
+  "hybrid_filtering_metrics": {
+    "cosine_similarity": 0.4579,
+    "rmse": 0.6583,
+    "mae": 0.6333,
+    "mrr": 0.4567
+  },
+  "all_recommendations": [
+    {
+      "title": "folkdance#ph",
+      "type": "post",
+      "relevance_score": 0.75,
+      "reasons": [
+        {
+          "label": "Interest Tags",
+          "value": "dance, folkdance",
+          "weight": "High"
+        },
+        {
+          "label": "Popular Content",
+          "value": "3159 views",
+          "weight": "Medium"
+        }
+      ]
+    },
+    {
+      "title": "2016 me Tinikling project demo for Recital.",
+      "type": "post",
+      "relevance_score": 0.68,
+      "reasons": [
+        {
+          "label": "Interest Tags",
+          "value": "folkdance",
+          "weight": "High"
+        },
+        {
+          "label": "Popular Content",
+          "value": "190 views, 20 shares",
+          "weight": "Medium"
+        }
+      ]
+    },
+    {
+      "title": "HSU event 2019 Arts and Design Recital👯",
+      "type": "post",
+      "relevance_score": 0.62,
+      "reasons": [
+        {
+          "label": "Interest Tags",
+          "value": "dance, contemporarydance",
+          "weight": "High"
+        },
+        {
+          "label": "Popular Content",
+          "value": "37 views, 13 shares",
+          "weight": "Medium"
+        }
+      ]
+    },
+    {
+      "title": "African Dance",
+      "type": "post",
+      "relevance_score": 0.62,
+      "reasons": [
+        {
+          "label": "Interest Tags",
+          "value": "dance",
+          "weight": "High"
+        },
+        {
+          "label": "Popular Content",
+          "value": "3819 views, 7 shares",
+          "weight": "Medium"
+        }
+      ]
+    },
+    {
+      "title": "\"Walang Sugat\" performed by UMAK Siglahi",
+      "type": "post",
+      "relevance_score": 0.61,
+      "reasons": [
+        {
+          "label": "Interest Tags",
+          "value": "drama",
+          "weight": "High"
+        },
+        {
+          "label": "Popular Content",
+          "value": "11 views, 7 shares",
+          "weight": "Medium"
+        }
+      ]
+    },
+    {
+      "title": "HUE & YOU: An Interactive Art Showcase",
+      "type": "event",
+      "relevance_score": 0.6,
+      "reasons": [
+        {
+          "label": "Event Status",
+          "value": "Past Event",
+          "weight": "Low"
+        }
+      ]
+    },
+    {
+      "title": "SIGLAHI: UMAK Dance Festival 2026",
+      "type": "event",
+      "relevance_score": 0.6,
+      "reasons": [
+        {
+          "label": "Interest Tags",
+          "value": "folk-dance, dance, filipino-dance, theatre",
+          "weight": "High"
+        },
+        {
+          "label": "Popular with Your Community",
+          "value": "UMAK Siglahi specializes in cultural-dance, folk-dance",
+          "weight": "High"
+        },
+        {
+          "label": "Event Status",
+          "value": "Past Event",
+          "weight": "Low"
+        }
+      ]
+    },
+    {
+      "title": "🩰✨ Groove Revolution 2025: The Ultimate Dance Showdown",
+      "type": "event",
+      "relevance_score": 0.6,
+      "reasons": [
+        {
+          "label": "Interest Tags",
+          "value": "modern-dance, dance, contemporary-dance, street-dance",
+          "weight": "High"
+        },
+        {
+          "label": "Popular with Your Community",
+          "value": "UMAK Dance Extreme specializes in dance, modern-dance",
+          "weight": "High"
+        },
+        {
+          "label": "Event Status",
+          "value": "Past Event",
+          "weight": "Low"
+        }
+      ]
+    },
+    {
+      "title": "💃 Groove Revolution: UMak Dance Showdown 2025 🕺",
+      "type": "event",
+      "relevance_score": 0.6,
+      "reasons": [
+        {
+          "label": "Interest Tags",
+          "value": "modern-dance, dance, contemporary-dance, street-dance",
+          "weight": "High"
+        },
+        {
+          "label": "Popular with Your Community",
+          "value": "UMAK Dance Extreme specializes in dance, modern-dance",
+          "weight": "High"
+        },
+        {
+          "label": "Event Status",
+          "value": "Past Event",
+          "weight": "Low"
+        }
+      ]
+    },
+    {
+      "title": "Curtain Call: The UMAK Theatrical Showcase 2025",
+      "type": "event",
+      "relevance_score": 0.6,
+      "reasons": [
+        {
+          "label": "Interest Tags",
+          "value": "drama, theatre",
+          "weight": "High"
+        },
+        {
+          "label": "Popular with Your Community",
+          "value": "CAST specializes in theatre, drama",
+          "weight": "High"
+        },
+        {
+          "label": "Event Status",
+          "value": "Past Event",
+          "weight": "Low"
+        }
+      ]
+    }
+  ],
+  "top_recommendations": [
+    {
+      "title": "folkdance#ph",
+      "type": "post",
+      "relevance_score": 0.75,
+      "reasons": [
+        {
+          "label": "Interest Tags",
+          "value": "dance, folkdance",
+          "weight": "High"
+        },
+        {
+          "label": "Popular Content",
+          "value": "3159 views",
+          "weight": "Medium"
+        }
+      ]
+    },
+    {
+      "title": "2016 me Tinikling project demo for Recital.",
+      "type": "post",
+      "relevance_score": 0.68,
+      "reasons": [
+        {
+          "label": "Interest Tags",
+          "value": "folkdance",
+          "weight": "High"
+        },
+        {
+          "label": "Popular Content",
+          "value": "190 views, 20 shares",
+          "weight": "Medium"
+        }
+      ]
+    },
+    {
+      "title": "HSU event 2019 Arts and Design Recital👯",
+      "type": "post",
+      "relevance_score": 0.62,
+      "reasons": [
+        {
+          "label": "Interest Tags",
+          "value": "dance, contemporarydance",
+          "weight": "High"
+        },
+        {
+          "label": "Popular Content",
+          "value": "37 views, 13 shares",
+          "weight": "Medium"
+        }
+      ]
+    },
+    {
+      "title": "African Dance",
+      "type": "post",
+      "relevance_score": 0.62,
+      "reasons": [
+        {
+          "label": "Interest Tags",
+          "value": "dance",
+          "weight": "High"
+        },
+        {
+          "label": "Popular Content",
+          "value": "3819 views, 7 shares",
+          "weight": "Medium"
+        }
+      ]
+    },
+    {
+      "title": "\"Walang Sugat\" performed by UMAK Siglahi",
+      "type": "post",
+      "relevance_score": 0.61,
+      "reasons": [
+        {
+          "label": "Interest Tags",
+          "value": "drama",
+          "weight": "High"
+        },
+        {
+          "label": "Popular Content",
+          "value": "11 views, 7 shares",
+          "weight": "Medium"
+        }
+      ]
+    }
+  ]
+}

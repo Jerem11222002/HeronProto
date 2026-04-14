@@ -104,6 +104,7 @@ const normalizeMediaArray = (arr) => {
 const hasValidMedia = (post) => {
   if (!post) return false;
 
+  // Priority: mediaArray first
   if (normalizeMediaArray(post.mediaArray).length > 0) return true;
   
   // For shared posts, check if the shared post has media
@@ -112,26 +113,39 @@ const hasValidMedia = (post) => {
     const sharedMedia = post.sharedPost.media || post.sharedPost.img;
     const sharedMediaType = post.sharedPost.mediaType;
     if (typeof sharedMedia !== 'string' || sharedMedia.trim().length === 0) return false;
-    // Must have both media AND a valid mediaType
+    // Reject broken filenames like "400.jpg"
+    if (sharedMedia === '400.jpg' || sharedMedia === 'undefined') return false;
     return sharedMediaType && (sharedMediaType === 'image' || sharedMediaType === 'video');
   }
   
-  // For regular posts, check the post's media AND mediaType
-  const media = post.media || post.img;
-  const mediaType = post.mediaType;
+  // For regular posts, prioritize img and media but REJECT "400.jpg"
+  const imgField = post.img;
+  const mediaField = post.media;
   
-  if (typeof media !== 'string' || media.trim().length === 0) return false;
+  // If we have a real img path, use it
+  if (imgField && typeof imgField === 'string' && imgField !== '400.jpg' && imgField.length > 5) {
+    return imgField.startsWith('/uploads/') || imgField.startsWith('http');
+  }
   
-  // CRITICAL: Must have a valid mediaType (image or video)
-  // Posts with media but no mediaType are orphaned/broken entries
-  return mediaType && (mediaType === 'image' || mediaType === 'video');
+  // If we have a real media path, use it (but not "400.jpg")
+  if (mediaField && typeof mediaField === 'string' && mediaField !== '400.jpg' && mediaField.length > 5) {
+    const mediaType = post.mediaType;
+    return mediaType && (mediaType === 'image' || mediaType === 'video');
+  }
+  
+  return false;
 };
 
 // Shared Post Renderer
 const SharedPost = ({ sharedPost }) => {
   if (!sharedPost) return null;
   const originalUser = sharedPost.user || {};
-  const mediaUrl = getMediaUrl(sharedPost.media || sharedPost.img);
+  
+  // Priority: mediaArray > media/img
+  const hasMediaArray = Array.isArray(sharedPost.mediaArray) && sharedPost.mediaArray.length > 0;
+  const mediaToRender = hasMediaArray ? sharedPost.mediaArray : null;
+  const fallbackMedia = sharedPost.media || sharedPost.img;
+  const mediaUrl = getMediaUrl(mediaToRender ? mediaToRender[0].url : fallbackMedia);
 
   return (
     <div className="shared-post">
@@ -157,7 +171,7 @@ const SharedPost = ({ sharedPost }) => {
       </div>
       <div className="shared-content">
         <p>{sharedPost.desc}</p>
-        {(sharedPost.media || sharedPost.img) && (
+        {(mediaToRender || fallbackMedia) && (
           sharedPost.mediaType === "video" ? (
             <div className="video-container">
               <ReactPlayer
@@ -280,6 +294,25 @@ const Post = ({ post, onDeletePost, onAddSharedPost, showOnly, fullScreen, showD
   useEffect(() => {
     fetchUserData();
   }, [fetchUserData]);
+
+  // DEBUG: Check what data we're receiving
+  useEffect(() => {
+    if (post) {
+      const mediaArrayLength = Array.isArray(post.mediaArray) ? post.mediaArray.length : 0;
+      const hasValidMediaArray = mediaArrayLength > 0 && post.mediaArray[0]?.url;
+      
+      console.log(`[PostDebug] ===== POST COMPONENT DEBUG =====`);
+      console.log(`  Post ID: ${post._id?.substring(0, 8)}...`);
+      console.log(`  Desc: "${post.desc?.substring(0, 40)}..."`);
+      console.log(`  post.media field: "${post.media}"`);
+      console.log(`  post.img field: "${post.img?.substring(0, 60)}..."`);
+      console.log(`  mediaArray length: ${mediaArrayLength}`);
+      if (hasValidMediaArray) {
+        console.log(`  First mediaArray URL: ${post.mediaArray[0]?.url?.substring(0, 80)}`);
+      }
+      console.log(`[PostDebug] ======================`);
+    }
+  }, [post?._id, post?.mediaArray?.length, post?.media, post?.img]);
 
   // Socket handlers
   useEffect(() => {
@@ -544,15 +577,27 @@ const Post = ({ post, onDeletePost, onAddSharedPost, showOnly, fullScreen, showD
     if (!hasValidMedia(post)) return null;
     if (imageError) return null;
 
-    // Get media array from post (prioritize mediaArray, fall back to single media)
-    const baseMediaArray = post.mediaArray && post.mediaArray.length > 0
-      ? post.mediaArray
-      : ((post.media || post.img)
-          ? [{ url: post.media || post.img, type: post.mediaType || (post.img ? 'image' : null) }]
-          : []);
+    // PRIORITY: 1) mediaArray (new), 2) img field (uploads), 3) media field (legacy)
+    // Skip "400.jpg" and other broken filenames - only use if it's a real path
+    let baseMediaArray = [];
+    
+    if (post.mediaArray && post.mediaArray.length > 0) {
+      baseMediaArray = post.mediaArray;
+      console.log(`[RenderMedia] Using mediaArray with ${baseMediaArray.length} items`);
+    } else if (post.img && post.img !== "400.jpg" && post.img.length > 5) {
+      baseMediaArray = [{ url: post.img, type: 'image' }];
+      console.log(`[RenderMedia] Using img field: ${post.img}`);
+    } else if (post.media && post.media !== "400.jpg" && post.media.length > 5) {
+      baseMediaArray = [{ url: post.media, type: post.mediaType || 'image' }];
+      console.log(`[RenderMedia] Using media field: ${post.media}`);
+    }
+    
     const mediaArray = normalizeMediaArray(baseMediaArray);
 
-    if (mediaArray.length === 0) return null;
+    if (mediaArray.length === 0) {
+      console.log(`[RenderMedia] No valid media found for post ${post._id}`);
+      return null;
+    }
 
     // Use Instagram-style carousel for all multi-media posts
     return renderCarouselStyle(mediaArray);
@@ -981,7 +1026,7 @@ const Post = ({ post, onDeletePost, onAddSharedPost, showOnly, fullScreen, showD
                   ))}
                 </div>
               )}
-              {(post.media || post.img) && renderMedia()}
+              {((post.media || post.img) || (Array.isArray(post.mediaArray) && post.mediaArray.length > 0)) && renderMedia()}
             </>
           )}
         </div>

@@ -818,22 +818,78 @@ router.get("/feed", authenticate, async (req, res) => {
     const { 
       sortBy = 'hybrid',
       page = 1, 
-      limit = 20,
-      includeEvents = true
+      limit = 50,
+      includeEvents = true,
+      feedType = 'my-feed',  // NEW: 'my-feed' | 'friends' | 'following'
+      maxPostsPerUser = 3  // NEW: limit posts from single user to avoid bias
     } = req.query;
+
+    console.info(`[/feed] Request: feedType=${feedType}, page=${page}, limit=${limit}, user=${req.user._id}`);
 
     if (!RecommendationService?.getHybridFeed) {
       throw new Error('Recommendation service not properly initialized');
     }
 
-    // Get feed items
-    const feed = await RecommendationService.getHybridFeed(req.user._id, {
-      sortBy,
-      page: parseInt(page),
-      limit: parseInt(limit),
-      eventRatio: includeEvents ? 0.3 : 0,
-      friendPostsRatio: 0.4,
-    });
+    // Fetch user with relationship data
+    const user = await User.findById(req.user._id)
+      .select('interests implicitPreferences following followers friends organizations interestsSelected interestsSkipped contentPreferences')
+      .lean();
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Route to appropriate feed method based on feedType
+    let feed;
+    console.info(`[/feed] Calling RecommendationService for feedType=${feedType}`);
+    switch (feedType) {
+      case 'friends':
+        console.info(`[/feed] Routing to getFriendsFeed`);
+        feed = await RecommendationService.getFriendsFeed(user, {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          maxPostsPerUser: parseInt(maxPostsPerUser)
+        });
+        console.info(`[/feed] getFriendsFeed returned ${feed.items.length} items`);
+        break;
+
+      case 'following':
+        console.info(`[/feed] Routing to getFollowingFeed`);
+        feed = await RecommendationService.getFollowingFeed(user, {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          maxPostsPerUser: parseInt(maxPostsPerUser)
+        });
+        console.info(`[/feed] getFollowingFeed returned ${feed.items.length} items`);
+        break;
+
+      case 'my-feed':
+      default:
+        console.info(`[/feed] Routing to getMyFeed`);
+        feed = await RecommendationService.getMyFeed(user, {
+          sortBy,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          maxPostsPerUser: parseInt(maxPostsPerUser),
+          timeRange: req.query.timeRange || 'all',
+          eventRatio: includeEvents ? 0.3 : 0
+        });
+        console.info(`[/feed] getMyFeed returned ${feed.items.length} items`);
+        break;
+    }
+
+    // Validate feed response
+    if (!feed || !Array.isArray(feed.items)) {
+      console.error('[/feed] Invalid feed response:', {
+        feedType,
+        feedExists: !!feed,
+        itemsIsArray: Array.isArray(feed?.items),
+        itemsCount: feed?.items?.length
+      });
+      throw new Error('Invalid feed response structure');
+    }
+
+    console.info(`[/feed] Feed response validated: ${feed.items.length} items, totalCount: ${feed.pagination?.totalCount}`);
 
     if (!feed || !Array.isArray(feed.items)) {
       throw new Error('Invalid feed response structure');
@@ -845,12 +901,16 @@ router.get("/feed", authenticate, async (req, res) => {
       .map(item => item.userId)
       .filter(Boolean))];
 
+    console.info(`[/feed] Fetching user data for ${userIds.length} unique users`);
+
     // Fetch all users data in one query
     const users = await User.find({ 
       _id: { $in: userIds }
     })
     .select('name profilePic gender profilePicture')
     .lean();
+
+    console.info(`[/feed] Found ${users.length} users in database`);
 
     // Create users lookup map
     const usersMap = users.reduce((acc, user) => {
@@ -944,6 +1004,8 @@ router.get("/feed", authenticate, async (req, res) => {
       const userId = item.userId?.toString();
       const userData = usersMap[userId] || {};
 
+      console.debug(`[/feed] Processing post ${item._id} from user ${userId}, userData:`, !!userData.name);
+
       // Get profile picture with fallbacks
       const profilePic = formatMediaUrl(
         req,
@@ -1028,16 +1090,22 @@ router.get("/feed", authenticate, async (req, res) => {
     });
 
     res.json({
+      feedType: feedType,
       items: formattedFeed,
-      hasMore: feed.hasMore,
-      nextPage: feed.hasMore ? parseInt(page) + 1 : null,
-      total: feed.total,
-      debug: {
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalCount: feed.pagination?.totalCount || feed.total || formattedFeed.length,
+        hasMore: feed.pagination?.hasMore !== undefined ? feed.pagination.hasMore : feed.hasMore
+      },
+      debug: feedType === 'my-feed' ? {
         ...feed.debug,
         usersFound: users.length,
         usersFetched: Object.keys(usersMap).length
-      }
+      } : undefined
     });
+
+    console.info(`[/feed] Response sent: feedType=${feedType}, items=${formattedFeed.length}, totalCount=${feed.pagination?.totalCount}`);
 
   } catch (error) {
     console.error('❌ Feed error:', {
@@ -1581,5 +1649,62 @@ router.get("/:id", authenticate, async (req, res) => {
 });
 
 
+
+// TEMPORARY DEBUG: Test feed endpoints without authentication
+router.get("/debug/test-feed/:feedType", async (req, res) => {
+  try {
+    const { feedType } = req.params;
+    const page = req.query.page || 1;
+    
+    console.log(`[DEBUG] Testing ${feedType} feed`);
+    
+    // Get first user from database  
+    const testUser = await User.findOne()
+      .select('interests implicitPreferences following followers friends organizations interestsSelected interestsSkipped contentPreferences _id')
+      .lean();
+    
+    if (!testUser) {
+      return res.status(404).json({ error: 'No test user found' });
+    }
+    
+    console.log(`[DEBUG] Using test user: ${testUser._id}`);
+    
+    let feed;
+    switch (feedType) {
+      case 'friends':
+        console.log('[DEBUG] Calling getFriendsFeed');
+        feed = await RecommendationService.getFriendsFeed(testUser, { page: parseInt(page), limit: 5 });
+        break;
+      case 'following':
+        console.log('[DEBUG] Calling getFollowingFeed');
+        feed = await RecommendationService.getFollowingFeed(testUser, { page: parseInt(page), limit: 5 });
+        break;
+      case 'my-feed':
+        console.log('[DEBUG] Calling getMyFeed');
+        feed = await RecommendationService.getMyFeed(testUser, { page: parseInt(page), limit: 5 });
+        break;
+      default:
+        return res.status(400).json({ error: 'Unknown feedType' });
+    }
+    
+    console.log(`[DEBUG] Feed returned ${feed.items.length} items`);
+    
+    res.json({
+      status: 'success',
+      feedType,
+      itemsCount: feed.items.length,
+      pagination: feed.pagination,
+      testUserId: testUser._id,
+      firstItemId: feed.items[0]?._id,
+      debug: {
+        following: testUser.following?.length || 0,
+        followers: testUser.followers?.length || 0
+      }
+    });
+  } catch (error) {
+    console.error('[DEBUG] Error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 module.exports = router;

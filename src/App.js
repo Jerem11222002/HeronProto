@@ -29,6 +29,7 @@ import { EventsProvider } from "./context/EventsContext";
 import FullScreenPostPage from "./components/post/FullScreenPostPage"; // <-- add this import
 import EventDetailPage from "./pages/admin/Dashboard/EventDetailPage";
 import Landing from "./pages/Landing/Landing";
+import RecommendationTest from "./pages/RecommendationTest";
 
 // Admin imports - standard format
 import AdminLayout from "./components/admin/Layout/AdminLayout";
@@ -142,7 +143,8 @@ function AppContent() {
         { path: "dashboard/registration/:id", element: isAdmin ? <Navigate to="/admin/dashboard" replace /> : <RegistrationDetail /> },
         { path: "settings", element: isAdmin ? <Navigate to="/admin/settings" replace /> : <Settings /> },
         { path: "events", element: isAdmin ? <Navigate to="/admin/events" replace /> : <Events /> },
-        { path: "pre-registration/:eventId", element: isAdmin ? <Navigate to="/admin/events" replace /> : <PreRegister /> }
+        { path: "pre-registration/:eventId", element: isAdmin ? <Navigate to="/admin/events" replace /> : <PreRegister /> },
+        { path: "recommendations", element: isAdmin ? <Navigate to="/admin/dashboard" replace /> : <RecommendationTest /> }
       ] : []
     },
     // Admin Routes

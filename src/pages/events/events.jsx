@@ -74,14 +74,42 @@ const Events = () => {
   const [showSavedOnly, setShowSavedOnly] = useState(false);
   const [favorites, setFavorites] = useState(new Set(JSON.parse(localStorage.getItem('eventFavorites')) || []));
 
+  // Normalize feed items to event shape
+  const normalizeToEventShape = (item) => {
+    const extractName = v => {
+      if (!v) return null;
+      if (typeof v === 'string') return v;
+      if (Array.isArray(v)) return v.map(x => extractName(x)).filter(Boolean);
+      return v.name || v.title || v.label || v.displayName || null;
+    };
+
+    return {
+      _id: item._id || item.id,
+      title: item.title || item.name || (typeof item.description === 'string' ? item.description.slice(0, 40) : 'Untitled Event'),
+      description: item.description || item.desc || '',
+      date: item.date || item.createdAt || null,
+      image: item.image || item.media || null,
+      organization: extractName(item.organization) || item.org || '',
+      location: typeof item.location === 'string' ? item.location : (extractName(item.location) || ''),
+      category: item.category || 'workshop',
+      status: item.status || 'upcoming',
+      tags: Array.isArray(item.tags) ? item.tags.map(t => extractName(t) || String(t)) : [],
+      createdBy: item.createdBy || item.userId || null,
+      primaryInterest: extractName(item.primaryInterest),
+      secondaryInterests: Array.isArray(item.secondaryInterests) ? item.secondaryInterests.map(extractName).filter(Boolean) : [],
+      __rawFeedItem: item
+    };
+  };
+
   const fetchRecommended = async () => {
     setRecommendedLoading(true);
     setRecommendedError(null);
     try {
       // ask for debug info temporarily to inspect why events are excluded
+      // includePast: true to show completed/past events too if no upcoming ones exist
       const res = await api.get('/api/events/recommended', {
         // use non-strict mode for the events page so users get useful recommendations
-        params: { strict: 'false', limit: 20, debug: 'true' }
+        params: { strict: 'false', limit: 20, debug: 'true', includePast: 'true' }
       });
 
       const feedItems = Array.isArray(res.data?.events) ? res.data.events : (Array.isArray(res.data?.items) ? res.data.items : []);
@@ -91,39 +119,19 @@ const Events = () => {
           params: { includeEvents: true, limit: 20 }
         });
         const items = Array.isArray(fallback.data?.items) ? fallback.data.items : [];
-        setRecommendedEvents(items.filter(i => i && (i.type === 'event' || i.title)).map(/* map same as below */));
+        const normalized = items
+          .filter(i => i && (i.type === 'event' || i.title))
+          .map(normalizeToEventShape)
+          .filter(ev => ev._id && ev.title)
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setRecommendedEvents(normalized);
         return;
       }
 
       // existing normalization mapping...
       const eventsFromFeed = feedItems
         .filter(item => item && (item.type === 'event' || item.primaryInterest || item.title))
-        .map(item => {
-          const extractName = v => {
-            if (!v) return null;
-            if (typeof v === 'string') return v;
-            if (Array.isArray(v)) return v.map(x => extractName(x)).filter(Boolean);
-            return v.name || v.title || v.label || v.displayName || null;
-          };
-
-          return {
-            _id: item._id || item.id,
-            title: item.title || item.name || (typeof item.description === 'string' ? item.description.slice(0, 40) : 'Untitled Event'),
-            description: item.description || item.desc || '',
-            date: item.date || item.createdAt || null,
-            image: item.image || item.media || null,
-            organization: extractName(item.organization) || item.org || '',
-            location: typeof item.location === 'string' ? item.location : (extractName(item.location) || ''),
-            category: item.category || 'workshop',
-            status: item.status || 'upcoming',
-            tags: Array.isArray(item.tags) ? item.tags.map(t => extractName(t) || String(t)) : [],
-            createdBy: item.createdBy || item.userId || null,
-            primaryInterest: extractName(item.primaryInterest),
-            secondaryInterests: Array.isArray(item.secondaryInterests) ? item.secondaryInterests.map(extractName).filter(Boolean) : [],
-            // keep original for debugging if needed
-            __rawFeedItem: item
-          };
-        })
+        .map(normalizeToEventShape)
         .filter(ev => ev._id && ev.title)
         .sort((a, b) => {
           // Sort by date, newest first
@@ -138,8 +146,13 @@ const Events = () => {
       try {
         const fallback = await api.get('/api/posts/feed', { params: { includeEvents: true, limit: 20 } });
         const items = Array.isArray(fallback.data?.items) ? fallback.data.items : [];
-        // map items -> events shape (same mapping block)
-        setRecommendedEvents(items.filter(i => i && (i.type === 'event' || i.title)).map(/* map */));
+        // map items -> events shape using normalization function
+        const normalized = items
+          .filter(i => i && (i.type === 'event' || i.title))
+          .map(normalizeToEventShape)
+          .filter(ev => ev._id && ev.title)
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setRecommendedEvents(normalized);
         setRecommendedError(null);
       } catch (e) {
         setRecommendedError('Failed to load recommended events');

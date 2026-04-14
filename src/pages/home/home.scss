@@ -59,38 +59,81 @@
           box-shadow: 0 2px 8px themed("shadow");
         }
 
-        .feed-filters {
+        // NEW: Tab Navigation Styles (Improved)
+        .feed-tabs-container {
           background-color: themed("bg");
-          padding: 16px;
+          border: 1px solid themed("border");
           border-radius: 12px;
-          display: flex;
-          gap: 12px;
-          align-items: center;
-          box-shadow: 0 2px 8px themed("shadow");
-
-          @include mobile {
-            flex-direction: column;
-            align-items: stretch;
-          }
-
-          .filter-select {
-            padding: 8px 12px;
-            border-radius: 6px;
-            border: 1px solid themed("border");
-            background-color: themed("bgSoft");
-            color: themed("textColor");
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-
-            &:hover {
-              border-color: themed("borderHover");
+          padding: 12px 16px;
+          box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+          margin-bottom: 24px;
+          
+          
+          .feed-tabs {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+            justify-content: center;
+            
+            
+            @include mobile {
+              gap: 12px;
+              overflow-x: auto;
+              -webkit-overflow-scrolling: touch;
+              padding: 0 4px;
+              justify-content: center;
             }
+            
+            .tab-button {
+              padding: 12px 16px;
+              border: none;
+              border-bottom: 3px solid transparent;
+              background-color: transparent;
+              color: themed("textColorSoft");
+              font-size: 15px;
+              font-weight: 500;
+              cursor: pointer;
+              transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+              white-space: nowrap;
+              position: relative;
+              user-select: none;
+              
+              // Hover state: slight background + bottom border/text color
+              &:hover {
+                color: themed("textColor");
+                background-color: themed("bgSoft");
+                border-bottom-color: themed("primary");
+                border-radius: 15px;
 
-            &:focus {
-              outline: none;
-              border-color: themed("primary");
-              box-shadow: 0 0 0 2px rgba(themed("primary"), 0.2);
+              }
+              
+              // Active state: bottom border indicator + bolder text
+              &.active {
+                color: themed("textColor");
+                font-weight: 600;
+                border-bottom-color: themed("primary");
+                background-color: themed("bgSoft");
+                border-radius: 12px;
+              }
+              
+              // Focus state for keyboard navigation (accessibility)
+              &:focus-visible {
+                outline: 2px solid themed("primary");
+                outline-offset: 4px;
+                border-radius: 4px;
+              }
+              
+              // Active click animation
+              &:active {
+                border-radius: 12px;
+              }
+              
+              // Mobile optimization
+              @include mobile {
+                padding: 10px 14px;
+                font-size: 14px;
+                border-bottom-width: 2px;
+              }
             }
           }
         }
@@ -262,6 +305,23 @@
             }
           }
 
+          // NEW: Pagination Exhausted Style
+          .pagination-exhausted {
+            background-color: themed("bgSoft");
+            border: 1px solid themed("border");
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            margin: 20px 0;
+            
+            p {
+              color: themed("textColorSoft");
+              font-size: 15px;
+              margin: 0;
+              line-height: 1.5;
+            }
+          }
+
           .scroll-trigger {
             height: 20px;
             margin: 20px 0;
@@ -297,11 +357,6 @@
   .home {
     .home-container {
       .left {
-        .feed-filters {
-          margin: 0;
-          border-radius: 12px;
-        }
-
         .feed-content {
           .feed-item {
             margin: 0;
@@ -330,13 +385,6 @@
         .share-section {
           border-radius: 12px;
           margin: 0;
-        }
-
-        .feed-filters {
-          margin: 0;
-          padding: 12px;
-          border-radius: 12px;
-          gap: 8px;
         }
 
         .feed-content {
@@ -372,13 +420,6 @@
           margin: 0;
         }
 
-        .feed-filters {
-          margin: 0;
-          padding: 12px;
-          border-radius: 12px;
-          gap: 10px;
-        }
-
         .feed-content {
           gap: 16px;
 
@@ -411,10 +452,6 @@
           margin: 0;
         }
 
-        .feed-filters {
-          margin: 0;
-          border-radius: 12px;
-        }
 
         .feed-content {
           gap: 16px;
@@ -431,12 +468,4 @@
 
 // Additional mobile/portrait tweaks
 @media (max-width: 768px) or (orientation: portrait) {
-  .home .home-container .left .feed-filters {
-    flex-direction: column;
-    align-items: stretch;
-
-    .filter-select {
-      width: 100%;
-    }
-  }
 }

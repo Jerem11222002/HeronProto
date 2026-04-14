@@ -1,6 +1,7 @@
 const Post = require('../models/posts');
 const Event = require('../models/event');
 const User = require('../models/users');
+const TagExtractor = require('../utils/tagExtractor');
 const path = require('path');
 
 console.log('[recommendations.js] module loaded:', __filename);
@@ -159,11 +160,12 @@ class RecommendationService {
   
     const {
       page = 1,
-      limit = 20,
-      eventRatio = 0.3,
-      friendPostsRatio = 0.4,
+      limit = 50,
+      eventRatio = 0.15,
+      friendPostsRatio = 0.3,
       sortBy = 'hybrid',
-      includePast = false
+      includePast = false,
+      maxPostsPerUser = 3
     } = options;
   
     try {
@@ -351,28 +353,46 @@ class RecommendationService {
       .populate('userId', 'name profilePicture organization')
       .populate('sharedPost')
       .sort({ createdAt: -1 })
-      .limit(friendPostsLimit * 2)
+      .limit(Math.max(200, limit * 15))
       .lean();
 
-      // Include all following posts (don't drop them). We'll demote unrelated ones later during scoring.
+      // Apply per-user limit to avoid bias: max 3 posts per user
+      const applyPerUserLimit = (posts, maxPerUser) => {
+        const grouped = {};
+        const limited = [];
+        for (const post of posts) {
+          const uid = String(post.userId?._id || post.userId);
+          if (!grouped[uid]) grouped[uid] = 0;
+          if (grouped[uid] < maxPerUser) {
+            grouped[uid]++;
+            limited.push(post);
+          }
+        }
+        return limited;
+      };
+      
+      const followingPostsLimited = applyPerUserLimit(followingPostsRaw, maxPostsPerUser);
+
+      // Include all following posts (filtered). We'll demote unrelated ones later during scoring.
       // This prevents empty feeds for users who follow people but didn't select many interests.
-      const filteredFollowingPosts = followingPostsRaw.filter(Boolean);
+      const filteredFollowingPosts = followingPostsLimited.filter(Boolean);
 
       // Get general posts
       // If the user has no or very few interests, broaden the general posts query to include popular/public
       // and recent posts so the feed isn't empty.
       let generalPosts;
       if (!normalizedInterests || normalizedInterests.length === 0) {
-        generalPosts = await Post.find({
+        const rawGeneralPosts = await Post.find({
           visibility: 'public'
         })
         .populate('userId', 'name profilePicture organization')
         .populate('sharedPost')
         .sort({ 'engagementMetrics.views': -1, 'engagementMetrics.popularity': -1, createdAt: -1 })
-        .limit(Math.max(generalPostsLimit * 2, 10))
+        .limit(Math.max(250, limit * 15))
         .lean();
+        generalPosts = applyPerUserLimit(rawGeneralPosts, maxPostsPerUser);
       } else {
-        generalPosts = await Post.find({
+        const rawGeneralPosts = await Post.find({
           userId: { $nin: [...user.following, userId] },
           $and: [
             { $or: [
@@ -387,8 +407,9 @@ class RecommendationService {
         .populate('userId', 'name profilePicture organization')
         .populate('sharedPost')
         .sort({ createdAt: -1 })
-        .limit(generalPostsLimit * 3)
+        .limit(Math.max(250, limit * 15))
         .lean();
+        generalPosts = applyPerUserLimit(rawGeneralPosts, maxPostsPerUser);
       }
 
       // Helper: robustly resolve the original owner id of a shared post (populated or raw)
@@ -414,8 +435,37 @@ class RecommendationService {
         if (p.userId && allowedSharedOwners.has(String(p.userId))) return true;
         return false;
       });
+
+      // Filter shared posts to only include those that match user interests
+      // This ensures shared posts only appear in My Feed if they're relevant to the user
+      const filterSharedPostsByInterest = (postsList = []) => postsList.filter(p => {
+        // If it's not a shared post, always include it
+        if (!p || !p.sharedPost) return true;
+        
+        // If user has no interests, be permissive with shared posts
+        if (!normalizedInterests || normalizedInterests.length === 0) return true;
+        
+        // Check if shared post content matches user interests
+        const sharedPostContent = p.sharedPost;
+        const title = String(sharedPostContent.title || p.title || '').toLowerCase();
+        const desc = String(sharedPostContent.desc || p.desc || '').toLowerCase();
+        const tags = Array.isArray(sharedPostContent.tags) ? sharedPostContent.tags.map(t => String(t).toLowerCase()) : [];
+        
+        // Check for interest matches in shared post
+        const hasInterestMatch = normalizedInterests.some(interest => {
+          const lowerInterest = String(interest).toLowerCase();
+          return (
+            title.includes(lowerInterest) ||
+            desc.includes(lowerInterest) ||
+            tags.includes(lowerInterest) ||
+            tags.some(tag => tag.includes(lowerInterest))
+          );
+        });
+        
+        return hasInterestMatch;
+      });
       
-      const safeFollowingPosts = filterOutDisallowedShared(filteredFollowingPosts);
+      const safeFollowingPosts = filterSharedPostsByInterest(filterOutDisallowedShared(filteredFollowingPosts));
       const safeGeneralPosts = filterOutDisallowedShared(generalPosts);
 
       debugLog('Content Collection Debug:', {
@@ -571,7 +621,8 @@ class RecommendationService {
       const sortedContent = this.sortContent(scoredContent, sortBy);
       const contentWithReasons = sortedContent.map(item => ({
         ...item,
-        recommendationReason: this.getRecommendationReason(item, user)
+        recommendationReason: this.getRecommendationReason(item, user),
+        breakdown: this.calculateScoreBreakdown(item, user)
       }));
   
       // Paginate
@@ -712,51 +763,103 @@ class RecommendationService {
     .lean();
   }
 
+        static normalizePopularityScore(raw = 0, type = 'post') {
+      const x = Number(raw) || 0;
+      // Popularity/engagement can be very large; squash to 0..1 so it can't dominate explicit interest matching.
+      // Different scales per type.
+      const scale = type === 'event' ? 25 : 50;
+      const score = 1 - Math.exp(-x / scale);
+      return Math.min(Math.max(score, 0), 1);
+    }
+
+        static ensureItemTags(item = {}) {
+      let tags = item.tags;
+      if (!Array.isArray(tags) || tags.length === 0) {
+        tags = TagExtractor.extractFromDescription(item.description || item.desc || item.title || '');
+        if (!tags || tags.length === 0) {
+          tags = TagExtractor.generateFallbackTags({
+            organization: item.organization,
+            mediaType: item.mediaType,
+            contentType: item.contentType
+            // NOTE: REMOVED userInterests parameter - posts scored on what they say, not what user wants
+          });
+        }
+      }
+      return tags;
+    }
+
         static async calculateFinalScore(item, user) {
       // Check cache first
       const cacheKey = `${item._id}-${user._id}`;
-      if (this.scoreCache?.has(cacheKey)) {
-        this.metrics.cacheHits++;
-        return this.scoreCache.get(cacheKey);
-      }
+      const cachedScore = this.getCachedScore(cacheKey);
+      if (cachedScore !== null && cachedScore !== undefined) return cachedScore;
       this.metrics.calculations++;
     
       try {
         // Handle non-event content (posts)
         if (item.type !== 'event') {
-          let baseScore = this.calculateBaseEngagementScore(item);
-    
-          // Apply content preference boosts
-          if (user.contentPreferences) {
-            if (user.contentPreferences.likedContent?.includes(item._id)) {
-              baseScore *= 1.2; // 20% boost for liked content
-            }
-            if (user.contentPreferences.savedContent?.includes(item._id)) {
-              baseScore *= 1.15; // 15% boost for saved content
-            }
-            if (user.contentPreferences.sharedContent?.includes(item._id)) {
-              baseScore *= 1.25; // 25% boost for shared content
-            }
+          const normalizedInterests = this.normalizeLegacyInterests(user.interests || []);
+          const ensuredTags = this.ensureItemTags(item);
+          const itemWithTags = { ...item, tags: ensuredTags };
+
+          // 1) Highest priority: explicit interest match
+          const explicitScore = this.calculateInterestScore(itemWithTags, normalizedInterests); // 0..1
+
+          // 2) Next: time relevance and popularity
+          const timeScore = this.calculateRecencyScore(itemWithTags); // 0..1
+          const popularityRaw = this.calculateBaseEngagementScore(itemWithTags); // unbounded
+          const popularityScore = this.normalizePopularityScore(popularityRaw, 'post'); // 0..1
+
+          // 3) Least: implicit preferences (derived from past engagement patterns)
+          const implicitScore = user.implicitPreferences
+            ? this.calculateImplicitScore(itemWithTags, user.implicitPreferences)
+            : 0;
+
+          // Weighted blend - EXPLICIT INTEREST is PRIMARY for testing accuracy
+          const WEIGHTS = {
+            explicit: 0.80,      // PRIMARY: Tag/keyword matching (for testing accuracy)
+            time: 0.10,          // SECONDARY: Recency
+            popularity: 0.10,    // SECONDARY: Community engagement  
+            implicit: 0.00       // REMOVED: No implicit/following boost
+          };
+
+          let finalScore = (
+            explicitScore * WEIGHTS.explicit +
+            timeScore * WEIGHTS.time +
+            popularityScore * WEIGHTS.popularity +
+            implicitScore * WEIGHTS.implicit
+          );
+
+          // CRITICAL: If explicit score is 0 (NO INTEREST MATCH), cap the final score
+          // This prevents engagement/popularity from boosting non-aligned content
+          // According to hybrid filtering docs: explicit interest match is PRIMARY for posts
+          if (explicitScore === 0) {
+            // No interest match = maximum score is 0.10 (effectively filtered out)
+            finalScore = Math.min(finalScore, 0.10);
+          } else if (explicitScore < 0.15) {
+            // Very weak interest match = cap at 0.30 (low priority)
+            finalScore = Math.min(finalScore, 0.30);
           }
-    
-          // Explicit interest match check and penalty for unrelated following posts
-          if (item.fromFollowing) {
-            const normalizedInterests = this.normalizeLegacyInterests(user.interests).map(i => i.toLowerCase());
-            const matchesExplicit = (item.tags || []).some(tag => normalizedInterests.includes(tag.toLowerCase()));
-            const titleDescText = ((item.title || '') + ' ' + (item.desc || '')).toLowerCase();
-            const textMatches = normalizedInterests.some(k => titleDescText.includes(k));
-            if (!matchesExplicit && !textMatches) {
-              // softer penalty: demote but keep the post visible
-              baseScore *= 0.6;
-            } else if (!matchesExplicit && textMatches) {
-              // keep but slightly demote if only text matches
-              baseScore *= 0.9;
-            }
+
+          // NOTE: fromFollowing boost REMOVED - should not create preference for friends
+          // Feed should prioritize tag/keyword match accuracy (for testing purposes)
+          // User relationship should not override content relevance
+
+          // Apply small boosts for direct content preferences ONLY if interest matched
+          if (user.contentPreferences && explicitScore > 0) {
+            if (user.contentPreferences.likedContent?.includes(item._id)) finalScore *= 1.06;
+            if (user.contentPreferences.savedContent?.includes(item._id)) finalScore *= 1.04;
+            if (user.contentPreferences.sharedContent?.includes(item._id)) finalScore *= 1.08;
           }
-    
-          // Cache and return
-          this.cacheScore(cacheKey, baseScore);
-          return baseScore;
+
+          // If explicit score is very low and this is a from-following post, demote to avoid irrelevant noise
+          if (item.fromFollowing && explicitScore < 0.12) {
+            finalScore *= 0.85;
+          }
+
+          const normalized = Math.min(Math.max(finalScore, 0), 1);
+          this.cacheScore(cacheKey, normalized);
+          return normalized;
         }
     
         // Event scoring
@@ -772,24 +875,35 @@ class RecommendationService {
           this.calculateImplicitScore(item, user.implicitPreferences) : 0;
     
         // Calculate weighted base score
+        // TESTING MODE: Prioritize explicit interest matching over organization weights
         let finalScore = (
           (orgScore * weights.base) +
           (interestScore * weights.explicit) +
           (timeScore * 0.2) +
           (recencyScore * weights.recency) +
           (implicitScore * weights.implicit)
-        ) * (orgInfo?.weight || 1.0);
-    
-        // Apply content preference boosts
-        if (user.contentPreferences) {
-          if (user.contentPreferences.interestedEvents?.includes(item._id)) {
-            finalScore *= 1.3; // 30% boost for interested events
-          }
+        );
+        // NOTE: Removed orgInfo?.weight multiplier - it was boosting non-relevant org events
+
+        // CRITICAL: If interest score is 0 (NO INTEREST MATCH), cap the final score
+        // Events shouldn't be recommended based on collaborative signals alone
+        // without any explicit user interest match
+        if (interestScore === 0) {
+          // No interest match = maximum score is 0.20 (effectively filtered out)
+          finalScore = Math.min(finalScore, 0.20);
+        } else if (interestScore < 0.20) {
+          // Very weak interest match = cap at 0.40 (low priority)
+          finalScore = Math.min(finalScore, 0.40);
+        }
+
+        // Apply content preference boosts ONLY if interest matched
+        // TESTING MODE: Minimal boosts to prioritize accuracy of tag matching
+        if (user.contentPreferences && interestScore > 0.2) {
+          // Minimal boosts - for testing, prioritize content relevance
           if (user.contentPreferences.registeredEvents?.includes(item._id)) {
-            finalScore *= 1.4; // 40% boost for registered events
-          }
-          if (user.contentPreferences.sharedEvents?.includes(item._id)) {
-            finalScore *= 1.25; // 25% boost for shared events
+            finalScore *= 1.05; // Reduced from 1.4 - minimal boost
+          } else if (user.contentPreferences.interestedEvents?.includes(item._id)) {
+            finalScore *= 1.03; // Reduced from 1.3 - minimal boost
           }
         }
     
@@ -834,6 +948,117 @@ class RecommendationService {
       }
     }
 
+    /**
+     * NEW: Generate detailed matching breakdown with specific variables
+     * Returns score component breakdown instead of just final score
+     */
+    static calculateScoreBreakdown(item, user) {
+      try {
+        const normalizedInterests = this.normalizeLegacyInterests(user.interests || []);
+        const breakdown = {
+          itemId: item._id,
+          finalScore: 0,
+          components: {
+            tagMatches: [],
+            keywordMatches: [],
+            organizationMatch: null,
+            engagement: {
+              likes: item.engagementMetrics?.likes || 0,
+              shares: item.engagementMetrics?.shares || 0,
+              comments: item.engagementMetrics?.comments || 0,
+              views: item.engagementMetrics?.views || 0,
+              registrations: item.engagementMetrics?.registrations || 0
+            },
+            recency: {
+              posted: item.date || item.createdAt,
+              daysAgo: Math.floor((new Date() - new Date(item.date || item.createdAt)) / (1000 * 60 * 60 * 24))
+            },
+            category: item.category || null
+          }
+        };
+
+        // 1. TAG MATCHING - Extract which tags match user interests
+        const ensuredTags = this.ensureItemTags(item);
+        const itemTagsSet = new Set([
+          ...(ensuredTags || []).map(tag => tag.toLowerCase()),
+          ...(ORGANIZATION_CATEGORIES[item.organization]?.tags || []).map(tag => tag.toLowerCase())
+        ]);
+
+        itemTagsSet.forEach(tagLower => {
+          normalizedInterests.forEach(interest => {
+            if (tagLower === interest.toLowerCase() || interest.includes(tagLower)) {
+              breakdown.components.tagMatches.push({
+                tag: tagLower,
+                interest: interest,
+                matchType: 'exact'
+              });
+            }
+          });
+        });
+
+        // Remove duplicates
+        breakdown.components.tagMatches = Array.from(
+          new Set(breakdown.components.tagMatches.map(m => m.tag))
+        ).map(tag => breakdown.components.tagMatches.find(m => m.tag === tag));
+
+        // 2. KEYWORD MATCHING - Check if user interests appear in title/description
+        const titleAndDesc = `${item.title || ''} ${item.desc || ''} ${item.description || ''}`.toLowerCase();
+        normalizedInterests.forEach(interest => {
+          if (titleAndDesc.includes(interest.toLowerCase())) {
+            breakdown.components.keywordMatches.push(interest);
+          }
+        });
+
+        // 3. ORGANIZATION MATCHING
+        if (item.organization) {
+          const userOrgIds = (user.organizations || []).map(o => String(o).toLowerCase());
+          const itemOrg = String(item.organization).toLowerCase();
+          
+          if (userOrgIds.some(org => org === itemOrg || itemOrg.includes(org) || org.includes(itemOrg))) {
+            breakdown.components.organizationMatch = {
+              organization: item.organization,
+              isFollowed: true,
+              orgInfo: ORGANIZATION_CATEGORIES[item.organization] || null
+            };
+          }
+        }
+
+        // 4. CATEGORY MATCHING
+        if (item.category) {
+          const recCategory = String(item.category).toLowerCase();
+          const matches = normalizedInterests.some(int => 
+            String(int).includes(recCategory) || recCategory.includes(int)
+          );
+          if (matches) {
+            breakdown.components.category = {
+              name: item.category,
+              matchesInterests: true
+            };
+          }
+        }
+
+        // 5. Calculate final score from components
+        let scoreComponents = {
+          tagScore: Math.min(breakdown.components.tagMatches.length / 3, 1) * 0.4,
+          keywordScore: Math.min(breakdown.components.keywordMatches.length / 2, 1) * 0.25,
+          orgScore: breakdown.components.organizationMatch ? 0.25 : 0,
+          engagementScore: (
+            Math.min(breakdown.components.engagement.likes / 100, 1) * 0.15 +
+            Math.min(breakdown.components.engagement.shares / 30, 1) * 0.1
+          ),
+          recencyScore: breakdown.components.recency.daysAgo < 7 ? 0.1 : 0
+        };
+
+        const finalScore = Object.values(scoreComponents).reduce((a, b) => a + b, 0);
+        breakdown.finalScore = Math.min(Math.max(finalScore, 0.3), 1);
+        breakdown.scoreComponents = scoreComponents;
+
+        return breakdown;
+      } catch (error) {
+        console.error('Error calculating score breakdown:', error);
+        return null;
+      }
+    }
 
   // Add to RecommendationService class
 static async debugUserEventVisibility(userId) {
@@ -1049,18 +1274,36 @@ static async debugUserEventVisibility(userId) {
   }
 
         static calculateInterestScore(item, userInterests) {
-      if (!item?.tags || !userInterests?.length) return 0;
+      // FALLBACK STRATEGY: If item has no tags, generate them
+      let itemTags = item.tags;
+      if (!itemTags || itemTags.length === 0) {
+        itemTags = TagExtractor.extractFromDescription(item.description || item.desc || '');
+        if (itemTags.length === 0) {
+          itemTags = TagExtractor.generateFallbackTags({
+            organization: item.organization,
+            mediaType: item.mediaType,
+            contentType: item.contentType
+          });
+        }
+      }
+      
+      if (!itemTags?.length || !userInterests?.length) {
+        // If still no options, give minimal positive score based on org match
+        if (item.organization && ORGANIZATION_CATEGORIES[item.organization]) {
+          return 0.05; // Very small boost for organization presence (not 0.1)
+        }
+        return 0.0; // NO SCORE for items with no tags and no user interests (was 0.05)
+      }
     
-      // Adjust scoring weights to be more balanced
       const WEIGHTS = {
         EXACT_MATCH: 1.0,          
-        PRIMARY_ORG_MATCH: 1.0,    // Increased from 0.9
-        SECONDARY_ORG_MATCH: 0.8,  // Increased from 0.7
-        MAPPED_MATCH: 0.7,         // Increased from 0.6
-        PARTIAL_MATCH: 0.6,        // Increased from 0.4
-        RELATED_MATCH: 0.5,        // Increased from 0.3
-        TITLE_MATCH: 0.5,          // Increased from 0.4
-        DESCRIPTION_MATCH: 0.4     // Increased from 0.3
+        PRIMARY_ORG_MATCH: 0.9,    
+        SECONDARY_ORG_MATCH: 0.7,  
+        MAPPED_MATCH: 0.6,         
+        PARTIAL_MATCH: 0.5,        
+        RELATED_MATCH: 0.3,        
+        TITLE_MATCH: 0.4,          
+        DESCRIPTION_MATCH: 0.2     
       };
     
       // Normalize and expand interests for better matching
@@ -1082,7 +1325,8 @@ static async debugUserEventVisibility(userId) {
         partial: 0,
         related: 0,
         title: 0,
-        description: 0
+        description: 0,
+        noMatches: true  // Track if we found ANY matches
       };
     
       // 1. Process organization matches with enhanced matching
@@ -1115,12 +1359,12 @@ static async debugUserEventVisibility(userId) {
       }
     
       // 2. Process tags with enhanced matching
-      const itemTags = new Set([
-        ...(item.tags || []).map(tag => tag.toLowerCase()),
+      const itemTagsSet = new Set([
+        ...(itemTags || []).map(tag => tag.toLowerCase()),
         ...(ORGANIZATION_CATEGORIES[item.organization]?.tags || []).map(tag => tag.toLowerCase())
       ]);
     
-      itemTags.forEach(tagLower => {
+      itemTagsSet.forEach(tagLower => {
         // Exact match with expanded interests
         // Partial match checking
         if (normalizedInterests.some(interest => {
@@ -1176,9 +1420,9 @@ static async debugUserEventVisibility(userId) {
       // Apply interest-specific boosts
       normalizedInterests.forEach(interest => {
         if (interest === 'dance') {
-          const isDanceEvent = itemTags.has('dance') || 
-                              itemTags.has('choreography') || 
-                              itemTags.has('performance');
+          const isDanceEvent = itemTagsSet.has('dance') || 
+                              itemTagsSet.has('choreography') || 
+                              itemTagsSet.has('performance');
           if (isDanceEvent) {
             totalScore *= 1.3; // 30% boost for dance events
           }
@@ -1195,27 +1439,89 @@ static async debugUserEventVisibility(userId) {
         }
       }
     
+      // Track if we found any actual matches
+      const hasAnyMatches = matchDetails.exact + matchDetails.primary + matchDetails.secondary + 
+                           matchDetails.mapped + matchDetails.partial + matchDetails.related + 
+                           matchDetails.title + matchDetails.description > 0;
+      
+      // IMPROVED: If NO interest matches found, apply fallback strategy instead of hard 0
+      // This ensures cold-start items aren't completely invisible
+      if (!hasAnyMatches) {
+        debugLog('No interest matches found for item:', {
+          itemId: item._id,
+          title: item.title,
+          tags: Array.from(itemTagsSet),
+          userInterests: normalizedInterests
+        });
+        
+        // Fallback: Give minimum visibility based on item type and organization
+        totalScore = 0.0;
+        
+        // If item belongs to a known organization, give slight boost
+        if (item.organization && ORGANIZATION_CATEGORIES[item.organization]) {
+          totalScore = 0.05;
+        }
+        
+        // If it's upcoming event, give small boost
+        if (item.type === 'event' && item.status === 'upcoming') {
+          totalScore = Math.max(totalScore, 0.08);
+        }
+        
+        // Never return exact zero - minimum floor for cold-start visibility
+        totalScore = Math.max(totalScore, 0.01);
+      }
+    
       // Ensure minimum score for matching organization
       if (item.organization && 
           ORGANIZATION_CATEGORIES[item.organization] && 
           matchDetails.primary + matchDetails.secondary > 0) {
         totalScore = Math.max(totalScore, 0.3); // Minimum score of 0.3 for matching org
       }
+
+      // IMPROVED: Normalize score to better utilize the 0-1 range
+      // Map raw score to 0-1 scale more aggressively to separate clearly matched items
+      // Previously items with scores 0.5-1.0 stayed in that range
+      // Now we compress the range to make relevant items stand out more
+      let normalizedScore = totalScore;
+      if (totalScore > 0.2) {
+        // For items with actual matches, map to higher range
+        // Score 0.3 -> 0.60, Score 0.6 -> 0.75, Score 1.0 -> 0.95
+        normalizedScore = 0.50 + (totalScore * 0.45);
+      } else if (totalScore > 0) {
+        // For weak matches, map to middle range
+        // Score 0.1 -> 0.30, Score 0.2 -> 0.40
+        normalizedScore = 0.20 + (totalScore * 1.0);
+      }
+
+      debugLog('Interest Score (Improved):', {
+        itemId: item._id,
+        title: item.title,
+        rawScore: totalScore.toFixed(3),
+        normalizedScore: normalizedScore.toFixed(3),
+        matchDetails
+      });
+    
+      // IMPROVED: Apply universal minimum floor to all recommendations
+      // Ensures all items have minimum visibility for exploration/serendipity
+      const MIN_VISIBILITY_FLOOR = 0.02;
+      normalizedScore = Math.max(normalizedScore, MIN_VISIBILITY_FLOOR);
     
       // Debug logging
       debugLog('Interest Score Calculation:', {
         itemId: item._id,
         title: item.title,
         organization: item.organization,
-        tags: Array.from(itemTags),
+        tags: Array.from(itemTagsSet),
         userInterests: normalizedInterests,
         expandedInterests: Array.from(expandedInterests),
         matchDetails,
+        hasAnyMatches,
         rawScore: totalScore,
-        finalScore: Math.min(totalScore, 1)
+        normalizedScore: normalizedScore.toFixed(3),
+        finalScore: Math.min(normalizedScore, 1)
       });
     
-      return Math.min(totalScore, 1);
+      return Math.min(normalizedScore, 1); // Return normalized score for better ranking
     }
   
   // Helper methods
@@ -1390,16 +1696,20 @@ static async debugUserEventVisibility(userId) {
   }
 
   static getWeights(type, hasImplicitPrefs) {
+    // Weight system prioritizes EXPLICIT INTEREST MATCHING for testing accuracy
+    // PRIMARY: Tag/keyword matching (0.80)
+    // SECONDARY: Time + Popularity (0.10 + 0.10)
+    // TERTIARY: No implicit preference boost (testing mode)
     return type === 'event' ? {
-      base: 0.2,
-      recency: 0.25,
-      explicit: 0.6, // Strong explicit interest
-      implicit: hasImplicitPrefs ? 0.05 : 0 // Weak implicit
+      base: 0.05,           // Minimal - don't boost org alone
+      recency: 0.05,        // SECONDARY: Minimal recency weight
+      explicit: 0.80,       // PRIMARY: Interest matching (for accuracy testing)
+      implicit: 0.10        // TERTIARY: Time-weighted engagement only
     } : {
-      base: 0.3,
-      recency: 0.2,
-      explicit: 0.5, // Strong explicit interest
-      implicit: hasImplicitPrefs ? 0.1 : 0 // Weak implicit
+      base: 0.00,           // No base boost for posts
+      recency: 0.10,        // SECONDARY: Recency component
+      explicit: 0.80,       // PRIMARY: Interest matching (for accuracy testing)
+      implicit: 0.10        // TERTIARY: Implicit signals
     };
   }
 
@@ -1661,94 +1971,86 @@ static async debugUserEventVisibility(userId) {
   }
 
     static sortContent(content, sortBy) {
-    // Configuration for sorting weights and boosts
+    // Configuration for sorting - OPTIMIZED FOR MRR (Mean Reciprocal Rank)
+    // Prioritize items with high interest match to appear early
     const SORT_CONFIG = {
       typeWeights: {
-        event: 1.2,
-        post: 1.0
-      },
-      boosts: {
-        following: 1.3,
-        upcoming: 1.25,
-        trending: 1.15,
-        highEngagement: 1.1
+        event: 1.1,    // Slight boost for events (collaborative signal)
+        post: 1.0      // Posts scored by content alone
       },
       timeDecay: {
-        halfLife: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
-        maxAge: 30 * 24 * 60 * 60 * 1000   // 30 days in milliseconds
+        halfLife: 7 * 24 * 60 * 60 * 1000,   // 7 days
+        maxAge: 30 * 24 * 60 * 60 * 1000     // 30 days
       }
     };
   
     const now = new Date();
   
-    // Calculate time-based score
-    const getTimeScore = (item) => {
+    // Calculate time-based decay (MINIMAL - already in calculateFinalScore)
+    const getTimeDecay = (item) => {
       const itemDate = new Date(item.createdAt || item.date);
       const age = now - itemDate;
-      if (age > SORT_CONFIG.timeDecay.maxAge) return 0;
+      if (age > SORT_CONFIG.timeDecay.maxAge) return 0.7; // Minimal penalty for old content (was 0.5)
       return Math.exp(-Math.log(2) * age / SORT_CONFIG.timeDecay.halfLife);
     };
   
-    // Calculate engagement score
+    // NEW: Calculate engagement boost for items in user history
     const getEngagementBoost = (item) => {
-      if (item.type === 'event') {
-        const registrations = item.engagementMetrics?.registrations || 0;
-        const interested = item.engagementMetrics?.interested || 0;
-        return (registrations > 10 || interested > 20) ? SORT_CONFIG.boosts.highEngagement : 1;
-      }
-      const likes = item.likes?.length || 0;
-      const comments = item.engagementMetrics?.commentCount || 0;
-      return (likes > 15 || comments > 5) ? SORT_CONFIG.boosts.highEngagement : 1;
+      // If item has high finalScore (>0.5), it means it matched user interests well
+      // These should be boosted to rank higher
+      if (item.finalScore > 0.65) return 1.3;  // Strong interest match = +30%
+      if (item.finalScore > 0.50) return 1.15; // Good interest match = +15%
+      if (item.finalScore > 0.30) return 1.05; // Moderate match = +5%
+      return 1.0; // Low/no match = no boost
     };
-  
+
     // Calculate final sort score based on sort type
     const calculateSortScore = (item) => {
       const baseScore = item.finalScore * SORT_CONFIG.typeWeights[item.type];
-      const timeScore = getTimeScore(item);
-      const engagementBoost = getEngagementBoost(item);
+      const timeDecay = getTimeDecay(item);
+      const engagementBoost = getEngagementBoost(item); // NEW: Boost relevant items
       
       let score = baseScore;
   
       switch (sortBy) {
         case 'recent':
-          score = timeScore * (baseScore * 0.3 + 0.7);
+          // Pure chronological - for reference only
+          score = (timeDecay * 0.5 + baseScore * 0.5) * engagementBoost;
           break;
         
         case 'relevance':
-          score = baseScore * (timeScore * 0.2 + 0.8) * engagementBoost;
+          // Pure relevance - respect finalScore heavily + engagement boost
+          score = baseScore * engagementBoost;
           break;
         
         case 'hybrid':
         default:
-          // Combine all factors with weights
-          score = (
-            baseScore * 0.4 +                    // Base relevance (40%)
-            timeScore * 0.3 +                    // Recency (30%)
-            engagementBoost * 0.3                // Engagement (30%)
-          );
+          // HYBRID (OPTIMIZED): NEW - Stronger emphasis on relevance/engagement
+          // Was: (baseScore * 0.85) + (timeDecay * 0.15)
+          // Now: Heavily promote items with strong interest match
+          score = (baseScore * 0.90) + (timeDecay * 0.10);
+          score *= engagementBoost; // Apply engagement boost to promote matched content
           
-          // Apply boosts
-          if (item.fromFollowing) {
-            score *= SORT_CONFIG.boosts.following;
-          }
+          // For upcoming events within 7 days, slight preference (not 1.25x)
           if (item.type === 'event' && item.status === 'upcoming') {
             const daysUntil = (new Date(item.date) - now) / (1000 * 60 * 60 * 24);
-            if (daysUntil <= 7) {
-              score *= SORT_CONFIG.boosts.upcoming;
+            if (daysUntil <= 7 && daysUntil >= 0) {
+              score *= 1.12;  // Minimal boost (was 1.1, now 1.12 to help upcoming events)
             }
           }
           break;
       }
   
       // Debug sorting details
-      debugLog('Sort Score Calculation:', {
+      debugLog('Sort Score Calculation (Optimized for MRR):', {
         itemId: item._id,
         type: item.type,
         baseScore: item.finalScore,
-        timeScore,
-        engagementBoost,
-        finalScore: score,
-        sortBy
+        timeDecay: timeDecay.toFixed(2),
+        engagementBoost: engagementBoost.toFixed(2), // NEW: Show boost
+        finalScore: score.toFixed(3),
+        sortBy,
+        fromFollowing: item.fromFollowing
       });
   
       return score;
@@ -1777,6 +2079,81 @@ static async debugUserEventVisibility(userId) {
     });
   
     return sortedContent;
+  }
+
+  /**
+   * Generate recommendations for single user from pre-fetched content
+   * Used by SingleUserRecommendationEvaluator
+   */
+  static async getRecommendations(userId, limit = 10, content = {}) {
+    try {
+      const { posts = [], events = [] } = content;
+
+      // Get user to access interests
+      const user = await User.findById(userId)
+        .select('interests organizations')
+        .lean();
+
+      if (!user) {
+        console.log('[RecommendationService] User not found:', userId);
+        return [];
+      }
+
+      console.log('[RecommendationService] getRecommendations:', {
+        userId,
+        userInterests: user.interests.length,
+        contentItems: posts.length + events.length,
+        limit
+      });
+
+      // Score all content
+      const scoredContent = [];
+
+      // Score posts
+      for (const post of posts) {
+        const score = await this.calculateFinalScore(post, user);
+        scoredContent.push({
+          ...post,
+          type: 'post',
+          score: typeof score === 'number' ? score : 0,
+          _id: post._id
+        });
+      }
+
+      // Score events
+      for (const event of events) {
+        const score = await this.calculateFinalScore(event, user);
+        scoredContent.push({
+          ...event,
+          type: 'event',
+          score: typeof score === 'number' ? score : 0,
+          _id: event._id
+        });
+      }
+
+      // Sort by score descending and take top limit
+      const sorted = scoredContent
+        .sort((a, b) => (b.score || 0) - (a.score || 0))
+        .slice(0, limit)
+        .map(item => ({
+          ...item,
+          score: parseFloat(Number(item.score).toFixed(2)) // Ensure score is a proper number
+        }));
+
+      console.log('[RecommendationService] Generated recommendations:', {
+        total: sorted.length,
+        topScores: sorted.slice(0, 3).map(r => ({ id: r._id, type: r.type, score: r.score }))
+      });
+
+      return sorted;
+    } catch (error) {
+      console.error('[RecommendationService] getRecommendations ERROR:', {
+        error: error.message,
+        stack: error.stack,
+        userId
+      });
+      return [];
+    }
   }
 
   // NEW: fetch events that match a user's interests/orgs (does NOT alter hybrid recommender)
@@ -1835,6 +2212,309 @@ static async debugUserEventVisibility(userId) {
       console.error('[RecommendationService] getEventsMatchingUser ERROR:', err && (err.stack || err.message || err));
       // DEV: return empty array so route doesn't 500 and UI falls back to hybrid feed
       return [];
+    }
+  }
+
+  /**
+   * getFriendsFeed: Fetch posts + shared posts from mutual friends
+   * @param {Object} user - User document with following/followers arrays
+   * @param {Object} options - { page, limit }
+   * @returns {Promise<Object>} { items, pagination }
+   */
+  static async getFriendsFeed(user, options = {}) {
+    const { page = 1, limit = 50 } = options;
+
+    try {
+      console.info(`[getFriendsFeed] Starting for user ${user._id}, page ${page}`);
+      
+      // Get mutual friends: users where relationship is mutual
+      const followingIds = (user.following || []).map(id =>
+        typeof id === 'object' && id._id ? String(id._id) : String(id)
+      );
+
+      // Find followers to detect mutuals
+      const followersDocs = await User.find({ following: user._id }).select('_id').lean();
+      const followerIds = (followersDocs || []).map(d => String(d._id));
+
+      // Mutual friends: intersection of following and followers
+      const mutualIds = followingIds.filter(id => followerIds.includes(id));
+
+      console.info(`[getFriendsFeed] Following: ${followingIds.length}, Followers: ${followerIds.length}, Mutuals: ${mutualIds.length}`);
+
+      debugLog('Friends Feed Debug:', {
+        userId: user._id,
+        mutuals: mutualIds.length
+      });
+
+      // If no mutual friends, return empty
+      if (mutualIds.length === 0) {
+        return {
+          items: [],
+          pagination: {
+            page,
+            limit,
+            totalCount: 0,
+            hasMore: false
+          }
+        };
+      }
+
+      // Query: ALL posts from mutual friends (both regular and shared)
+      const query = {
+        userId: { $in: mutualIds },
+        visibility: { $in: ['public', 'organization-only'] }
+      };
+
+      const totalCount = await Post.countDocuments(query);
+      const skip = (page - 1) * limit;
+
+      const posts = await Post.find(query)
+        .populate('userId', 'name profilePicture organization')
+        .populate('sharedPost')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean();
+
+      const formattedPosts = posts.map(post => ({
+        ...this.normalizeContent(post),
+        type: 'post',
+        createdAt: post.createdAt
+      }));
+
+      return {
+        items: formattedPosts,
+        pagination: {
+          page,
+          limit,
+          totalCount,
+          hasMore: skip + limit < totalCount
+        }
+      };
+    } catch (error) {
+      debugLog('Error in getFriendsFeed:', {
+        error: error.message,
+        stack: error.stack,
+        userId: user._id
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * getFollowingFeed: Fetch posts + shared posts from followed users
+   * @param {Object} user - User document with following array
+   * @param {Object} options - { page, limit }
+   * @returns {Promise<Object>} { items, pagination }
+   */
+  static async getFollowingFeed(user, options = {}) {
+    const { page = 1, limit = 50 } = options;
+
+    try {
+      console.info(`[getFollowingFeed] Starting for user ${user._id}, page ${page}`);
+      
+      // Get all users being followed (one-way)
+      const followingIds = (user.following || []).map(id =>
+        typeof id === 'object' && id._id ? String(id._id) : String(id)
+      );
+
+      console.info(`[getFollowingFeed] Following: ${followingIds.length} users`);
+
+      debugLog('Following Feed Debug:', {
+        userId: user._id,
+        following: followingIds.length
+      });
+
+      // If not following anyone, return empty
+      if (followingIds.length === 0) {
+        return {
+          items: [],
+          pagination: {
+            page,
+            limit,
+            totalCount: 0,
+            hasMore: false
+          }
+        };
+      }
+
+      // Query: ALL posts from followed users (both regular and shared)
+      const query = {
+        userId: { $in: followingIds },
+        visibility: { $in: ['public', 'organization-only'] }
+      };
+
+      const totalCount = await Post.countDocuments(query);
+      const skip = (page - 1) * limit;
+
+      const posts = await Post.find(query)
+        .populate('userId', 'name profilePicture organization')
+        .populate('sharedPost')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean();
+
+      const formattedPosts = posts.map(post => ({
+        ...this.normalizeContent(post),
+        type: 'post',
+        createdAt: post.createdAt
+      }));
+
+      return {
+        items: formattedPosts,
+        pagination: {
+          page,
+          limit,
+          totalCount,
+          hasMore: skip + limit < totalCount
+        }
+      };
+    } catch (error) {
+      debugLog('Error in getFollowingFeed:', {
+        error: error.message,
+        stack: error.stack,
+        userId: user._id
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * getMyFeed: Fetch My Feed (algorithm-recommended posts + events)
+   * Refactored from getHybridFeed - excludes friend posts AND shared posts
+   * @param {Object} user - User document
+   * @param {Object} options - { page, limit, sortBy, timeRange, maxPostsPerUser }
+   * @returns {Promise<Object>} { items, pagination, metrics, requiresInterests }
+   */
+  static async getMyFeed(user, options = {}) {
+    const {
+      page = 1,
+      limit = 50,
+      eventRatio = 0.15,
+      sortBy = 'hybrid',
+      timeRange = 'all',
+      includePast = false,
+      maxPostsPerUser = 3
+    } = options;
+
+    try {
+      // Get hybrid feed which includes all content
+      const result = await this.getHybridFeed(user._id, {
+        page,
+        limit,
+        eventRatio,
+        sortBy,
+        includePast,
+        maxPostsPerUser
+      });
+
+      // For My Feed: Show hybrid items + shared posts from mutual friends that match interests
+      let myFeedItems = result.items || [];
+
+      // Get mutual friends for shared post filtering
+      const followingIds = (user.following || []).map(id =>
+        typeof id === 'object' && id._id ? String(id._id) : String(id)
+      );
+
+      const followersDocs = await User.find({ following: user._id }).select('_id').lean();
+      const followerIds = (followersDocs || []).map(d => String(d._id));
+      const mutualIds = followingIds.filter(id => followerIds.includes(id));
+
+      // Get shared posts from mutual friends that match user interests
+      if (mutualIds.length > 0) {
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const userInterests = user.interests || [];
+
+        const sharedPostQuery = {
+          userId: { $in: mutualIds },
+          sharedPost: { $exists: true, $ne: null },
+          createdAt: { $gte: sevenDaysAgo },
+          visibility: { $in: ['public', 'organization-only'] }
+        };
+
+        // Only add interest filter if user has interests
+        if (userInterests.length > 0) {
+          sharedPostQuery.$or = [
+            { tags: { $in: userInterests } },
+            { desc: { $in: userInterests.map(i => new RegExp(i, 'i')) } }
+          ];
+        }
+
+        const sharedPosts = await Post.find(sharedPostQuery)
+          .populate('userId', 'name profilePicture organization')
+          .populate('sharedPost')
+          .lean();
+
+        const formattedSharedPosts = sharedPosts.map(post => ({
+          ...this.normalizeContent(post),
+          type: 'post',
+          createdAt: post.createdAt
+        }));
+
+        // Combine hybrid items with interest-matched shared posts from friends
+        myFeedItems = [...myFeedItems, ...formattedSharedPosts];
+      }
+
+      // Apply time range filter if specified
+      let filteredItems = myFeedItems;
+      if (timeRange !== 'all') {
+        const now = new Date();
+        const rangeMs = {
+          'today': 24 * 60 * 60 * 1000,
+          'week': 7 * 24 * 60 * 60 * 1000,
+          'month': 30 * 24 * 60 * 60 * 1000
+        };
+
+        const cutoffMs = rangeMs[timeRange] || Infinity;
+        filteredItems = myFeedItems.filter(item => {
+          const itemDate = new Date(item.createdAt || item.date);
+          return now - itemDate <= cutoffMs;
+        });
+      }
+
+      // Re-sort if needed
+      const sortedItems = this.sortContent(filteredItems, sortBy);
+
+      return {
+        items: sortedItems.slice(0, limit),
+        pagination: {
+          page,
+          limit,
+          totalCount: sortedItems.length,
+          hasMore: limit < sortedItems.length
+        },
+        requiresInterests: result.requiresInterests
+      };
+    } catch (error) {
+      debugLog('Error in getMyFeed:', {
+        error: error.message,
+        stack: error.stack,
+        userId: user._id,
+        options
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * sortContent: Sort content by specified criteria
+   * Helper method for sorting feed items
+   */
+  static sortContent(content, sortBy) {
+    switch (sortBy) {
+      case 'recent':
+        return content.sort((a, b) =>
+          new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date)
+        );
+      case 'relevance':
+        return content.sort((a, b) => b.finalScore - a.finalScore);
+      case 'hybrid':
+      default:
+        return content.sort((a, b) => {
+          const typeWeight = a.type === 'event' ? 1.2 : 1; // Boost events slightly
+          return (b.finalScore * typeWeight) - (a.finalScore * typeWeight);
+        });
     }
   }
 }

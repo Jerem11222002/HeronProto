@@ -1,0 +1,2209 @@
+@use 'sass:map';
+@use 'sass:color';
+
+@import "../../style.scss";
+
+// Modal Overlay
+.recommendation-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-in-out;
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
+// Modal Container
+.recommendation-modal {
+  background: map.get($themes, light, bg);
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 900px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s ease-in-out;
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(30px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @media (max-width: 768px) {
+    width: 95%;
+    max-height: 90vh;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    background: map.get($themes, dark, bg);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  }
+}
+
+// Modal Header
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px;
+  border-bottom: 1px solid map.get($themes, light, border);
+
+  @media (prefers-color-scheme: dark) {
+    border-bottom-color: map.get($themes, dark, border);
+  }
+
+  .header-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    h2 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+      color: map.get($themes, light, textColor);
+
+      @media (prefers-color-scheme: dark) {
+        color: map.get($themes, dark, textColor);
+      }
+
+      @media (max-width: 576px) {
+        font-size: 18px;
+      }
+    }
+
+    .header-icon {
+      color: #5271ff;
+      font-size: 28px;
+    }
+  }
+
+  .close-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: map.get($themes, light, textColor);
+    font-size: 24px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+
+    &:hover {
+      transform: scale(1.1);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      color: map.get($themes, dark, textColor);
+    }
+  }
+}
+
+// Modal Tabs
+.modal-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 16px 24px 0;
+  border-bottom: 1px solid map.get($themes, light, border);
+  overflow-x: auto;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+
+  @media (prefers-color-scheme: dark) {
+    border-bottom-color: map.get($themes, dark, border);
+  }
+
+  .tab {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: map.get($themes, light, textColor);
+    font-size: 14px;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s;
+
+    &:hover {
+      color: #5271ff;
+    }
+
+    &.active {
+      color: #5271ff;
+      border-bottom-color: #5271ff;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      color: map.get($themes, dark, textColor);
+    }
+
+    svg {
+      font-size: 18px;
+    }
+  }
+}
+
+// Modal Content
+.modal-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  color: map.get($themes, light, textColor);
+
+  @media (prefers-color-scheme: dark) {
+    color: map.get($themes, dark, textColor);
+    background-color: map.get($themes, dark, bg);
+  }
+}
+
+// Tab Content
+.tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+
+  h3 {
+    margin: 0 0 16px;
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  h4 {
+    margin: 0 0 12px;
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  h5 {
+    margin: 0 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+}
+
+// ========== RECOMMENDATIONS TAB ==========
+.recommendations-tab {
+  .recommendations-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .section-divider {
+    margin: 24px 0 16px 0;
+    padding-bottom: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    border-bottom: 2px solid map.get($themes, light, border);
+    color: map.get($themes, light, textColor);
+
+    @media (prefers-color-scheme: dark) {
+      border-bottom-color: map.get($themes, dark, border);
+      color: map.get($themes, dark, textColor);
+    }
+
+    &:first-child {
+      margin-top: 0;
+    }
+  }
+
+  .recommendation-card {
+    border: 1px solid map.get($themes, light, border);
+    border-radius: 8px;
+    padding: 16px;
+    background: map.get($themes, light, cardBg);
+    transition: all 0.3s;
+
+    @media (prefers-color-scheme: dark) {
+      border-color: map.get($themes, dark, border);
+      background: map.get($themes, dark, cardBg);
+    }
+
+    &:hover {
+      border-color: #5271ff;
+      box-shadow: 0 4px 12px rgba(82, 113, 255, 0.1);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+
+      .item-info {
+        h4 {
+          margin: 0 0 4px;
+          font-size: 15px;
+          color: map.get($themes, light, textColor);
+
+          @media (prefers-color-scheme: dark) {
+            color: map.get($themes, dark, textColor);
+          }
+        }
+
+        .item-type {
+          display: inline-block;
+          padding: 2px 8px;
+          background: #f0f0f0;
+          border-radius: 4px;
+          font-size: 11px;
+          font-weight: 600;
+          color: #666;
+          text-transform: uppercase;
+
+          @media (prefers-color-scheme: dark) {
+            background: #333;
+            color: #ccc;
+          }
+        }
+
+        .event-date {
+          display: block;
+          margin-top: 6px;
+          font-size: 12px;
+          color: #00d4aa;
+          font-weight: 500;
+
+          @media (prefers-color-scheme: dark) {
+            color: #00e5cc;
+          }
+        }
+      }
+
+      .relevance-score {
+        text-align: center;
+        padding: 8px 12px;
+        background: #f5f5f5;
+        border-radius: 6px;
+
+        @media (prefers-color-scheme: dark) {
+          background: #333;
+        }
+
+        .score-value {
+          font-size: 16px;
+          font-weight: 700;
+          color: #5271ff;
+        }
+
+        .score-label {
+          font-size: 11px;
+          color: #999;
+          text-transform: uppercase;
+        }
+      }
+    }
+
+    .card-reasons {
+      h5 {
+        margin: 0 0 8px;
+      }
+
+      .reasons-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .reason-item {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        padding: 8px;
+        background: map.get($themes, light, bg);
+        border-radius: 6px;
+
+        @media (prefers-color-scheme: dark) {
+          background: map.get($themes, dark, bg);
+        }
+
+        .reason-badge {
+          flex-shrink: 0;
+          width: 24px;
+          height: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 4px;
+          color: white;
+          font-size: 12px;
+          font-weight: 600;
+        }
+
+        .reason-content {
+          flex: 1;
+
+          .reason-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 4px;
+
+            strong {
+              display: block;
+              font-size: 13px;
+              font-weight: 600;
+              color: map.get($themes, light, textColor);
+              flex: 1;
+
+              @media (prefers-color-scheme: dark) {
+                color: map.get($themes, dark, textColor);
+              }
+            }
+
+            .reason-weight-badge {
+              flex-shrink: 0;
+              font-size: 10px;
+              font-weight: 700;
+              color: white;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              padding: 2px 6px;
+              border-radius: 3px;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+          }
+
+          .reason-value {
+            margin: 4px 0 0 0;
+            font-size: 12px;
+            font-weight: 500;
+            color: map.get($themes, light, textColor);
+
+            @media (prefers-color-scheme: dark) {
+              color: map.get($themes, dark, textColor);
+            }
+          }
+
+          .reason-detail {
+            margin: 2px 0 0 0;
+            font-size: 11px;
+            color: #999;
+            font-style: italic;
+          }
+        }
+
+        .reason-weight {
+          flex-shrink: 0;
+          font-size: 11px;
+          font-weight: 600;
+          color: #999;
+          text-transform: uppercase;
+        }
+      }
+
+      .no-reasons {
+        font-size: 13px;
+        color: #999;
+        margin: 0;
+      }
+    }
+  }
+
+  .no-data {
+    text-align: center;
+    padding: 40px 20px;
+    color: #999;
+    font-size: 14px;
+  }
+}
+
+// ========== METRICS TAB ==========
+// ========== METRICS TAB ==========
+.metrics-tab {
+  .metrics-description {
+    font-size: 14px;
+    color: #999;
+    margin: 0 0 24px;
+  }
+
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .metric-card {
+    border: 1px solid map.get($themes, light, border);
+    border-radius: 8px;
+    padding: 16px;
+    background: map.get($themes, light, cardBg);
+    transition: all 0.3s ease;
+
+    @media (prefers-color-scheme: dark) {
+      border-color: map.get($themes, dark, border);
+      background: map.get($themes, dark, cardBg);
+    }
+
+    &.detailed {
+      &:hover {
+        border-color: #5271ff;
+        box-shadow: 0 4px 12px rgba(82, 113, 255, 0.1);
+
+        @media (prefers-color-scheme: dark) {
+          box-shadow: 0 4px 12px rgba(82, 113, 255, 0.2);
+        }
+      }
+    }
+
+    .metric-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+
+      h4 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: map.get($themes, light, textColor);
+
+        @media (prefers-color-scheme: dark) {
+          color: map.get($themes, dark, textColor);
+        }
+      }
+
+      .metric-badge {
+        background: #5271ff;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+    }
+
+    .metric-content {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+
+      .metric-value {
+        font-size: 32px;
+        font-weight: 700;
+        text-align: center;
+
+        &.primary {
+          color: #5271ff;
+        }
+
+        &.secondary {
+          color: #ff6b6b;
+        }
+
+        &.tertiary {
+          color: #ffa94d;
+        }
+
+        &.quaternary {
+          color: #00d4aa;
+        }
+      }
+
+      .metric-bar {
+        height: 8px;
+        background: map.get($themes, light, bgSoft);
+        border-radius: 4px;
+        overflow: hidden;
+
+        @media (prefers-color-scheme: dark) {
+          background: map.get($themes, dark, bgSoft);
+        }
+
+        .bar-fill {
+          height: 100%;
+          border-radius: 4px;
+          transition: width 0.6s ease;
+
+          &.cosine-bar {
+            background: linear-gradient(90deg, #5271ff 0%, #748ffc 100%);
+          }
+
+          &.rmse-bar {
+            background: linear-gradient(90deg, #ff6b6b 0%, #ff8686 100%);
+          }
+
+          &.mae-bar {
+            background: linear-gradient(90deg, #ffa94d 0%, #ffb76f 100%);
+          }
+
+          &.mrr-bar {
+            background: linear-gradient(90deg, #00d4aa 0%, #1ae5b8 100%);
+          }
+        }
+      }
+
+      .metric-stats {
+        font-size: 12px;
+        color: #999;
+        text-align: center;
+      }
+
+      .metric-badge-interpretation {
+        text-align: center;
+
+        .badge {
+          display: inline-block;
+          padding: 6px 12px;
+          border-radius: 20px;
+          font-size: 12px;
+          font-weight: 600;
+          text-transform: uppercase;
+
+          &.excellent {
+            background: rgba(76, 175, 80, 0.1);
+            color: #4caf50;
+          }
+
+          &.good {
+            background: rgba(33, 150, 243, 0.1);
+            color: #2196f3;
+          }
+
+          &.fair {
+            background: rgba(255, 193, 7, 0.1);
+            color: #ffc107;
+          }
+
+          &.needs\ improvement {
+            background: rgba(244, 67, 54, 0.1);
+            color: #f44336;
+          }
+        }
+      }
+
+      .metric-range {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-size: 12px;
+        color: #999;
+        margin-bottom: 8px;
+
+        .range-label {
+          font-weight: 600;
+        }
+
+        .range-value {
+          background: map.get($themes, light, bgSoft);
+          padding: 4px 8px;
+          border-radius: 4px;
+
+          @media (prefers-color-scheme: dark) {
+            background: map.get($themes, dark, bgSoft);
+          }
+        }
+      }
+
+      .metric-explanation {
+        background: map.get($themes, light, bgSoft);
+        border-left: 4px solid #5271ff;
+        padding: 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        line-height: 1.6;
+
+        @media (prefers-color-scheme: dark) {
+          background: map.get($themes, dark, bgSoft);
+        }
+
+        p {
+          margin: 8px 0;
+          color: map.get($themes, light, textColor);
+
+          @media (prefers-color-scheme: dark) {
+            color: map.get($themes, dark, textColor);
+          }
+
+          &:first-child {
+            margin-top: 0;
+          }
+
+          strong {
+            color: map.get($themes, light, textColor);
+            font-weight: 600;
+
+            @media (prefers-color-scheme: dark) {
+              color: map.get($themes, dark, textColor);
+            }
+          }
+        }
+
+        ul {
+          margin: 8px 0;
+          padding-left: 20px;
+          list-style-type: disc;
+
+          li {
+            margin: 6px 0;
+            color: #999;
+          }
+        }
+
+        .score-breakdown {
+          background: map.get($themes, light, bg);
+          border-radius: 4px;
+          padding: 12px;
+          margin: 8px 0;
+
+          @media (prefers-color-scheme: dark) {
+            background: map.get($themes, dark, bg);
+          }
+
+          .score-tier {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid map.get($themes, light, border);
+            font-size: 11px;
+
+            @media (prefers-color-scheme: dark) {
+              border-bottom-color: map.get($themes, dark, border);
+            }
+
+            &:last-child {
+              border-bottom: none;
+            }
+
+            .tier-range {
+              font-weight: 600;
+              color: #5271ff;
+              min-width: 80px;
+            }
+
+            .tier-meaning {
+              color: #999;
+              flex: 1;
+              text-align: right;
+            }
+          }
+        }
+
+        .current-rating {
+          background: rgba(82, 113, 255, 0.1);
+          border-radius: 4px;
+          padding: 8px;
+          margin: 8px 0 0;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 12px;
+          color: map.get($themes, light, textColor);
+
+          @media (prefers-color-scheme: dark) {
+            color: map.get($themes, dark, textColor);
+          }
+
+          strong {
+            color: #5271ff;
+          }
+        }
+      }
+    }
+  }
+
+  .evaluation-summary {
+    background: map.get($themes, light, cardBg);
+    border: 1px solid map.get($themes, light, border);
+    border-radius: 8px;
+    padding: 16px;
+    margin: 20px 0;
+
+    @media (prefers-color-scheme: dark) {
+      background: map.get($themes, dark, cardBg);
+      border-color: map.get($themes, dark, border);
+    }
+
+    h4 {
+      margin: 0 0 16px;
+      font-size: 14px;
+      font-weight: 600;
+      color: map.get($themes, light, textColor);
+
+      @media (prefers-color-scheme: dark) {
+        color: map.get($themes, dark, textColor);
+      }
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .summary-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 12px;
+      background: map.get($themes, light, bgSoft);
+      border-radius: 6px;
+      border-left: 3px solid #5271ff;
+
+      @media (prefers-color-scheme: dark) {
+        background: map.get($themes, dark, bgSoft);
+      }
+
+      .label {
+        font-size: 10px;
+        color: #999;
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+      }
+
+      .value {
+        font-size: 24px;
+        font-weight: 700;
+        color: #5271ff;
+      }
+
+      .note {
+        font-size: 11px;
+        color: #999;
+        line-height: 1.3;
+      }
+    }
+
+    .summary-explanation {
+      background: map.get($themes, light, bg);
+      border-radius: 4px;
+      padding: 12px;
+      border-left: 3px solid #00d4aa;
+
+      @media (prefers-color-scheme: dark) {
+        background: map.get($themes, dark, bg);
+      }
+
+      p {
+        margin: 0;
+        font-size: 12px;
+        color: #999;
+        line-height: 1.5;
+      }
+    }
+  }
+
+  .overall-assessment {
+    background: linear-gradient(135deg, rgba(82, 113, 255, 0.05) 0%, rgba(116, 143, 252, 0.05) 100%);
+    border: 2px solid #5271ff;
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 16px;
+
+    @media (prefers-color-scheme: dark) {
+      border-color: #748ffc;
+    }
+
+    h4 {
+      margin: 0 0 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: map.get($themes, light, textColor);
+
+      @media (prefers-color-scheme: dark) {
+        color: map.get($themes, dark, textColor);
+      }
+    }
+
+    .assessment-content {
+      .assessment-headline {
+        margin: 0 0 16px;
+        font-size: 13px;
+        line-height: 1.6;
+        color: map.get($themes, light, textColor);
+
+        @media (prefers-color-scheme: dark) {
+          color: map.get($themes, dark, textColor);
+        }
+
+        strong {
+          color: #5271ff;
+          font-weight: 600;
+        }
+      }
+
+      .assessment-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+
+        li {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+          font-size: 12px;
+          color: #999;
+          line-height: 1.4;
+
+          .check-mark {
+            font-size: 16px;
+            padding-top: 2px;
+            flex-shrink: 0;
+          }
+
+          .assessment-text {
+            flex: 1;
+
+            strong {
+              color: map.get($themes, light, textColor);
+              font-weight: 600;
+
+              @media (prefers-color-scheme: dark) {
+                color: map.get($themes, dark, textColor);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// ========== PROFILE TAB ==========
+.profile-tab {
+  .profile-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+  }
+
+  .info-section {
+    padding: 16px;
+    border: 1px solid map.get($themes, light, border);
+    border-radius: 8px;
+    background: map.get($themes, light, cardBg);
+
+    @media (prefers-color-scheme: dark) {
+      border-color: map.get($themes, dark, border);
+      background: map.get($themes, dark, cardBg);
+    }
+
+    h4 {
+      margin: 0 0 8px;
+      font-size: 13px;
+      text-transform: uppercase;
+      color: #999;
+    }
+
+    p {
+      margin: 0;
+      font-size: 14px;
+      color: map.get($themes, light, textColor);
+
+      @media (prefers-color-scheme: dark) {
+        color: map.get($themes, dark, textColor);
+      }
+    }
+
+    .interests-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+
+      .interest-tag {
+        display: inline-block;
+        padding: 6px 12px;
+        background: #5271ff;
+        color: white;
+        border-radius: 16px;
+        font-size: 12px;
+        font-weight: 500;
+      }
+
+      .no-interests {
+        font-size: 13px;
+        color: #999;
+        margin: 0;
+      }
+    }
+  }
+}
+
+// ========== LOADING STATE ==========
+.modal-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  gap: 16px;
+  flex: 1;
+
+  p {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 500;
+    color: map.get($themes, light, textColor);
+
+    @media (prefers-color-scheme: dark) {
+      color: map.get($themes, dark, textColor);
+    }
+  }
+
+  small {
+    color: #999;
+    font-size: 13px;
+  }
+}
+
+// ========== ERROR STATE ==========
+.modal-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  gap: 16px;
+  flex: 1;
+
+  h3 {
+    margin: 0;
+    color: #ff6b6b;
+  }
+
+  p {
+    margin: 0;
+    color: #999;
+    text-align: center;
+  }
+
+  .retry-btn {
+    padding: 10px 20px;
+    background: #5271ff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+
+    &:hover {
+      background: #748ffc;
+      transform: translateY(-2px);
+    }
+  }
+}
+
+// ========== MODAL FOOTER ==========
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid map.get($themes, light, border);
+  background: map.get($themes, light, bg);
+  font-size: 12px;
+  color: #999;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  @media (prefers-color-scheme: dark) {
+    border-top-color: map.get($themes, dark, border);
+    background: map.get($themes, dark, bg);
+  }
+
+  p {
+    margin: 0;
+  }
+
+  small {
+    font-size: 11px;
+  }
+
+  @media (max-width: 576px) {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 576px) {
+  .recommendation-modal {
+    max-height: 95vh;
+    border-radius: 8px;
+  }
+
+  .modal-header {
+    padding: 16px;
+
+    .header-content h2 {
+      font-size: 16px;
+    }
+  }
+
+  .modal-content {
+    padding: 16px;
+  }
+
+  .iso-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-info {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+// Modal Overlay
+.recommendation-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-in-out;
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
+// Modal Container
+.recommendation-modal {
+  background: map.get($themes, light, bg);
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 800px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s ease-in-out;
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(30px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @media (max-width: 768px) {
+    width: 95%;
+    max-height: 90vh;
+  }
+
+  // Dark mode
+  @media (prefers-color-scheme: dark) {
+    background: map.get($themes, dark, bg);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  }
+}
+
+// Modal Header
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px;
+  border-bottom: 1px solid map.get($themes, light, border);
+
+  @media (prefers-color-scheme: dark) {
+    border-bottom-color: map.get($themes, dark, border);
+  }
+
+  .header-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    h2 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 600;
+      color: map.get($themes, light, textColor);
+
+      @media (prefers-color-scheme: dark) {
+        color: map.get($themes, dark, textColor);
+      }
+
+      @media (max-width: 576px) {
+        font-size: 18px;
+      }
+    }
+
+    .header-icon {
+      color: map.get($themes, light, primary);
+      font-size: 28px;
+
+      @media (prefers-color-scheme: dark) {
+        color: map.get($themes, dark, primary);
+      }
+    }
+  }
+
+  .close-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: map.get($themes, light, textColorSoft);
+    transition: all 0.2s ease;
+    padding: 4px;
+
+    @media (prefers-color-scheme: dark) {
+      color: map.get($themes, dark, textColorSoft);
+    }
+
+    &:hover {
+      color: map.get($themes, light, textColor);
+      transform: rotate(90deg);
+
+      @media (prefers-color-scheme: dark) {
+        color: map.get($themes, dark, textColor);
+      }
+    }
+  }
+}
+
+// Tabs
+.modal-tabs {
+  display: flex;
+  gap: 0;
+  padding: 0 24px;
+  border-bottom: 1px solid map.get($themes, light, border);
+  background: map.get($themes, light, bgSoft);
+
+  @media (prefers-color-scheme: dark) {
+    border-bottom-color: map.get($themes, dark, border);
+    background: map.get($themes, dark, bgSoft);
+  }
+
+  @media (max-width: 576px) {
+    padding: 0 12px;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 16px 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: map.get($themes, light, textColorSoft);
+    font-weight: 500;
+    font-size: 14px;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    white-space: nowrap;
+
+    @media (prefers-color-scheme: dark) {
+      color: map.get($themes, dark, textColorSoft);
+    }
+
+    svg {
+      font-size: 18px;
+    }
+
+    &:hover {
+      color: map.get($themes, light, textColor);
+
+      @media (prefers-color-scheme: dark) {
+        color: map.get($themes, dark, textColor);
+      }
+    }
+
+    &.active {
+      color: map.get($themes, light, primary);
+      border-bottom-color: map.get($themes, light, primary);
+
+      @media (prefers-color-scheme: dark) {
+        color: map.get($themes, dark, primary);
+        border-bottom-color: map.get($themes, dark, primary);
+      }
+    }
+
+    @media (max-width: 576px) {
+      padding: 12px 8px;
+      font-size: 12px;
+
+      svg {
+        font-size: 16px;
+      }
+    }
+  }
+}
+
+// Modal Content
+.modal-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+
+  @media (max-width: 576px) {
+    padding: 16px;
+  }
+
+  // Scrollbar styling
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: map.get($themes, light, bgSoft);
+
+    @media (prefers-color-scheme: dark) {
+      background: map.get($themes, dark, bgSoft);
+    }
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: map.get($themes, light, border);
+    border-radius: 4px;
+
+    @media (prefers-color-scheme: dark) {
+      background: map.get($themes, dark, border);
+    }
+
+    &:hover {
+      background: map.get($themes, light, textColorSoft);
+
+      @media (prefers-color-scheme: dark) {
+        background: map.get($themes, dark, textColorSoft);
+      }
+    }
+  }
+}
+
+// Loading State
+.modal-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 60px 24px;
+  text-align: center;
+  flex: 1;
+
+  p {
+    font-size: 16px;
+    color: map.get($themes, light, textColor);
+    margin: 0;
+
+    @media (prefers-color-scheme: dark) {
+      color: map.get($themes, dark, textColor);
+    }
+  }
+
+  small {
+    font-size: 12px;
+    color: map.get($themes, light, textColorSoft);
+
+    @media (prefers-color-scheme: dark) {
+      color: map.get($themes, dark, textColorSoft);
+    }
+  }
+}
+
+// Error State
+.modal-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 40px 24px;
+  text-align: center;
+  flex: 1;
+
+  h3 {
+    color: map.get($themes, light, error);
+    margin: 0;
+
+    @media (prefers-color-scheme: dark) {
+      color: map.get($themes, dark, error);
+    }
+  }
+
+  p {
+    color: map.get($themes, light, textColorSoft);
+    margin: 0;
+
+    @media (prefers-color-scheme: dark) {
+      color: map.get($themes, dark, textColorSoft);
+    }
+  }
+
+  .retry-btn {
+    padding: 10px 20px;
+    background: map.get($themes, light, primary);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+
+    @media (prefers-color-scheme: dark) {
+      background: map.get($themes, dark, primary);
+    }
+
+    &:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px map.get($themes, light, shadow);
+
+      @media (prefers-color-scheme: dark) {
+        box-shadow: 0 4px 12px map.get($themes, dark, shadow);
+      }
+    }
+  }
+}
+
+// Tab Content
+.tab-content {
+  animation: fadeIn 0.3s ease-in-out;
+
+  h3 {
+    margin: 0 0 16px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: map.get($themes, light, textColor);
+
+    @media (prefers-color-scheme: dark) {
+      color: map.get($themes, dark, textColor);
+    }
+  }
+
+  h4 {
+    margin: 16px 0 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: map.get($themes, light, textColorSoft);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+
+    @media (prefers-color-scheme: dark) {
+      color: map.get($themes, dark, textColorSoft);
+    }
+  }
+}
+
+// Summary Tab
+.summary-tab {
+  .summary-card {
+    background: map.get($themes, light, bgSoft);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 24px;
+    border-left: 4px solid map.get($themes, light, primary);
+
+    @media (prefers-color-scheme: dark) {
+      background: map.get($themes, dark, bgSoft);
+      border-left-color: map.get($themes, dark, primary);
+    }
+
+    &.highlight {
+      border: 2px solid map.get($themes, light, primary);
+      background: linear-gradient(
+        135deg,
+        map.get($themes, light, primary) 0%,
+        rgba(82, 113, 255, 0.1) 100%
+      );
+
+      @media (prefers-color-scheme: dark) {
+        background: linear-gradient(
+          135deg,
+          rgba(82, 113, 255, 0.2) 0%,
+          rgba(82, 113, 255, 0.05) 100%
+        );
+      }
+    }
+
+    .metric-highlight {
+      text-align: center;
+      padding: 12px 0;
+
+      .metric-value {
+        font-size: 48px;
+        font-weight: 700;
+        color: map.get($themes, light, primary);
+        line-height: 1;
+        margin-bottom: 8px;
+
+        @media (prefers-color-scheme: dark) {
+          color: map.get($themes, dark, primary);
+        }
+
+        @media (max-width: 576px) {
+          font-size: 36px;
+        }
+      }
+
+      .metric-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: map.get($themes, light, textColor);
+        margin-bottom: 4px;
+
+        @media (prefers-color-scheme: dark) {
+          color: map.get($themes, dark, textColor);
+        }
+      }
+
+      .metric-subtext {
+        font-size: 12px;
+        color: map.get($themes, light, textColorSoft);
+
+        @media (prefers-color-scheme: dark) {
+          color: map.get($themes, dark, textColorSoft);
+        }
+      }
+    }
+  }
+
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+
+    @media (max-width: 576px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .metric-card {
+    background: map.get($themes, light, bgSoft);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+    border: 1px solid map.get($themes, light, border);
+    transition: all 0.2s ease;
+
+    @media (prefers-color-scheme: dark) {
+      background: map.get($themes, dark, bgSoft);
+      border-color: map.get($themes, dark, border);
+    }
+
+    &:hover {
+      box-shadow: 0 4px 12px map.get($themes, light, shadow);
+      transform: translateY(-2px);
+
+      @media (prefers-color-scheme: dark) {
+        box-shadow: 0 4px 12px map.get($themes, dark, shadow);
+      }
+    }
+
+    .metric-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: map.get($themes, light, primary);
+      line-height: 1;
+      margin-bottom: 4px;
+
+      @media (prefers-color-scheme: dark) {
+        color: map.get($themes, dark, primary);
+      }
+    }
+
+    .metric-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: map.get($themes, light, textColorSoft);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      margin-bottom: 4px;
+
+      @media (prefers-color-scheme: dark) {
+        color: map.get($themes, dark, textColorSoft);
+      }
+    }
+
+    .metric-note {
+      font-size: 11px;
+      color: map.get($themes, light, textColorSoft);
+
+      @media (prefers-color-scheme: dark) {
+        color: map.get($themes, dark, textColorSoft);
+      }
+    }
+  }
+
+  .content-distribution {
+    background: map.get($themes, light, bgSoft);
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid map.get($themes, light, border);
+
+    @media (prefers-color-scheme: dark) {
+      background: map.get($themes, dark, bgSoft);
+      border-color: map.get($themes, dark, border);
+    }
+
+    .distribution-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .dist-bar-item {
+      .bar-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: map.get($themes, light, textColorSoft);
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+
+        @media (prefers-color-scheme: dark) {
+          color: map.get($themes, dark, textColorSoft);
+        }
+      }
+
+      .bar-container {
+        width: 100%;
+        height: 32px;
+        background: map.get($themes, light, border);
+        border-radius: 4px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        position: relative;
+
+        @media (prefers-color-scheme: dark) {
+          background: map.get($themes, dark, border);
+        }
+      }
+
+      .bar-fill {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 12px;
+        transition: width 0.4s ease;
+
+        &.posts-bar {
+          background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        }
+
+        &.events-bar {
+          background: linear-gradient(90deg, #f093fb 0%, #f5576c 100%);
+        }
+      }
+
+      .bar-count {
+        font-size: 11px;
+        color: map.get($themes, light, textColorSoft);
+        margin-top: 4px;
+
+        @media (prefers-color-scheme: dark) {
+          color: map.get($themes, dark, textColorSoft);
+        }
+      }
+    }
+  }
+}
+
+// Users Tab
+.users-tab {
+  .users-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .user-card {
+    background: map.get($themes, light, bgSoft);
+    border: 1px solid map.get($themes, light, border);
+    border-radius: 8px;
+    padding: 16px;
+    transition: all 0.2s ease;
+    border-left: 4px solid map.get($themes, light, border);
+
+    @media (prefers-color-scheme: dark) {
+      background: map.get($themes, dark, bgSoft);
+      border-color: map.get($themes, dark, border);
+    }
+
+    &.optimal {
+      border-left-color: #4caf50;
+      background: rgba(76, 175, 80, 0.05);
+
+      @media (prefers-color-scheme: dark) {
+        background: rgba(76, 175, 80, 0.1);
+      }
+    }
+
+    &.improved {
+      border-left-color: #2196f3;
+      background: rgba(33, 150, 243, 0.05);
+
+      @media (prefers-color-scheme: dark) {
+        background: rgba(33, 150, 243, 0.1);
+      }
+    }
+
+    &.fixed {
+      border-left-color: #ff9800;
+      background: rgba(255, 152, 0, 0.05);
+
+      @media (prefers-color-scheme: dark) {
+        background: rgba(255, 152, 0, 0.1);
+      }
+    }
+
+    &.pending {
+      border-left-color: #f44336;
+      background: rgba(244, 67, 54, 0.05);
+
+      @media (prefers-color-scheme: dark) {
+        background: rgba(244, 67, 54, 0.1);
+      }
+    }
+
+    .user-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .user-interests {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      strong {
+        color: map.get($themes, light, textColor);
+        font-size: 14px;
+
+        @media (prefers-color-scheme: dark) {
+          color: map.get($themes, dark, textColor);
+        }
+      }
+
+      .user-id {
+        font-size: 11px;
+        color: map.get($themes, light, textColorSoft);
+        font-family: monospace;
+
+        @media (prefers-color-scheme: dark) {
+          color: map.get($themes, dark, textColorSoft);
+        }
+      }
+
+      .status-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        background: map.get($themes, light, primary);
+        color: white;
+        white-space: nowrap;
+
+        @media (prefers-color-scheme: dark) {
+          background: map.get($themes, dark, primary);
+        }
+      }
+    }
+
+    .user-metrics {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .metric-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      @media (max-width: 576px) {
+        gap: 8px;
+      }
+
+      .metric-name {
+        min-width: 80px;
+        font-size: 12px;
+        font-weight: 600;
+        color: map.get($themes, light, textColorSoft);
+        text-transform: uppercase;
+
+        @media (prefers-color-scheme: dark) {
+          color: map.get($themes, dark, textColorSoft);
+        }
+      }
+
+      .metric-bar {
+        flex: 1;
+        height: 24px;
+        background: map.get($themes, light, border);
+        border-radius: 4px;
+        overflow: hidden;
+        position: relative;
+
+        @media (prefers-color-scheme: dark) {
+          background: map.get($themes, dark, border);
+        }
+
+        .bar-fill {
+          height: 100%;
+          background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+          transition: width 0.4s ease;
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          padding-right: 6px;
+        }
+      }
+
+      .metric-value {
+        min-width: 45px;
+        text-align: right;
+        font-weight: 600;
+        font-size: 14px;
+        color: map.get($themes, light, textColor);
+
+        @media (prefers-color-scheme: dark) {
+          color: map.get($themes, dark, textColor);
+        }
+      }
+    }
+
+    .user-info {
+      padding: 8px 0;
+      border-bottom: 1px solid map.get($themes, light, border);
+      margin: 8px 0;
+
+      @media (prefers-color-scheme: dark) {
+        border-bottom-color: map.get($themes, dark, border);
+      }
+
+      small {
+        font-size: 12px;
+        color: map.get($themes, light, textColorSoft);
+
+        @media (prefers-color-scheme: dark) {
+          color: map.get($themes, dark, textColorSoft);
+        }
+      }
+    }
+
+    .user-stats {
+      display: flex;
+      gap: 16px;
+      padding: 8px 0;
+      border-top: 1px solid map.get($themes, light, border);
+      margin-top: 8px;
+      font-size: 12px;
+
+      @media (prefers-color-scheme: dark) {
+        border-top-color: map.get($themes, dark, border);
+      }
+
+      span {
+        color: map.get($themes, light, textColorSoft);
+
+        @media (prefers-color-scheme: dark) {
+          color: map.get($themes, dark, textColorSoft);
+        }
+      }
+    }
+  }
+}
+
+// Improvements Tab
+.improvements-tab {
+  .improvements-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .improvement-item {
+    background: map.get($themes, light, bgSoft);
+    border: 1px solid map.get($themes, light, border);
+    border-radius: 8px;
+    padding: 16px;
+    transition: all 0.2s ease;
+
+    @media (prefers-color-scheme: dark) {
+      background: map.get($themes, dark, bgSoft);
+      border-color: map.get($themes, dark, border);
+    }
+
+    &:hover {
+      box-shadow: 0 2px 8px map.get($themes, light, shadow);
+
+      @media (prefers-color-scheme: dark) {
+        box-shadow: 0 2px 8px map.get($themes, dark, shadow);
+      }
+    }
+
+    .improvement-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+
+      .improvement-name {
+        font-weight: 600;
+        color: map.get($themes, light, textColor);
+
+        @media (prefers-color-scheme: dark) {
+          color: map.get($themes, dark, textColor);
+        }
+      }
+
+      .improvement-change {
+        background: #4caf50;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+    }
+
+    .improvement-details {
+      .before-after {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        @media (max-width: 576px) {
+          gap: 8px;
+          font-size: 12px;
+        }
+
+        .before,
+        .after {
+          flex: 1;
+          text-align: center;
+
+          small {
+            display: block;
+            font-size: 11px;
+            color: map.get($themes, light, textColorSoft);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+
+            @media (prefers-color-scheme: dark) {
+              color: map.get($themes, dark, textColorSoft);
+            }
+          }
+
+          strong {
+            display: block;
+            font-size: 16px;
+            color: map.get($themes, light, textColor);
+
+            @media (prefers-color-scheme: dark) {
+              color: map.get($themes, dark, textColor);
+            }
+          }
+        }
+
+        .arrow {
+          color: map.get($themes, light, textColorSoft);
+          font-weight: 600;
+
+          @media (prefers-color-scheme: dark) {
+            color: map.get($themes, dark, textColorSoft);
+          }
+        }
+      }
+    }
+  }
+
+  .improvement-summary {
+    background: map.get($themes, light, bgSoft);
+    border: 1px solid map.get($themes, light, border);
+    border-radius: 8px;
+    padding: 16px;
+
+    @media (prefers-color-scheme: dark) {
+      background: map.get($themes, dark, bgSoft);
+      border-color: map.get($themes, dark, border);
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+
+      li {
+        padding: 8px 0;
+        color: map.get($themes, light, textColor);
+        font-size: 14px;
+
+        @media (prefers-color-scheme: dark) {
+          color: map.get($themes, dark, textColor);
+        }
+
+        &:not(:last-child) {
+          border-bottom: 1px solid map.get($themes, light, border);
+
+          @media (prefers-color-scheme: dark) {
+            border-bottom-color: map.get($themes, dark, border);
+          }
+        }
+      }
+    }
+  }
+
+  .system-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+
+    .stat-box {
+      background: map.get($themes, light, bgSoft);
+      border: 1px solid map.get($themes, light, border);
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+
+      @media (prefers-color-scheme: dark) {
+        background: map.get($themes, dark, bgSoft);
+        border-color: map.get($themes, dark, border);
+      }
+
+      .stat-label {
+        font-size: 12px;
+        color: map.get($themes, light, textColorSoft);
+        text-transform: uppercase;
+        font-weight: 600;
+        margin-bottom: 8px;
+
+        @media (prefers-color-scheme: dark) {
+          color: map.get($themes, dark, textColorSoft);
+        }
+      }
+
+      .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: map.get($themes, light, primary);
+
+        @media (prefers-color-scheme: dark) {
+          color: map.get($themes, dark, primary);
+        }
+      }
+    }
+  }
+
+  .aggregated-metrics {
+    background: map.get($themes, light, bgSoft);
+    border: 1px solid map.get($themes, light, border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 24px;
+    overflow-x: auto;
+
+    @media (prefers-color-scheme: dark) {
+      background: map.get($themes, dark, bgSoft);
+      border-color: map.get($themes, dark, border);
+    }
+
+    .metrics-table {
+      width: 100%;
+      border-collapse: collapse;
+
+      .table-header {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+        gap: 8px;
+        padding: 12px 0;
+        border-bottom: 2px solid map.get($themes, light, border);
+        font-weight: 600;
+        font-size: 12px;
+        text-transform: uppercase;
+        color: map.get($themes, light, textColorSoft);
+
+        @media (prefers-color-scheme: dark) {
+          border-bottom-color: map.get($themes, dark, border);
+          color: map.get($themes, dark, textColorSoft);
+        }
+
+        > div {
+          text-align: center;
+        }
+      }
+
+      .table-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+        gap: 8px;
+        padding: 10px 0;
+        border-bottom: 1px solid map.get($themes, light, border);
+        font-size: 13px;
+        color: map.get($themes, light, textColor);
+
+        @media (prefers-color-scheme: dark) {
+          border-bottom-color: map.get($themes, dark, border);
+          color: map.get($themes, dark, textColor);
+        }
+
+        > div {
+          text-align: center;
+        }
+
+        .metric-name {
+          text-align: left;
+          font-weight: 600;
+          text-transform: uppercase;
+        }
+      }
+    }
+  }
+
+  .system-info {
+    background: map.get($themes, light, bgSoft);
+    border: 1px solid map.get($themes, light, border);
+    border-radius: 8px;
+    padding: 16px;
+
+    @media (prefers-color-scheme: dark) {
+      background: map.get($themes, dark, bgSoft);
+      border-color: map.get($themes, dark, border);
+    }
+
+    p {
+      margin: 8px 0;
+      font-size: 14px;
+      color: map.get($themes, light, textColor);
+
+      @media (prefers-color-scheme: dark) {
+        color: map.get($themes, dark, textColor);
+      }
+
+      strong {
+        color: map.get($themes, light, textColorSoft);
+
+        @media (prefers-color-scheme: dark) {
+          color: map.get($themes, dark, textColorSoft);
+        }
+      }
+    }
+  }
+}
+
+// Evaluation metadata
+.evaluation-metadata {
+  background: map.get($themes, light, bgSoft);
+  border: 1px solid map.get($themes, light, border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+
+  @media (prefers-color-scheme: dark) {
+    background: map.get($themes, dark, bgSoft);
+    border-color: map.get($themes, dark, border);
+  }
+
+  p {
+    margin: 8px 0;
+    font-size: 13px;
+    color: map.get($themes, light, textColor);
+
+    @media (prefers-color-scheme: dark) {
+      color: map.get($themes, dark, textColor);
+    }
+
+    strong {
+      color: map.get($themes, light, textColorSoft);
+
+      @media (prefers-color-scheme: dark) {
+        color: map.get($themes, dark, textColorSoft);
+      }
+    }
+  }
+}
+
+// No data message
+.no-data {
+  padding: 40px 20px;
+  text-align: center;
+  color: map.get($themes, light, textColorSoft);
+  font-size: 14px;
+
+  @media (prefers-color-scheme: dark) {
+    color: map.get($themes, dark, textColorSoft);
+  }
+}
+
+// Modal Footer
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid map.get($themes, light, border);
+  background: map.get($themes, light, bgSoft);
+  text-align: center;
+
+  @media (prefers-color-scheme: dark) {
+    border-top-color: map.get($themes, dark, border);
+    background: map.get($themes, dark, bgSoft);
+  }
+
+  p {
+    margin: 0;
+    font-size: 12px;
+    color: map.get($themes, light, textColorSoft);
+
+    @media (prefers-color-scheme: dark) {
+      color: map.get($themes, dark, textColorSoft);
+    }
+  }
+}

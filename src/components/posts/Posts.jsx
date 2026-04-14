@@ -106,6 +106,12 @@ const Posts = ({ userPosts, onPostUpdate, userId, userData = null, onAddSharedPo
             ...post,
             img: post.img ? formatMediaUrl(post.img) : null,
             media: post.media ? formatMediaUrl(post.media) : null,
+            mediaArray: Array.isArray(post.mediaArray) && post.mediaArray.length > 0
+              ? post.mediaArray.map(item => ({
+                  ...item,
+                  url: item.url ? formatMediaUrl(item.url) : null
+                }))
+              : [],
             user: {
               _id: post.userId || post.user?._id,
               name: post.user?.name || post.name,
@@ -146,6 +152,13 @@ const Posts = ({ userPosts, onPostUpdate, userId, userData = null, onAddSharedPo
               ...resolvedShared,
               img: resolvedShared.img ? formatMediaUrl(resolvedShared.img) : null,
               media: resolvedShared.media ? formatMediaUrl(resolvedShared.media) : null,
+              mediaArray: Array.isArray(resolvedShared.mediaArray) && resolvedShared.mediaArray.length > 0
+                ? resolvedShared.mediaArray.map(item => ({
+                    ...item,
+                    url: item.url ? formatMediaUrl(item.url) : null,
+                    thumbnail: item.thumbnail ? formatMediaUrl(item.thumbnail) : null
+                  }))
+                : [],
               mediaType: resolvedShared.mediaType || (resolvedShared.media && /\.(mp4|mov|webm|avi|mkv)$/i.test(resolvedShared.media) ? 'video' : (resolvedShared.img ? 'image' : null)),
               user: {
                 _id: resolvedShared.user?._id || resolvedShared.userId || resolvedShared._id || '',
@@ -159,6 +172,13 @@ const Posts = ({ userPosts, onPostUpdate, userId, userData = null, onAddSharedPo
               ...post,
               img: post.img ? formatMediaUrl(post.img) : null,
               media: post.media ? formatMediaUrl(post.media) : null,
+              mediaArray: Array.isArray(post.mediaArray) && post.mediaArray.length > 0
+                ? post.mediaArray.map(item => ({
+                    ...item,
+                    url: item.url ? formatMediaUrl(item.url) : null,
+                    thumbnail: item.thumbnail ? formatMediaUrl(item.thumbnail) : null
+                  }))
+                : [],
               user: {
                 _id: post.userId || post.user?._id,
                 name: post.user?.name || post.name,

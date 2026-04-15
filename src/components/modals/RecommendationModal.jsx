@@ -14,6 +14,7 @@ const RecommendationModal = ({ isOpen, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
+  const [filter, setFilter] = useState("all"); // "all", "posts", "events"
 
   // Fetch evaluation data from API
   useEffect(() => {
@@ -443,8 +444,8 @@ const RecommendationModal = ({ isOpen, onClose }) => {
         console.warn("Could not fetch user profile, using defaults:", userErr);
       }
 
-      // Fetch recommended events (same as events page with "Recommended" toggle)
-      const eventsResponse = await fetch("/api/events/recommended?strict=false&limit=20&includePast=true", {
+      // Fetch user's actual feed (no limit - get all recommendations in feed order)
+      const feedResponse = await fetch("/api/posts/feed?limit=1000&page=1", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -452,37 +453,19 @@ const RecommendationModal = ({ isOpen, onClose }) => {
         }
       });
 
-      if (!eventsResponse.ok) {
-        throw new Error(`Events API Error: ${eventsResponse.statusText}`);
+      if (!feedResponse.ok) {
+        throw new Error(`Feed API Error: ${feedResponse.statusText}`);
       }
 
-      const eventsResult = await eventsResponse.json();
-      const recommendedEvents = Array.isArray(eventsResult?.events) ? eventsResult.events : [];
-
-      // Normalize events
-      const normalizedEvents = recommendedEvents
-        .filter(ev => ev._id && ev.title)
-        .map(normalizeToEventShape)
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-      // Fetch posts from feed for recommended posts
-      const feedResponse = await fetch("/api/posts/feed?limit=20", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        }
-      });
-
-      let recommendedPosts = [];
-      if (feedResponse.ok) {
-        const feedResult = await feedResponse.json();
-        const feedItems = Array.isArray(feedResult?.items) ? feedResult.items : [];
-        recommendedPosts = feedItems.filter(item => item.type === 'post' && item.desc);
-      }
-
-      // Build evaluation data structure
-      const allRecommendations = [...recommendedPosts, ...normalizedEvents];
+      const feedResult = await feedResponse.json();
+      const feedItems = Array.isArray(feedResult?.items) ? feedResult.items : [];
+      
+      // Separate posts and events from feed (maintaining feed order)
+      const recommendedPosts = feedItems.filter(item => item.type === 'post' && item.desc);
+      const recommendedEvents = feedItems.filter(item => item.type === 'event').map(normalizeToEventShape);
+      
+      // Combine maintaining feed order (posts come first as they appear in feed)
+      const allRecommendations = [...recommendedPosts, ...recommendedEvents];
       
       // Fetch performance metrics
       let metricsData = {
@@ -499,13 +482,15 @@ const RecommendationModal = ({ isOpen, onClose }) => {
       };
 
       try {
+        // Only send first 50 items to avoid 413 Payload Too Large error
+        const metricsPayload = allRecommendations.slice(0, 50);
         const metricsResponse = await fetch('/api/metrics/performance', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({ recommendations: allRecommendations })
+          body: JSON.stringify({ recommendations: metricsPayload })
         });
 
         if (metricsResponse.ok) {
@@ -529,7 +514,7 @@ const RecommendationModal = ({ isOpen, onClose }) => {
             relevanceScore: post.relevanceScore || 0.75,
             reasons: generateDetailedReasons(post, userData, post.relevanceScore || 0.75)
           })),
-          ...normalizedEvents.map(event => ({
+          ...recommendedEvents.map(event => ({
             itemId: event._id,
             itemTitle: event.title || 'Untitled Event',
             itemType: 'event',
@@ -670,6 +655,58 @@ const RecommendationModal = ({ isOpen, onClose }) => {
               {/* Recommendations Tab */}
               {activeTab === "recommendations" && (
                 <div className="tab-content recommendations-tab">
+                  {/* Filter Buttons */}
+                  <div className="filter-buttons" style={{ display: 'flex', gap: '10px', marginBottom: '20px', justifyContent: 'flex-start' }}>
+                    <button 
+                      onClick={() => setFilter("all")}
+                      style={{
+                        padding: '8px 16px',
+                        backgroundColor: filter === "all" ? '#5271ff' : 'transparent',
+                        color: filter === "all" ? 'white' : '#9ca3af',
+                        border: '1px solid ' + (filter === "all" ? '#5271ff' : '#4b5563'),
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: filter === "all" ? '600' : '500',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      📋 All ({data?.recommendations?.length || 0})
+                    </button>
+                    <button 
+                      onClick={() => setFilter("posts")}
+                      style={{
+                        padding: '8px 16px',
+                        backgroundColor: filter === "posts" ? '#5271ff' : 'transparent',
+                        color: filter === "posts" ? 'white' : '#9ca3af',
+                        border: '1px solid ' + (filter === "posts" ? '#5271ff' : '#4b5563'),
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: filter === "posts" ? '600' : '500',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      📝 Posts ({data?.recommendations?.filter(r => r.type === 'post')?.length || 0})
+                    </button>
+                    <button 
+                      onClick={() => setFilter("events")}
+                      style={{
+                        padding: '8px 16px',
+                        backgroundColor: filter === "events" ? '#5271ff' : 'transparent',
+                        color: filter === "events" ? 'white' : '#9ca3af',
+                        border: '1px solid ' + (filter === "events" ? '#5271ff' : '#4b5563'),
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: filter === "events" ? '600' : '500',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      📅 Events ({data?.recommendations?.filter(r => r.type === 'event')?.length || 0})
+                    </button>
+                  </div>
+
                   <div className="recommendations-list">
                     {data.recommendations && data.recommendations.length > 0 ? (
                       (() => {
@@ -678,7 +715,7 @@ const RecommendationModal = ({ isOpen, onClose }) => {
                         const events = data.recommendations.filter(item => item.type === 'event');
 
                         // Build display items with explanations
-                        const displayItems = [
+                        let displayItems = [
                           ...posts.map(post => {
                             const explanation = data.explanations.find(exp => exp.itemId === post._id);
                             return {
@@ -696,6 +733,13 @@ const RecommendationModal = ({ isOpen, onClose }) => {
                             };
                           })
                         ];
+
+                        // Apply filter
+                        if (filter === "posts") {
+                          displayItems = displayItems.filter(item => item.itemType === 'post');
+                        } else if (filter === "events") {
+                          displayItems = displayItems.filter(item => item.itemType === 'event');
+                        }
 
                         let lastType = null;
                         return displayItems.map((item, idx) => {
@@ -1041,7 +1085,7 @@ const RecommendationModal = ({ isOpen, onClose }) => {
                           <span className="check-mark">{parseFloat(data.metrics?.cosine_similarity?.value) > 0.6 ? '✅' : '⚠️'}</span>
                           <span className="assessment-text">
                             <strong>Interest Alignment:</strong> {formatPercentage(data.metrics?.cosine_similarity?.value)} match rate - 
-                            {parseFloat(data.metrics?.cosine_similarity?.value) > 0.6 ? ' Strong alignment with your interests' : ' May need interest profile update'}
+                            {parseFloat(data.metrics?.cosine_similarity?.value) > 0.65 ? ' Strong alignment with your interests' : parseFloat(data.metrics?.cosine_similarity?.value) > 0.45 ? ' Balanced approach - mixing interests with trending content' : ' Using collaborative filtering + fallback strategies'}
                           </span>
                         </li>
                         <li>

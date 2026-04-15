@@ -750,6 +750,176 @@
   transform: none !important;
 }
 
+  /* Optimized for Full HD laptop displays (1536px / 96em viewport) */
+  @media (min-width: 1400px) {
+    .card {
+      width: min(90vw, 1100px); /* Constrain width to prevent excessive stretching */
+      grid-template-columns: 1fr 1fr; /* Maintain two-column layout */
+      min-height: 680px; /* Increase minimum height for better proportions */
+      gap: 0;
+
+      .left {
+        position: sticky;
+        top: clamp(40px, 5vh, 60px); /* Increase sticky offset */
+        padding: clamp(50px, 6vw, 70px); /* Increase padding for breathing room */
+        gap: clamp(28px, 4vw, 40px); /* Increase gap between elements */
+
+        h1 {
+          font-size: clamp(3rem, 7vw, 3.5rem); /* Scale up heading */
+          line-height: 1.2;
+        }
+
+        p {
+          font-size: clamp(1.05rem, 2.2vw, 1.2rem); /* Scale up paragraph text */
+          line-height: 1.7;
+        }
+
+        .loginTypeSwitch {
+          gap: clamp(12px, 2vw, 16px); /* Increase button gap */
+          margin: clamp(20px, 3vw, 28px) 0; /* Increase margin */
+
+          button {
+            padding: clamp(12px, 1.8vw, 14px); /* Increase button padding */
+            font-size: clamp(1rem, 1.6vw, 1.1rem); /* Scale up button text */
+          }
+        }
+
+        button:not(.loginTypeSwitch button) {
+          width: clamp(180px, 32%, 240px); /* Scale up standalone buttons */
+          padding: 14px 28px;
+          font-size: clamp(1rem, 1.5vw, 1.1rem);
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+
+          &:hover {
+            box-shadow: 0 8px 24px rgba(131, 83, 202, 0.25);
+          }
+        }
+
+        span {
+          font-size: clamp(0.95rem, 1.6vw, 1.05rem); /* Scale up span text */
+        }
+      }
+
+      .right {
+        padding: clamp(50px, 6vw, 70px); /* Increase padding for symmetry */
+        gap: clamp(28px, 4vw, 40px); /* Increase form gaps */
+        overflow-y: auto;
+        max-height: 100%;
+
+        h1 {
+          font-size: clamp(2.2rem, 4.5vw, 2.8rem); /* Scale up form heading */
+          margin-bottom: clamp(8px, 1.5vw, 12px);
+        }
+
+        .loginToggleIcon {
+          top: clamp(20px, 3vw, 25px);
+          right: clamp(20px, 3vw, 25px);
+          width: 46px;
+          height: 46px;
+          font-size: 20px;
+
+          &:hover {
+            box-shadow: 0 8px 20px rgba(131, 83, 202, 0.12);
+          }
+        }
+
+        form {
+          gap: clamp(24px, 3.5vw, 32px); /* Increase form field gaps */
+
+          .error-message {
+            padding: clamp(14px, 2vw, 18px);
+            font-size: clamp(0.95rem, 1.3vw, 1.05rem);
+            line-height: 1.6;
+          }
+
+          input {
+            padding: clamp(18px, 2.8vw, 22px) 14px;
+            font-size: clamp(1rem, 1.4vw, 1.1rem);
+            border-radius: 10px 10px 0 0;
+
+            &:focus {
+              box-shadow: 0 4px 12px rgba(131, 83, 202, 0.15);
+            }
+          }
+
+          .password-input-wrapper {
+            input[type="password"],
+            input[type="text"] {
+              padding: clamp(18px, 2.8vw, 22px) 14px;
+              font-size: clamp(1rem, 1.4vw, 1.1rem);
+              border-radius: 10px 10px 0 0;
+            }
+
+            .password-toggle {
+              width: 40px;
+              height: 40px;
+              font-size: 1.2rem;
+              margin-bottom: 6px;
+              border-radius: 6px;
+
+              &:hover {
+                background: rgba(131, 83, 202, 0.12);
+              }
+            }
+          }
+
+          button {
+            padding: clamp(16px, 2.2vw, 18px);
+            font-size: clamp(1.05rem, 1.6vw, 1.15rem);
+            border-radius: 12px;
+            box-shadow: 0 6px 18px rgba(131, 83, 202, 0.22);
+
+            &:hover:not(:disabled) {
+              box-shadow: 0 10px 28px rgba(131, 83, 202, 0.32);
+            }
+
+            &.loading::after {
+              width: 22px;
+              height: 22px;
+              margin: -11px 0 0 -11px;
+              border-width: 2.5px;
+            }
+          }
+
+          .forgot-password-link {
+            font-size: clamp(0.95rem, 1.3vw, 1.05rem);
+
+            a {
+              font-size: inherit;
+            }
+          }
+        }
+
+        .panel-quick {
+          gap: 12px;
+          margin-bottom: clamp(12px, 2vw, 16px);
+
+          span {
+            font-size: clamp(1rem, 1.4vw, 1.1rem);
+          }
+
+          .link,
+          .quick-login,
+          .quick-signup {
+            padding: 8px 14px;
+            font-size: clamp(1rem, 1.3vw, 1.1rem);
+            border-radius: 8px;
+          }
+
+          .quick-signup {
+            padding: 8px 16px;
+          }
+        }
+      }
+    }
+
+    .school-logo {
+      top: clamp(16px, 2.5vw, 24px);
+      left: clamp(16px, 2.5vw, 24px);
+      width: clamp(100px, 9vw, 140px);
+    }
+  }
+
   /* Special handling for portrait orientation on larger screens */
   @media (max-width: 1200px) and (orientation: portrait) {
     .card {

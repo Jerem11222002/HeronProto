@@ -9,288 +9,444 @@
       "dance"
     ]
   },
-  "recommendations_count": 10,
+  "recommendations_count": 18,
   "iso_25010_metrics": {
     "functional_completeness": 100,
-    "functional_correctness": 90,
-    "functional_appropriateness": 0.85,
-    "total_recommended": 10
+    "functional_correctness": 72.22,
+    "functional_appropriateness": 0.98,
+    "total_recommended": 18
   },
   "hybrid_filtering_metrics": {
-    "cosine_similarity": 0.4579,
-    "rmse": 0.6583,
-    "mae": 0.6333,
-    "mrr": 0.4567
+    "cosine_similarity": 0,
+    "rmse": 0,
+    "mae": 0,
+    "mrr": 0
   },
   "all_recommendations": [
     {
-      "title": "folkdance#ph",
-      "type": "post",
-      "relevance_score": 0.75,
+      "title": "UTPC Visual Arts Exhibition - \"Digital Horizons\"",
+      "type": "event",
+      "relevance_score": 0.97,
       "reasons": [
         {
-          "label": "Interest Tags",
-          "value": "dance, folkdance",
-          "weight": "High"
+          "label": "Popular Content",
+          "value": "0 likes, 1542 views",
+          "weight": "Medium"
         },
         {
-          "label": "Popular Content",
-          "value": "3159 views",
+          "label": "Recently Posted",
+          "value": "0 days ago",
           "weight": "Medium"
         }
       ]
     },
     {
-      "title": "2016 me Tinikling project demo for Recital.",
-      "type": "post",
-      "relevance_score": 0.68,
+      "title": "CAST Theatre Spring Presentation - \"The Tempest\"",
+      "type": "event",
+      "relevance_score": 0.97,
       "reasons": [
         {
           "label": "Interest Tags",
-          "value": "folkdance",
+          "value": "theatre, drama",
           "weight": "High"
         },
         {
           "label": "Popular Content",
-          "value": "190 views, 20 shares",
+          "value": "0 likes, 2340 views",
+          "weight": "Medium"
+        },
+        {
+          "label": "Recently Posted",
+          "value": "0 days ago",
           "weight": "Medium"
         }
       ]
     },
     {
-      "title": "HSU event 2019 Arts and Design Recital👯",
-      "type": "post",
-      "relevance_score": 0.62,
+      "title": "UMAK Dance Extreme Performance - \"Movement Revolution\"",
+      "type": "event",
+      "relevance_score": 0.97,
       "reasons": [
         {
           "label": "Interest Tags",
-          "value": "dance, contemporarydance",
+          "value": "dance, modern-dance",
           "weight": "High"
         },
         {
           "label": "Popular Content",
-          "value": "37 views, 13 shares",
+          "value": "0 likes, 3120 views",
+          "weight": "Medium"
+        },
+        {
+          "label": "Recently Posted",
+          "value": "0 days ago",
           "weight": "Medium"
         }
       ]
     },
     {
-      "title": "African Dance",
-      "type": "post",
-      "relevance_score": 0.62,
+      "title": "UMAK Chorale Concert - Symphony of Voices",
+      "type": "event",
+      "relevance_score": 0.97,
       "reasons": [
         {
-          "label": "Interest Tags",
-          "value": "dance",
-          "weight": "High"
+          "label": "Popular Content",
+          "value": "0 likes, 1876 views",
+          "weight": "Medium"
         },
         {
-          "label": "Popular Content",
-          "value": "3819 views, 7 shares",
+          "label": "Recently Posted",
+          "value": "0 days ago",
           "weight": "Medium"
         }
       ]
     },
     {
-      "title": "\"Walang Sugat\" performed by UMAK Siglahi",
-      "type": "post",
-      "relevance_score": 0.61,
+      "title": "CULTURA Heritage Festival - Opening Ceremony",
+      "type": "event",
+      "relevance_score": 0.96,
       "reasons": [
         {
           "label": "Interest Tags",
-          "value": "drama",
+          "value": "dance, folk-dance",
           "weight": "High"
         },
         {
           "label": "Popular Content",
-          "value": "11 views, 7 shares",
+          "value": "0 likes, 1250 views",
+          "weight": "Medium"
+        },
+        {
+          "label": "Recently Posted",
+          "value": "0 days ago",
           "weight": "Medium"
         }
       ]
     },
     {
-      "title": "HUE & YOU: An Interactive Art Showcase",
+      "title": "CAST Theatre Production Auditions - \"A Midsummer Night's Dream\"",
       "type": "event",
-      "relevance_score": 0.6,
-      "reasons": [
-        {
-          "label": "Event Status",
-          "value": "Past Event",
-          "weight": "Low"
-        }
-      ]
-    },
-    {
-      "title": "SIGLAHI: UMAK Dance Festival 2026",
-      "type": "event",
-      "relevance_score": 0.6,
+      "relevance_score": 0.95,
       "reasons": [
         {
           "label": "Interest Tags",
-          "value": "folk-dance, dance, filipino-dance, theatre",
+          "value": "theatre, drama",
           "weight": "High"
         },
         {
-          "label": "Popular with Your Community",
-          "value": "UMAK Siglahi specializes in cultural-dance, folk-dance",
-          "weight": "High"
+          "label": "Popular Content",
+          "value": "0 likes, 356 views",
+          "weight": "Medium"
         },
         {
-          "label": "Event Status",
-          "value": "Past Event",
-          "weight": "Low"
+          "label": "Recently Posted",
+          "value": "0 days ago",
+          "weight": "Medium"
         }
       ]
     },
     {
-      "title": "🩰✨ Groove Revolution 2025: The Ultimate Dance Showdown",
+      "title": "UMAK Dance Extreme Contemporary Dance Auditions",
       "type": "event",
-      "relevance_score": 0.6,
+      "relevance_score": 0.95,
       "reasons": [
         {
           "label": "Interest Tags",
-          "value": "modern-dance, dance, contemporary-dance, street-dance",
+          "value": "dance, modern-dance",
           "weight": "High"
         },
         {
-          "label": "Popular with Your Community",
-          "value": "UMAK Dance Extreme specializes in dance, modern-dance",
-          "weight": "High"
+          "label": "Popular Content",
+          "value": "0 likes, 412 views",
+          "weight": "Medium"
         },
         {
-          "label": "Event Status",
-          "value": "Past Event",
-          "weight": "Low"
+          "label": "Recently Posted",
+          "value": "0 days ago",
+          "weight": "Medium"
         }
       ]
     },
     {
-      "title": "💃 Groove Revolution: UMak Dance Showdown 2025 🕺",
+      "title": "UMAK Brass Band Instrumentalist Auditions",
       "type": "event",
-      "relevance_score": 0.6,
+      "relevance_score": 0.94,
       "reasons": [
         {
-          "label": "Interest Tags",
-          "value": "modern-dance, dance, contemporary-dance, street-dance",
-          "weight": "High"
+          "label": "Popular Content",
+          "value": "0 likes, 289 views",
+          "weight": "Medium"
         },
         {
-          "label": "Popular with Your Community",
-          "value": "UMAK Dance Extreme specializes in dance, modern-dance",
-          "weight": "High"
-        },
-        {
-          "label": "Event Status",
-          "value": "Past Event",
-          "weight": "Low"
+          "label": "Recently Posted",
+          "value": "0 days ago",
+          "weight": "Medium"
         }
       ]
     },
     {
-      "title": "Curtain Call: The UMAK Theatrical Showcase 2025",
+      "title": "UMAK Chorale Spring Auditions 2026",
       "type": "event",
-      "relevance_score": 0.6,
+      "relevance_score": 0.93,
+      "reasons": [
+        {
+          "label": "Popular Content",
+          "value": "0 likes, 245 views",
+          "weight": "Medium"
+        },
+        {
+          "label": "Recently Posted",
+          "value": "0 days ago",
+          "weight": "Medium"
+        }
+      ]
+    },
+    {
+      "title": "UTPC Digital Art & Multimedia Auditions",
+      "type": "event",
+      "relevance_score": 0.93,
+      "reasons": [
+        {
+          "label": "Popular Content",
+          "value": "0 likes, 178 views",
+          "weight": "Medium"
+        },
+        {
+          "label": "Recently Posted",
+          "value": "0 days ago",
+          "weight": "Medium"
+        }
+      ]
+    },
+    {
+      "title": "Drama production: Script adaptation and character interpretation",
+      "type": "post",
+      "relevance_score": 0.87,
+      "reasons": [
+        {
+          "label": "Popular Content",
+          "value": "0 likes, 1 views",
+          "weight": "Medium"
+        },
+        {
+          "label": "Recently Posted",
+          "value": "0 days ago",
+          "weight": "Medium"
+        }
+      ]
+    },
+    {
+      "title": "Dance workshop: Technique practice and skill development",
+      "type": "post",
+      "relevance_score": 0.86,
+      "reasons": [
+        {
+          "label": "Popular Content",
+          "value": "0 likes, 1 views",
+          "weight": "Medium"
+        },
+        {
+          "label": "Recently Posted",
+          "value": "0 days ago",
+          "weight": "Medium"
+        }
+      ]
+    },
+    {
+      "title": "Dance workshop: Technique practice and skill development",
+      "type": "post",
+      "relevance_score": 0.86,
+      "reasons": [
+        {
+          "label": "Popular Content",
+          "value": "0 likes, 1 views",
+          "weight": "Medium"
+        },
+        {
+          "label": "Recently Posted",
+          "value": "0 days ago",
+          "weight": "Medium"
+        }
+      ]
+    },
+    {
+      "title": "Drama technique: Method acting and character portrayal",
+      "type": "post",
+      "relevance_score": 0.86,
+      "reasons": [
+        {
+          "label": "Popular Content",
+          "value": "0 likes, 1 views",
+          "weight": "Medium"
+        },
+        {
+          "label": "Recently Posted",
+          "value": "0 days ago",
+          "weight": "Medium"
+        }
+      ]
+    },
+    {
+      "title": "STAGECRAFT: A Night of Student Theatre",
+      "type": "event",
+      "relevance_score": 0.78,
       "reasons": [
         {
           "label": "Interest Tags",
           "value": "drama, theatre",
           "weight": "High"
+        }
+      ]
+    },
+    {
+      "title": "Theatre project update: Set design and costume preparation",
+      "type": "post",
+      "relevance_score": 0.6,
+      "reasons": [
+        {
+          "label": "Popular Content",
+          "value": "0 likes, 2 views",
+          "weight": "Medium"
         },
         {
-          "label": "Popular with Your Community",
-          "value": "CAST specializes in theatre, drama",
-          "weight": "High"
+          "label": "Recently Posted",
+          "value": "6 days ago",
+          "weight": "Medium"
+        }
+      ]
+    },
+    {
+      "title": "New art piece inspired by vocal-arts 🎨",
+      "type": "post",
+      "relevance_score": 0.2,
+      "reasons": [
+        {
+          "label": "Popular Content",
+          "value": "0 likes, 2 views",
+          "weight": "Medium"
         },
         {
-          "label": "Event Status",
-          "value": "Past Event",
-          "weight": "Low"
+          "label": "Recently Posted",
+          "value": "6 days ago",
+          "weight": "Medium"
+        }
+      ]
+    },
+    {
+      "title": "New art piece inspired by vocal-arts 🎨",
+      "type": "post",
+      "relevance_score": 0.2,
+      "reasons": [
+        {
+          "label": "Popular Content",
+          "value": "0 likes, 2 views",
+          "weight": "Medium"
+        },
+        {
+          "label": "Recently Posted",
+          "value": "6 days ago",
+          "weight": "Medium"
         }
       ]
     }
   ],
   "top_recommendations": [
     {
-      "title": "folkdance#ph",
-      "type": "post",
-      "relevance_score": 0.75,
+      "title": "UTPC Visual Arts Exhibition - \"Digital Horizons\"",
+      "type": "event",
+      "relevance_score": 0.97,
       "reasons": [
         {
-          "label": "Interest Tags",
-          "value": "dance, folkdance",
-          "weight": "High"
+          "label": "Popular Content",
+          "value": "0 likes, 1542 views",
+          "weight": "Medium"
         },
         {
-          "label": "Popular Content",
-          "value": "3159 views",
+          "label": "Recently Posted",
+          "value": "0 days ago",
           "weight": "Medium"
         }
       ]
     },
     {
-      "title": "2016 me Tinikling project demo for Recital.",
-      "type": "post",
-      "relevance_score": 0.68,
+      "title": "CAST Theatre Spring Presentation - \"The Tempest\"",
+      "type": "event",
+      "relevance_score": 0.97,
       "reasons": [
         {
           "label": "Interest Tags",
-          "value": "folkdance",
+          "value": "theatre, drama",
           "weight": "High"
         },
         {
           "label": "Popular Content",
-          "value": "190 views, 20 shares",
+          "value": "0 likes, 2340 views",
+          "weight": "Medium"
+        },
+        {
+          "label": "Recently Posted",
+          "value": "0 days ago",
           "weight": "Medium"
         }
       ]
     },
     {
-      "title": "HSU event 2019 Arts and Design Recital👯",
-      "type": "post",
-      "relevance_score": 0.62,
+      "title": "UMAK Dance Extreme Performance - \"Movement Revolution\"",
+      "type": "event",
+      "relevance_score": 0.97,
       "reasons": [
         {
           "label": "Interest Tags",
-          "value": "dance, contemporarydance",
+          "value": "dance, modern-dance",
           "weight": "High"
         },
         {
           "label": "Popular Content",
-          "value": "37 views, 13 shares",
+          "value": "0 likes, 3120 views",
+          "weight": "Medium"
+        },
+        {
+          "label": "Recently Posted",
+          "value": "0 days ago",
           "weight": "Medium"
         }
       ]
     },
     {
-      "title": "African Dance",
-      "type": "post",
-      "relevance_score": 0.62,
+      "title": "UMAK Chorale Concert - Symphony of Voices",
+      "type": "event",
+      "relevance_score": 0.97,
       "reasons": [
         {
-          "label": "Interest Tags",
-          "value": "dance",
-          "weight": "High"
+          "label": "Popular Content",
+          "value": "0 likes, 1876 views",
+          "weight": "Medium"
         },
         {
-          "label": "Popular Content",
-          "value": "3819 views, 7 shares",
+          "label": "Recently Posted",
+          "value": "0 days ago",
           "weight": "Medium"
         }
       ]
     },
     {
-      "title": "\"Walang Sugat\" performed by UMAK Siglahi",
-      "type": "post",
-      "relevance_score": 0.61,
+      "title": "CULTURA Heritage Festival - Opening Ceremony",
+      "type": "event",
+      "relevance_score": 0.96,
       "reasons": [
         {
           "label": "Interest Tags",
-          "value": "drama",
+          "value": "dance, folk-dance",
           "weight": "High"
         },
         {
           "label": "Popular Content",
-          "value": "11 views, 7 shares",
+          "value": "0 likes, 1250 views",
+          "weight": "Medium"
+        },
+        {
+          "label": "Recently Posted",
+          "value": "0 days ago",
           "weight": "Medium"
         }
       ]

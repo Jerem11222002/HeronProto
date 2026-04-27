@@ -80,7 +80,11 @@ const ChatPopupInternal = ({ friend, onClose, style, messages: externalMessages 
       })
       .then(res => {
         if (!isMounted) return;
-        setMessages(res?.data || []);
+        // Backend now returns { messages: [...], pagination: {...} }
+        console.log('📨 Messages response:', res?.data);
+        const messagesArray = res?.data?.messages || res?.data || [];
+        console.log('📨 Messages array:', messagesArray, 'is Array?', Array.isArray(messagesArray));
+        setMessages(Array.isArray(messagesArray) ? messagesArray : []);
       })
       .catch(err => {
         if (isMounted) {
@@ -147,7 +151,9 @@ const ChatPopupInternal = ({ friend, onClose, style, messages: externalMessages 
 
   // Update messages from navbar
   useEffect(() => {
-    if (externalMessages) setMessages(externalMessages);
+    if (externalMessages) {
+      setMessages(Array.isArray(externalMessages) ? externalMessages : []);
+    }
   }, [externalMessages]);
 
   // Send message
@@ -223,7 +229,9 @@ const ChatPopupInternal = ({ friend, onClose, style, messages: externalMessages 
   if ('top' in appliedStyle) delete appliedStyle.top;
   if (!('bottom' in appliedStyle)) appliedStyle.bottom = '24px';
 
-  const groupedMessages = groupMessagesByDate(messages);
+  // Ensure messages is always an array before grouping
+  const safeMessages = Array.isArray(messages) ? messages : [];
+  const groupedMessages = groupMessagesByDate(safeMessages);
   const dateKeys = Object.keys(groupedMessages);
 
   return (
@@ -277,7 +285,7 @@ const ChatPopupInternal = ({ friend, onClose, style, messages: externalMessages 
         <div className="messages">
           {loading ? (
             <div className="empty-state">Loading...</div>
-          ) : messages.length === 0 ? (
+          ) : safeMessages.length === 0 ? (
             <div className="empty-state">No messages yet. Say hello!</div>
           ) : (
             dateKeys.map(dateKey => (

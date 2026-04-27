@@ -40,20 +40,21 @@ User Profile (Interests: dance, theatre, drama)
         ↓
      HYBRID RECOMMENDATION ENGINE
         │
-        ├─→ FOR POSTS
+        ├─→ FOR POSTS (Accuracy Testing Mode)
         │    └─→ Content-Based Filtering
-        │         • 60% Explicit Match (tag/keyword matching)
-        │         • 20% Recency (how recent)
-        │         • 15% Popularity (engagement)
-        │         • 5% Implicit (past behavior)
+        │         • 75% Explicit Match (tag/keyword matching - PRIMARY)
+        │         • 13% Popularity (engagement)
+        │         • 12% Recency (how recent)
+        │         • 2% Trending Score (engagement velocity)
+        │         • 3% Past Engagement (saved/liked/shared history)
         │
-        ├─→ FOR EVENTS
+        ├─→ FOR EVENTS (Production Mode)
         │    └─→ Collaborative + Content
-        │         • 40% Organization Popularity
-        │         • 40% User Similarity Score
-        │         • 20% Time-Weighted Engagement
+        │         • 40% Organization Engagement
+        │         • 40% Time-Weighted User Behavior
+        │         • 20% User Similarity Score
         │         • + Interest Match (bonus)
-        │         • + Time Relevance (bonus)
+        │         • + Past Event Engagement (multiplier)
         │
         ↓
     Calculate Final Score (0-1 normalized)
@@ -69,29 +70,38 @@ User Profile (Interests: dance, theatre, drama)
 
 ### For POSTS (Content-Based Dominant)
 
-The system prioritizes **what the post says** over social signals.
+The system prioritizes **what the post says** over social signals, with optimization for **accuracy testing** and interest matching quality.
 
 | Factor | Weight | What It Does | Example |
 |--------|--------|-------------|---------|
-| **Explicit Interest Match** | 60% | Direct tag/keyword matching with user interests | "dance" tag matches user's "dance" interest → High score |
-| **Recency** | 20% | How recent the post is | Posts from today rank higher than 1-month-old ones |
-| **Popularity** | 15% | Engagement (likes, views, comments, shares) | Post with 3,000 views and 50 likes → Boosts score |
-| **Implicit Preferences** | 5% | Derived from past behavior (what you liked before) | User liked video content → video posts get slight boost |
-| **Following Boost** | +5% | If post is from someone you follow | Posts from followed users get +5% boost |
-| **Past Engagement** | +4-8% | If you saved/liked/shared this exact post | Saved content gets 4-8% boost |
+| **Explicit Interest Match** | 75% | Direct tag/keyword matching with user interests (PRIMARY FOCUS) | "dance" tag matches user's "dance" interest → High score |
+| **Popularity** | 13% | Engagement (likes, views, comments, shares) | Post with 3,000 views and 50 likes → Boosts score |
+| **Recency** | 12% | How recent the post is | Posts from today rank higher than 1-month-old ones |
+| **Trending Score** | 2% | Items gaining engagement quickly | Post with rising likes/views ratio → Gets small boost |
+| **Past Engagement** | 3% | If you saved/liked/shared this exact post | Saved content gets 4-8% boost (conservative) |
+| ~~Implicit Preferences~~ | ~~5%~~ | ~~Removed for accuracy~~ | ~~Disabled in current version~~ |
+| ~~Following Boost~~ | ~~+5%~~ | ~~Removed for accuracy~~ | ~~Disabled in current version~~ |
+
+**Note:** Current implementation emphasizes **interest matching accuracy** over social signals. Following relationships and implicit preferences are deprioritized.
 
 #### Example Calculation for "folkdance#ph" Post
 
 ```
 Component               Score    Weight    Contribution
 ─────────────────────────────────────────────────────
-Explicit Interest Match  0.85 ×   0.60  =  0.510
-Recency Score            0.75 ×   0.20  =  0.150
-Popularity Score         0.90 ×   0.15  =  0.135
-Implicit Score           0.60 ×   0.05  =  0.030
+Explicit Interest Match  0.85 ×   0.75  =  0.638
+Popularity Score         0.90 ×   0.13  =  0.117
+Recency Score            0.75 ×   0.12  =  0.090
+Trending Score           0.80 ×   0.02  =  0.016
+Past Engagement          0.60 ×   0.03  =  0.018
 ─────────────────────────────────────────────────────
-                                 TOTAL  =  0.825 ✓ EXCELLENT
+                                 TOTAL  =  0.879 ✓ EXCELLENT
 ```
+
+**Quality Caps Applied:**
+- Explicit match ≥ 0.15: Score can reach 1.0
+- Explicit match < 0.15: Score capped at 0.30 (low priority)
+- No explicit match: Score capped at 0.10 (filtered out)
 
 ---
 
@@ -123,35 +133,50 @@ User Similarity Score           0.70 ×   0.20  =  0.140
 
 ## Posts Scoring (Content-Based)
 
-### Scoring Process
-
-1. **Extract User Interests** (normalized/expanded)
-   - Normalize old/alternative spellings
-   - Expand related interests (e.g., "dance" → includes "contemporary-dance", "modern-dance")
-
-2. **Match Post Tags to User Interests**
+### Scoring Process (PRIMARY SIGNAL)
    - Direct match: 1.0 points
    - Partial match: 0.5 points
    - No match: 0.0 points
    - Multiple matches: averaged
 
-3. **Calculate Recency Score**
-   - Posted today: 1.0
-   - Posted 7 days ago: 0.85
-   - Posted 30 days ago: 0.5
-   - Posted 90+ days ago: 0.1
-
-4. **Calculate Popularity Score** (normalized 0-1)
+3. **Calculate Popularity Score** (normalized 0-1)
    - Views: 40% weight
    - Likes: 30% weight
    - Comments: 20% weight
    - Shares: 10% weight
 
-5. **Combine Scores with Weights**
+4. **Calculate Recency Score**
+   - Posted today: 1.0
+   - Posted 7 days ago: 0.85
+   - Posted 30 days ago: 0.5
+   - Posted 90+ days ago: 0.1
+
+5. **Calculate Trending Score**
+   - Detect items with rising engagement (views/likes ratio)
+   - Recent posts with high engagement velocity get small boost
+
+6. **Combine Scores with Weights**
    ```
-   Final Score = (explicit × 0.60) + (recency × 0.20) + 
-                 (popularity × 0.15) + (implicit × 0.05)
+   Final Score = (explicit × 0.75) + (popularity × 0.13) + 
+                 (recency × 0.12) + (trending × 0.02) + 
+                 (engagementHistory × 0.03)
    ```
+
+7. **Apply Quality Caps** (Accuracy Focus)
+   ```
+   IF explicit match = 0:
+       Final Score = MIN(score, 0.10)  // Effectively filtered out
+   ELSE IF explicit match < 0.15:
+       Final Score = MIN(score, 0.30)  // Low priority
+   ELSE:
+       Score reaches full 0.0-1.0 range
+   ```
+
+8. **Apply Conservative Past Engagement Boosts**
+   - Previously saved: ×1.04
+   - Previously liked: ×1.06
+   - Previously shared: ×1.08
+   - NOTE: Boosts only apply if explicit match > 0
 
 6. **Apply Boosts**
    - From followed users: ×1.05
@@ -291,20 +316,28 @@ Final Score = (0.6 × 0.4) + (0.68 × 0.4) + (0.548 × 0.2)
 
 ## Key Differences
 
-### Posts Use Content-Based (60% Interest Weight)
+### Posts Use Content-Based (75% Interest Weight) - Accuracy Optimized
+
+**Current Focus:** Accuracy testing and interest matching quality
 
 **Advantages:**
+- ✅ **High accuracy** - Explicit interest matching is primary signal (75%)
 - ✅ Focus on **what the post says** (tags, content quality)
-- ✅ Faster computation (no user comparison needed)
-- ✅ Works well for new/unpopular posts
-- ✅ Transparent (user sees why matched)
+- ✅ Transparent and predictable recommendations
+- ✅ Works well for measurable interest alignment
+- ✅ Prevents irrelevant content from being boosted by popularity alone
 
-**Limitations:**
-- ❌ Misses social signals
-- ❌ Can promote unpopular content if it matches interests
-- ❌ Doesn't learn from user behavior
+**Tradeoffs:**
+- ⚠️ Reduced diversity (deprioritizes popularity/engagement)
+- ⚠️ Ignores social signals (following relationships disabled)
+- ⚠️ May miss trending content that doesn't match interests
+- ⚠️ Implicit learning disabled for testing consistency
 
-### Events Use Collaborative + Content (Balanced)
+**Design Note:** Following relationships and implicit preferences are intentionally deprioritized to maintain accuracy and reproducibility during testing phases.
+
+### Events Use Collaborative + Content (Balanced) - Standard Approach
+
+**Current Focus:** Balanced recommendation quality
 
 **Advantages:**
 - ✅ Leverages **what similar users do**
@@ -328,108 +361,90 @@ Final Score = (0.6 × 0.4) + (0.68 × 0.4) + (0.548 × 0.2)
 **Following:** 25 users  
 **Organizations:** UMAK Siglahi, CAST  
 
-**Event:** "SIGLAHI: UMAK Dance Festival 2026"
-- Organization: UMAK Siglahi
+**Post:** "folk-dance techniques and trends"
 - Tags: `folk-dance`, `dance`, `theatre`
-- Registrations (last 30 days): 28
-- Interested (last 30 days): 35
-- Date: April 15, 2026 (upcoming)
+- Recency: Posted 5 days ago
+- Engagement: 45 views, 8 likes, 2 comments, 1 share
+- User relationship: Not from followed account
+- User history: User previously saved similar dance posts
 
 ### Scoring Process
 
-#### Step 1: Organization Base Score
+#### Step 1: Calculate Explicit Interest Match (PRIMARY)
 
 ```
-UMAK Siglahi maps to:
-  - Primary Interest: cultural
-  - Secondary Interests: performance
-
-User has interests:
-  - dance, theatre, drama
-
-Check matches:
-  - Primary "cultural" matches? 
-    → "dance" is cultural activity → 0.6 points
-  - Secondary interests match?
-    → "theatre" and "performance" overlap → 0.4 points
-
-Organization Base Score = 0.6 + 0.4 = 1.0 (perfect!)
-Contribution to final = 1.0 × 0.4 = 0.40
-```
-
-#### Step 2: User Similarity Score
-
-```
-Found 9 similar users who:
-- Like dance, theatre, or cultural activities
-- Follow or are in same organizations
-
-Similarity scores:
-  User 1: 0.72
-  User 2: 0.65
-  User 3: 0.78
-  User 4: 0.61
-  User 5: 0.71
-  User 6: 0.68
-  User 7: 0.69
-  User 8: 0.74
-  User 9: 0.63
-
-Average User Similarity = 0.69
-Contribution to final = 0.69 × 0.2 = 0.138
-```
-
-#### Step 3: Time-Weighted Engagement
-
-```
-Similar users' engagement with UMAK Siglahi:
-
-Recent events:
-  - 3 days ago: 28 registered, 35 interested
-    Score = (28×0.7 + 35×0.3) × e^(-3/30) 
-           = 29.5 × 0.905 = 26.7
-  
-  - 15 days ago: 22 registered, 28 interested
-    Score = (22×0.7 + 28×0.3) × e^(-15/30)
-           = 23.8 × 0.606 = 14.4
-  
-  - 28 days ago: 18 registered, 20 interested
-    Score = (18×0.7 + 20×0.3) × e^(-28/30)
-           = 18 × 0.341 = 6.1
-
-Normalized Time-Weighted Engagement = 0.78
-Contribution to final = 0.78 × 0.4 = 0.312
-```
-
-#### Step 4: Interest Matching (Bonus)
-
-```
-Event tags: folk-dance, dance, theatre
+Post tags: folk-dance, dance, theatre
 User interests: dance, theatre, drama
 
-Matches found: 3/4 tags match
-Interest match score: 0.85
-Applied as multiplier to final score
+Matches found: 3 tags match directly
+Match scoring: 1.0 (direct match on 2/3 main interests)
+Explicit Interest Score = 1.0 ✓
 ```
 
-#### Step 5: Calculate Final Score
+#### Step 2: Calculate Popularity Score
 
 ```
-Base calculation:
-  Org Base Score contribution:           0.40
-  User Similarity contribution:          0.138
-  Time-Weighted Engagement contribution: 0.312
-  ────────────────────────────────────────
-  Base Final Score:                      0.85
-
-Apply interest match multiplier:
-  0.85 × 0.85 (interest match) = 0.72
-
-Apply engagement boost (user hasn't registered yet):
-  0.72 (no registered boost applied)
-
-FINAL SCORE = 0.72 ✅ EXCELLENT - TOP RECOMMENDATION!
+Views:     45 × 0.4 = 18
+Likes:     8 × 0.3 = 2.4
+Comments:  2 × 0.2 = 0.4
+Shares:    1 × 0.1 = 0.1
+          ─────────────
+Raw score = 20.9
+Normalized (scale to 0-1 on content type distribution) = 0.68
+Popularity Score = 0.68
 ```
+
+#### Step 3: Calculate Recency Score
+
+```
+Days ago: 5 days
+Decay formula: Applied
+Recency Score = 0.85
+```
+
+#### Step 4: Calculate Trending Score
+
+```
+Recent engagement velocity: Moderate (not trending rapidly)
+Trending Score = 0.40 (low trending indicator)
+```
+
+#### Step 5: Check Past Engagement
+
+```
+User previously saved similar posts: Yes
+Engagement History Score = 0.8 (indicates interest pattern)
+```
+
+#### Step 6: Calculate Final Score
+
+```
+Base Calculation:
+  Explicit × 0.75  =  1.0 × 0.75  = 0.750
+  Popularity × 0.13 = 0.68 × 0.13 = 0.088
+  Recency × 0.12    = 0.85 × 0.12 = 0.102
+  Trending × 0.02   = 0.40 × 0.02 = 0.008
+  Past Engagement × 0.03 = 0.8 × 0.03 = 0.024
+                                   ─────────
+Base Score = 0.972
+
+Apply Past Engagement Boost (saved content):
+0.972 × 1.04 = 1.0 (capped at max)
+
+Check Quality Caps:
+  Explicit = 1.0 ✓ No caps applied
+  
+FINAL SCORE = 1.0 ✅ TOP RECOMMENDATION!
+```
+
+### Why This Score?
+
+1. **Strong explicit match** (100%) - All tags align with user interests → Gets 75% weight
+2. **Recent post** (5 days) - Fresh content is valued → 12% boost
+3. **Good engagement** for post type → 13% popularity boost
+4. **User history confirms** interest → 3% engagement history boost
+5. **Accuracy is prioritized** - This is a safe, reliable recommendation
+6. **Social signals ignored** - Following status doesn't matter (accuracy focus)
 
 ---
 
@@ -437,20 +452,45 @@ FINAL SCORE = 0.72 ✅ EXCELLENT - TOP RECOMMENDATION!
 
 The hybrid recommendation system intelligently combines:
 
-1. **Content-Based Filtering** for posts
-   - Analyzes what the post contains
-   - Matches user interests directly
-   - Fast and transparent
+1. **Content-Based Filtering** for posts (75% interest weight)
+   - PRIMARY FOCUS: Analyzes what the post contains
+   - Optimized for accuracy and interest matching
+   - Transparent and reproducible recommendations
+   - Social signals (following, implicit) disabled for testing consistency
 
-2. **Collaborative Filtering** for events
-   - Analyzes what similar users do
-   - Social proof and engagement signals
-   - Discovers new opportunities
+2. **Collaborative Filtering** for events (balanced 40/40/20 split)
+   - Organization engagement signals (40%)
+   - Time-weighted user behavior (40%)
+   - User similarity matching (20%)
+   - Social proof and engagement-based discovery
 
-This hybrid approach maximizes recommendation quality across different content types while maintaining computational efficiency and user satisfaction.
+This hybrid approach prioritizes recommendation **accuracy** for posts while maintaining **balanced discovery** for events.
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** March 22, 2026  
-**System:** HeronProto Recommendation Engine v1.0
+## Implementation Notes
+
+**Current Configuration (April 2026):**
+- **Post Scoring Phase:** Accuracy Testing Mode
+  - Explicit interest matching emphasis: 75% weight
+  - Following relationships: Disabled
+  - Implicit learning: Disabled
+  - Purpose: Validate interest-matching quality and reduce false positives
+
+- **Event Scoring Phase:** Production Mode
+  - Balanced collaborative + content approach
+  - Organization popularity + user similarity signals
+  - Time-weighted engagement decay (30-day window)
+  - Purpose: Quality recommendations with social proof
+
+**Quality Assurance:**
+- Interest mismatch cap: 0.10 (posts with no matching interests capped at 10%)
+- Weak match cap: 0.30 (posts with <15% explicit match capped at 30%)
+- Ensures feed shows only relevant, high-quality matches
+
+---
+
+**Document Version:** 2.0  
+**Last Updated:** April 23, 2026  
+**System:** HeronProto Recommendation Engine v1.5  
+**Configuration:** Accuracy Testing Phase

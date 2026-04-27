@@ -30,6 +30,7 @@ const adminAnalyticsRouter = require('./backend/routes/adminAnalytics');
 const adminMonitoringRouter = require('./backend/routes/adminMonitoring');
 const adminAccountsRouter = require('./backend/routes/adminAccounts');
 const recommendationEvaluationRouter = require('./backend/routes/recommendationEvaluation');
+const requestTiming = require('./backend/middleware/requestTiming');
 
 const path = require("path");
 const fs = require("fs");
@@ -132,6 +133,9 @@ app.get('/favicon.ico', (req, res) => {
 app.use(cors(CORS_OPTIONS));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// ⏱️ Request timing middleware - logs response times to identify bottlenecks
+app.use(requestTiming);
 
 // Development request logging (lightweight, no headers/body dump)
 if (process.env.NODE_ENV === 'development') {
@@ -353,6 +357,9 @@ const startServer = async () => {
   try {
     await connectDB();
     
+    // Initialize critical indexes for notifications and messages
+    const { ensureIndexes } = require('./backend/utils/ensureIndexes');
+    await ensureIndexes();
 
     const PORT = process.env.PORT || 5000;
     console.log('Starting server on port', PORT);

@@ -122,12 +122,10 @@ const RightBar = () => {
 
   const normalizeUsers = useCallback(
     (list) => {
-      console.log('🔵 Normalizing users with onlineUsers:', onlineUsers);
       return list
         .filter((u) => u._id !== currentUser?._id)
         .map((u) => {
           const isUserOnline = onlineUsers.includes(u._id) || onlineUsers.includes(String(u._id));
-          console.log(`👤 User ${u.name} (${u._id}): isOnline=${isUserOnline}`);
           return {
             ...u,
             isOnline: isUserOnline

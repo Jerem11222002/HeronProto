@@ -5,6 +5,8 @@ const Message = require('../models/message');
 const Conversation = require('../models/conversation');
 const User = require('../models/users');
 const authenticateToken = require('../Middleware/authenticateToken');
+const messageCache = require('../services/messageCache');
+const { retryWithBackoff } = require('../utils/retryWithBackoff');
 
 // Create or get a conversation between two users
 router.post('/start/:userId', authenticateToken, async (req, res) => {
@@ -33,35 +35,200 @@ router.post('/start/:userId', authenticateToken, async (req, res) => {
   }
 });
 
-// Get all conversations for the current user
+// Get all conversations for the current user with pagination
 router.get('/conversations', authenticateToken, async (req, res) => {
   try {
-    const conversations = await Conversation.find({
-      participants: req.user._id
-    })
-      .populate('participants', 'name profilePic')
-      .sort({ updatedAt: -1 });
+    const userId = req.user._id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = Math.min(parseInt(req.query.limit) || 20, 50); // Max 50
+    const skip = (page - 1) * limit;
 
-    res.json(conversations);
+    // Get total count with retry (fast, no lookups)
+    const totalCount = await retryWithBackoff(
+      async () => {
+        return await Conversation.countDocuments({ 
+          participants: new mongoose.Types.ObjectId(userId) 
+        }).maxTimeMS(10000); // 10 second timeout for count
+      },
+      2,
+      50,
+      `Conversation count for user ${userId}`
+    );
+
+    // Get paginated conversations with lookups (only paginated results, not all) - WITH RETRY
+    console.log(`🔍 Fetching paginated conversations: page ${page}, limit ${limit}, userId: ${userId}`);
+    const paginatedConversations = await retryWithBackoff(
+      async () => {
+        return await Conversation.aggregate([
+          { $match: { participants: new mongoose.Types.ObjectId(userId) } },
+          { $sort: { updatedAt: -1 } },
+          // CRITICAL: Paginate BEFORE lookups (only lookup paginated results)
+          { $skip: skip },
+          { $limit: limit },
+          {
+            $lookup: {
+              from: 'users',
+              let: { participantIds: '$participants' },
+              pipeline: [
+                { $match: { $expr: { $in: ['$_id', '$$participantIds'] } } },
+                { $project: { _id: 1, name: 1, profilePic: 1, username: 1 } }
+              ],
+              as: 'participants'
+            }
+          }
+        ]);
+      },
+      3,
+      100,
+      `Conversation pagination for user ${userId} page ${page}`
+    );
+
+    res.json({
+      conversations: paginatedConversations,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        pages: Math.ceil(totalCount / limit)
+      }
+    });
   } catch (err) {
+    console.error('Error fetching conversations:', err);
     res.status(500).json({ message: 'Failed to fetch conversations' });
   }
 });
 
-// Get all messages for a conversation
+// Get all messages for a conversation with pagination
 router.get('/conversations/:conversationId/messages', authenticateToken, async (req, res) => {
+  const queryStartTime = Date.now();
   try {
-    const messages = await Message.find({
-      conversationId: req.params.conversationId
-    })
-      .populate('sender', 'name profilePic')
-      .populate('replyTo')
-      .populate('forwardedFrom')
-      .sort({ createdAt: 1 });
+    const conversationId = req.params.conversationId;
+    const page = parseInt(req.query.page) || 1;
+    const limit = Math.min(parseInt(req.query.limit) || 30, 100); // Max 100 messages
+    const skip = (page - 1) * limit;
 
-    res.json(messages);
+    console.log(`\n📌 [MESSAGES] GET /messages/${conversationId} start`);
+    console.log(`   Page: ${page}, Limit: ${limit}`);
+
+    // Validate conversationId
+    if (!mongoose.Types.ObjectId.isValid(conversationId)) {
+      console.warn(`[MESSAGES] ❌ Invalid conversationId: ${conversationId}`);
+      return res.status(400).json({ message: 'Invalid conversationId' });
+    }
+
+    // Get total count with retry (fast, no lookups)
+    console.log(`   [COUNT] Fetching message count...`);
+    const countStartTime = Date.now();
+    
+    const totalCount = await retryWithBackoff(
+      async () => {
+        const countStart = Date.now();
+        const result = await Message.countDocuments({ 
+          conversationId: new mongoose.Types.ObjectId(conversationId) 
+        });
+        const countDuration = Date.now() - countStart;
+        console.log(`   [COUNT] ✅ DB query done (${countDuration}ms): ${result} messages total`);
+        return result;
+      },
+      2,
+      50,
+      `Message count for conversation ${conversationId}`
+    );
+    const countDuration = Date.now() - countStartTime;
+    console.log(`   [COUNT DONE] ${countDuration}ms`);
+
+    // Get paginated messages with lookups (only paginated results, not all) - WITH RETRY
+    console.log(`   [PAGINATION] Fetching messages page ${page}...`);
+    const paginationStartTime = Date.now();
+    
+    const paginatedMessages = await retryWithBackoff(
+      async () => {
+        const aggregateStart = Date.now();
+        console.log(`   [PAGINATION] Starting aggregation...`);
+        
+        const result = await Message.aggregate([
+          { $match: { conversationId: new mongoose.Types.ObjectId(conversationId) } },
+          { $sort: { createdAt: 1 } },
+          // CRITICAL: Paginate BEFORE lookups (only lookup paginated results)
+          { $skip: skip },
+          { $limit: limit },
+          {
+            $lookup: {
+              from: 'users',
+              let: { senderId: '$sender' },
+              pipeline: [
+                { $match: { $expr: { $eq: ['$_id', '$$senderId'] } } },
+                { $project: { _id: 1, name: 1, profilePic: 1, username: 1 } }
+              ],
+              as: 'sender'
+            }
+          },
+          {
+            $lookup: {
+              from: 'messages',
+              let: { replyToId: '$replyTo' },
+              pipeline: [
+                { $match: { $expr: { $eq: ['$_id', '$$replyToId'] } } },
+                { $project: { _id: 1, text: 1, sender: 1, createdAt: 1 } }
+              ],
+              as: 'replyTo'
+            }
+          },
+          {
+            $addFields: {
+              sender: { $arrayElemAt: ['$sender', 0] },
+              replyTo: { $arrayElemAt: ['$replyTo', 0] }
+            }
+          },
+          {
+            $project: {
+              _id: 1,
+              conversationId: 1,
+              sender: 1,
+              text: 1,
+              attachments: 1,
+              reactions: 1,
+              replyTo: 1,
+              messageType: 1,
+              read: 1,
+              edited: 1,
+              createdAt: 1,
+              updatedAt: 1
+            }
+          }
+        ]);
+        
+        const aggregateDuration = Date.now() - aggregateStart;
+        console.log(`   [PAGINATION] ✅ Aggregation complete (${aggregateDuration}ms): ${result.length} docs returned`);
+        return result;
+      },
+      3,
+      150,
+      `Message pagination for conversation ${conversationId} page ${page}`
+    );
+    
+    const paginationDuration = Date.now() - paginationStartTime;
+    console.log(`   [PAGINATION DONE] ${paginationDuration}ms`);
+    
+    const totalDuration = Date.now() - queryStartTime;
+    console.log(`📌 [MESSAGES] Complete (${totalDuration}ms)\n`);
+
+    res.json({
+      messages: paginatedMessages,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        pages: Math.ceil(totalCount / limit)
+      }
+    });
   } catch (err) {
-    res.status(500).json({ message: 'Failed to fetch messages' });
+    const totalDuration = Date.now() - queryStartTime;
+    console.error(`\n❌ [MESSAGES] ERROR (${totalDuration}ms):`);
+    console.error(`   Message: ${err.message}`);
+    console.error(`   Type: ${err.name}`);
+    console.error(`   Stack: ${err.stack}\n`);
+    res.status(500).json({ message: 'Failed to fetch messages', error: err.message });
   }
 });
 
@@ -100,13 +267,32 @@ router.post('/conversations/:conversationId/messages', authenticateToken, async 
     });
 
     const savedMessage = await newMessage.save();
-    const populatedMessage = await Message.findById(savedMessage._id)
-      .populate('sender', 'name profilePic')
-      .populate('replyTo')
-      .populate('forwardedFrom');
+    
+    // Use aggregation pipeline instead of .populate()
+    const populatedMessage = (await Message.aggregate([
+      { $match: { _id: savedMessage._id } },
+      {
+        $lookup: {
+          from: 'users',
+          let: { senderId: '$sender' },
+          pipeline: [
+            { $match: { $expr: { $eq: ['$_id', '$$senderId'] } } },
+            { $project: { _id: 1, name: 1, profilePic: 1, username: 1 } }
+          ],
+          as: 'sender'
+        }
+      },
+      {
+        $addFields: {
+          sender: { $arrayElemAt: ['$sender', 0] }
+        }
+      }
+    ]))[0];
 
-    // Update conversation's updatedAt
+    // Update conversation's updatedAt and invalidate cache
     await Conversation.findByIdAndUpdate(req.params.conversationId, { updatedAt: new Date() });
+    messageCache.invalidate(req.params.conversationId);
+    messageCache.invalidateConversations();
 
     // Emit real-time message via Socket.io
     const io = req.app.get('io') || req.app.get('socketio');
@@ -146,7 +332,12 @@ router.post('/messages/:messageId/reactions', authenticateToken, async (req, res
       req.params.messageId,
       { $addToSet: { reactions: { user: req.user._id, emoji } } },
       { new: true }
-    ).populate('reactions.user', 'name profilePic');
+    );
+    
+    // Invalidate conversation cache when reaction is added
+    if (message) {
+      messageCache.invalidate(message.conversationId);
+    }
 
     // Emit reaction event
     const io = req.app.get('io') || req.app.get('socketio');
@@ -168,12 +359,17 @@ router.delete('/messages/:messageId/reactions', authenticateToken, async (req, r
   try {
     const { emoji } = req.body;
     if (!emoji) return res.status(400).json({ message: 'Emoji required' });
-
+    
     const message = await Message.findByIdAndUpdate(
       req.params.messageId,
       { $pull: { reactions: { user: req.user._id, emoji } } },
       { new: true }
-    ).populate('reactions.user', 'name profilePic');
+    );
+    
+    // Invalidate conversation cache when reaction is removed
+    if (message) {
+      messageCache.invalidate(message.conversationId);
+    }
 
     // Emit reaction removal event
     const io = req.app.get('io') || req.app.get('socketio');
@@ -316,34 +512,75 @@ router.get('/conversations/:friendId/preview', authenticateToken, async (req, re
 // Get unread message counts for the current user
 router.get('/unread-count', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user._id.toString();
-    const conversations = await Conversation.find({ participants: userId });
+    const userId = req.user._id;
+
+    // Optimized: Single aggregation pipeline instead of N+1 queries
+    const results = await Message.aggregate([
+      // Match messages in conversations with this user
+      {
+        $lookup: {
+          from: 'conversations',
+          localField: 'conversationId',
+          foreignField: '_id',
+          as: 'conversation'
+        }
+      },
+      { $unwind: '$conversation' },
+      {
+        $match: {
+          'conversation.participants': userId,
+          deleted: { $ne: true },
+          sender: { $ne: userId }
+        }
+      },
+      // Check if message is unread for this user
+      {
+        $addFields: {
+          isUnread: {
+            $not: {
+              $in: [userId, { $ifNull: ['$readBy', []] }]
+            }
+          }
+        }
+      },
+      { $match: { isUnread: true } },
+      // Group by conversation to get per-friend unread counts
+      {
+        $group: {
+          _id: '$conversationId',
+          friendId: { $first: { $arrayElemAt: ['$conversation.participants', 0] } },
+          count: { $sum: 1 }
+        }
+      },
+      // Transform to get all friend IDs
+      {
+        $addFields: {
+          friendId: {
+            $cond: [
+              { $eq: ['$friendId', userId] },
+              { $arrayElemAt: ['$conversation.participants', 1] },
+              '$friendId'
+            ]
+          }
+        }
+      }
+    ]);
+
+    // Build response object
     const perFriend = {};
     let total = 0;
-
-    for (const convo of conversations) {
-      const friendId = convo.participants.find(
-        id => id.toString() !== userId
-      );
-      if (!friendId) continue;
-
-      const messages = await Message.find({
-        conversationId: convo._id,
-        deleted: { $ne: true }
-      }).select('readBy sender');
-
-      const unread = messages.filter(
-        msg =>
-          msg.sender.toString() !== userId && // Only messages from others
-          !(msg.readBy || []).map(id => id.toString()).includes(userId)
-      ).length;
-
-      perFriend[friendId] = unread;
-      total += unread;
-    }
+    
+    results.forEach(result => {
+      const friendId = result.friendId?.toString() || '';
+      if (friendId && friendId !== userId.toString()) {
+        perFriend[friendId] = result.count;
+        total += result.count;
+      }
+    });
 
     res.json({ total, perFriend });
   } catch (err) {
+    console.error('Error fetching unread counts:', err);
     res.status(500).json({ message: 'Failed to fetch unread counts' });
   }
 });

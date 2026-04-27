@@ -18,35 +18,6 @@ const debug = (type, data) => {
   }
 };
 
-// Define useEventsWithDebug outside of EventsProvider
-const useEventsWithDebug = () => {
-  const context = useContext(EventsContext);
-  
-  useEffect(() => {
-    if (!context) {
-      console.error('Events Context is null - Provider missing');
-      return;
-    }
-
-    const { events, loading, error, areEventsReady } = context;
-    console.log('Events Debug:', {
-      eventsCount: events?.length || 0,
-      loading,
-      error,
-      areEventsReady,
-      hasValidEvents: Array.isArray(events) && events.length > 0,
-      sampleEvent: events?.[0] ? {
-        id: events[0]._id,
-        title: events[0].title,
-        organization: events[0].organization,
-        hasValidDate: !isNaN(new Date(events[0].date).getTime())
-      } : null
-    });
-  }, [context]);
-
-  return context;
-};
-
 export const EventsProvider = ({ children }) => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -336,14 +307,10 @@ export const EventsProvider = ({ children }) => {
     adminOperations,
     userOperations
   ]);
-  console.log('Events context value:', value); // Debug log for context value
 
   return <EventsContext.Provider value={value}>{children}</EventsContext.Provider>;
 };
 
-// Export the hook with conditional debug wrapper
-export const useEvents = process.env.NODE_ENV === 'development' 
-  ? useEventsWithDebug 
-  : () => useContext(EventsContext);
+export const useEvents = () => useContext(EventsContext);
 
 export default EventsContext;

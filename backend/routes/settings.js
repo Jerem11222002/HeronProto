@@ -19,9 +19,25 @@ router.get('/settings', auth, async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Use model helper so the shape is consistent across callers
-    const settings = await User.getSettingsById(userId);
-    if (!settings) return res.status(404).json({ error: 'User not found' });
+    // 🎯 OPTIMIZED: Use .lean() and only select needed fields to avoid loading huge arrays
+    const user = await User.findById(userId)
+      .select('customization notifications profilePic profilePicture')
+      .lean() // 🚀 Use lean() for read-only - much faster than hydrated document
+      .exec();
+    
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    // Build settings object directly from lean user
+    const settings = {
+      userId: userId.toString ? userId.toString() : userId,
+      theme: user.customization?.theme || 'system',
+      language: user.customization?.language || 'en',
+      visibility: user.customization?.visibility || 'public',
+      notifications: user.notifications || { email: true, push: false, sms: false },
+      profilePic: user.profilePic || user.profilePicture || null,
+      profilePicture: user.profilePic || user.profilePicture || null
+    };
+    
     return res.json(settings);
   } catch (err) {
     console.error('❌ Settings.fetch error:', err, 'req.user=', req.user);

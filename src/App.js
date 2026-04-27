@@ -23,7 +23,7 @@ import "./layout.scss";
 import { DarkModeContext, DarkModeContextProvider } from "./context/darkModeContext";
 import { AuthContext, AuthContextProvider } from "./context/authContext";
 import Interests from "./pages/interests/interests";
-import { SocketProvider } from './context/SocketContext';
+import { SocketProvider, useSocket } from './context/SocketContext';
 import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
 import { EventsProvider } from "./context/EventsContext";
 import FullScreenPostPage from "./components/post/FullScreenPostPage"; // <-- add this import
@@ -106,18 +106,25 @@ const AuthRequiredRoute = ({ children, redirectTo = "/login" }) => {
 };
 
 function AppContent() {
-  const { currentUser, isAdmin, loading } = useContext(AuthContext);
+  const { currentUser, isAdmin, loading, refreshUser } = useContext(AuthContext);
   const { darkMode } = useContext(DarkModeContext);
+  const { subscribeToProfileUpdates } = useSocket();
+
+  useEffect(() => {
+    if (!currentUser?._id || currentUser.isAdmin) return undefined;
+    return subscribeToProfileUpdates((data) => {
+      const uid = data?.userId;
+      if (uid != null && String(uid) === String(currentUser._id)) {
+        void refreshUser();
+      }
+    });
+  }, [currentUser?._id, currentUser?.isAdmin, subscribeToProfileUpdates, refreshUser]);
 
   // Helper for admin permission checks
   const isSuperAdmin = isAdmin && currentUser?.adminRole === 'super';
   const isStandardAdmin = isAdmin && currentUser?.adminRole === 'admin';
 
   const canAccess = (perm) => !!currentUser?.adminPermissions?.[perm];
-  console.log('currentUser', currentUser);
-  console.log('isAdmin', isAdmin);
-  console.log('adminRole', currentUser?.adminRole);
-  console.log('adminPermissions', currentUser?.adminPermissions);
 
   // Create a temporary loading router while auth initializes to avoid
   // "No route matches URL" errors on refresh. Hooks must remain unconditional.

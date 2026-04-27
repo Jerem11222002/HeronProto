@@ -170,6 +170,47 @@ $transition-duration: 0.2s;
       margin: 0;
     }
 
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .refresh-button {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      border-radius: 50%;
+      border: none;
+      background: var(--bgSoft);
+      color: var(--textColor);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all $transition-duration ease;
+
+      &:hover:not(:disabled) {
+        background: var(--primary);
+        color: white;
+        transform: rotate(180deg);
+      }
+
+      &:active:not(:disabled) {
+        transform: rotate(180deg) scale(0.95);
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+      }
+    }
+
     .mark-all-read {
       padding: 6px 12px;
       border-radius: 20px;

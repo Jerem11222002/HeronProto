@@ -297,30 +297,8 @@ const Settings = () => {
     if (profilePicture) {
       formData.append('profilePicture', profilePicture);
     }
-    
-    console.log('FormData being sent:');
-    for (let [key, value] of formData.entries()) {
-      if (key !== 'profilePicture') {
-        console.log(`  ${key}:`, value);
-      }
-    }
 
     try {
-      console.log('Submitting settings form...');
-      console.log('Endpoint:', SETTINGS_ENDPOINT);
-      
-      // Log FormData contents for debugging
-      console.log('FormData contents:');
-      for (let [key, value] of formData.entries()) {
-        if (key === 'profilePicture') {
-          console.log(`  ${key}: File(${value.size} bytes)`);
-        } else if (key === 'notifications') {
-          console.log(`  ${key}:`, value);
-        } else {
-          console.log(`  ${key}:`, value || '(empty)');
-        }
-      }
-      
       const response = await fetch(SETTINGS_ENDPOINT, {
         method: 'POST',
         body: formData,
@@ -329,11 +307,8 @@ const Settings = () => {
         // DO NOT set Content-Type header with FormData - let browser handle it
       });
 
-      console.log('Response status:', response.status);
-      console.log('Response status text:', response.statusText);
       const data = await response.json();
-      console.log('Response data:', data);
-      
+
       if (!response.ok) {
         console.error('Settings update failed:', {
           status: response.status,

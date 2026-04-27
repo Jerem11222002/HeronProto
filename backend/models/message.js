@@ -56,4 +56,9 @@ const MessageSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
+// CRITICAL INDEXES - Address message thread queries (very high volume)
+MessageSchema.index({ conversationId: 1, createdAt: -1 }); // Get conversation messages (HIGHEST PRIORITY)
+MessageSchema.index({ conversationId: 1, read: 1 });       // Unread message count
+MessageSchema.index({ sender: 1, createdAt: -1 });         // User's sent messages
+
 module.exports = mongoose.model('Message', MessageSchema);

@@ -1,12 +1,15 @@
-import React, { useState, useEffect, useContext } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import NotificationItem from './NotificationItem';
 import { CircularProgress } from '@mui/material';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { DarkModeContext } from '../../context/darkModeContext';
+import { useNotificationCache } from '../../context/NotificationCacheContext';
+import apiService from '../../services/apiService';
 import './notifications.scss';
 
 const NotificationDropdown = ({ onClose }) => {
   const { darkMode } = useContext(DarkModeContext);
+  const cache = useNotificationCache();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -25,30 +28,45 @@ const NotificationDropdown = ({ onClose }) => {
     return isFixed ? Math.ceil(rect.bottom) : Math.ceil(rect.bottom + window.scrollY);
   });
 
-  const fetchNotifications = async (pageNum = 1) => {
+  const fetchNotifications = async (pageNum = 1, forceRefresh = false) => {
     try {
+      // For page 1, check cache first (unless forcing refresh)
+      if (pageNum === 1 && !forceRefresh && cache.isCacheValid()) {
+        const cachedData = cache.getCachedNotifications();
+        const cachedPagination = cache.getCachedPagination();
+        setNotifications(cachedData);
+        setHasMore(cachedPagination?.hasMore ?? false);
+        setPage(pageNum);
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError(null);
-      const token = localStorage.getItem('token');
       
-      const response = await axios.get('/api/notifications', {
-        params: { page: pageNum, limit: 20 },
-        headers: {
-          Authorization: `Bearer ${token}`
-        },
-        baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000'
-      });
-
-      const { notifications: newNotifications, pagination } = response.data;
+      const response = await apiService.getNotifications(pageNum, 20);
+      const { notifications: newNotifications, pagination } = response.data.data || response.data;
       
-      setNotifications(prev => 
-        pageNum === 1 ? newNotifications : [...prev, ...newNotifications]
-      );
-      setHasMore(pagination.hasMore);
+      // Ensure notifications is an array
+      if (!Array.isArray(newNotifications)) {
+        throw new Error('Invalid notifications format from server');
+      }
+      
+      const updatedNotifications = pageNum === 1 ? newNotifications : [...notifications, ...newNotifications];
+      
+      // Cache only the first page data
+      if (pageNum === 1) {
+        cache.setCachedNotifications(newNotifications, pagination);
+      }
+      
+      setNotifications(updatedNotifications);
+      setHasMore(pagination?.hasMore ?? false);
       setPage(pageNum);
     } catch (err) {
-      console.error('Error fetching notifications:', err);
-      setError(err.response?.data?.message || 'Failed to load notifications');
+      console.error('❌ Error fetching notifications:', err.message || err);
+      // Handle both error formats from backend
+      const errorMsg = err.response?.data?.message || err.response?.data?.error || err.message || 'Failed to load notifications (after retries)';
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -56,19 +74,30 @@ const NotificationDropdown = ({ onClose }) => {
 
   const markAllAsRead = async () => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.post('/api/notifications/read-all', null, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        },
-        baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000'
-      });
+      await apiService.markAllNotificationsAsRead();
       
       setNotifications(prev => prev.map(notif => ({ ...notif, read: true })));
+      
+      // Invalidate cache since data changed
+      cache.invalidateCache();
+      
       onClose?.();
     } catch (err) {
-      console.error('Error marking all as read:', err);
+      console.error('❌ Error marking all as read:', err.message || err);
     }
+  };
+
+  const handleRefresh = () => {
+    console.log('🔄 Refreshing notifications...');
+    // Invalidate cache and fetch fresh
+    cache.invalidateCache();
+    fetchNotifications(1, true);
+  };
+
+  const handleNotificationUpdate = () => {
+    // Invalidate cache when a notification is updated
+    cache.invalidateCache();
+    fetchNotifications(1, true);
   };
 
   const loadMore = () => {
@@ -78,6 +107,7 @@ const NotificationDropdown = ({ onClose }) => {
   };
 
   useEffect(() => {
+    // Fetch notifications on mount, or use cache if valid
     fetchNotifications();
 
     const socket = window.socket;
@@ -121,7 +151,7 @@ const NotificationDropdown = ({ onClose }) => {
       window.removeEventListener('resize', onResize);
       window.removeEventListener('scroll', onScroll);
     };
-  }, []);
+  }, [cache]);
 
   const mobileCenterStyle = isMobile
     ? (()=>{
@@ -151,7 +181,7 @@ const NotificationDropdown = ({ onClose }) => {
     return (
       <div className="notification-dropdown error" style={mobileCenterStyle}>
         <p>{error}</p>
-        <button onClick={() => fetchNotifications(1)} className="retry-button">
+        <button onClick={() => handleRefresh()} className="retry-button">
           Retry
         </button>
       </div>
@@ -162,11 +192,21 @@ const NotificationDropdown = ({ onClose }) => {
     <div className="notification-dropdown" style={mobileCenterStyle}>
       <div className="notification-header">
         <h3>Notifications</h3>
-        {notifications.length > 0 && (
-          <button onClick={markAllAsRead} className="mark-all-read">
-            Mark all as read
+        <div className="header-actions">
+          <button 
+            onClick={handleRefresh} 
+            className="refresh-button" 
+            title="Refresh notifications"
+            disabled={loading}
+          >
+            <RefreshIcon sx={{ fontSize: 18 }} />
           </button>
-        )}
+          {notifications.length > 0 && (
+            <button onClick={markAllAsRead} className="mark-all-read">
+              Mark all as read
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="notification-list">
@@ -180,7 +220,7 @@ const NotificationDropdown = ({ onClose }) => {
               <NotificationItem
                 key={notification._id}
                 notification={notification}
-                onUpdate={fetchNotifications}
+                onUpdate={handleNotificationUpdate}
               />
             ))}
             {loading && (

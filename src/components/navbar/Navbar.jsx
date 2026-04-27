@@ -1,5 +1,6 @@
 import React, { useState, useContext, useCallback, useRef, useEffect } from "react";
 import "./navbar.scss";
+import useSearchCache from "../../hooks/useSearchCache";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import GridViewOutlinedIcon from "@mui/icons-material/GridViewOutlined";
 import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined';
@@ -186,7 +187,13 @@ const Navbar = () => {
   const [unreadCounts, setUnreadCounts] = useState({});
   const [messagePreviews, setMessagePreviews] = useState({});
 
-  // Search functionality
+  // Initialize search cache with 5-minute TTL
+  const { searchUsers: searchUsersWithCache } = useSearchCache({
+    ttl: 5 * 60 * 1000,  // 5 minutes
+    apiUrl: API_URL
+  });
+
+  // Search functionality with caching
   const handleSearch = useCallback(async (query) => {
     if (!query.trim()) {
       setSearchResults([]);
@@ -198,13 +205,16 @@ const Navbar = () => {
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
-      const response = await axios.get(`${API_URL}/api/search/users`, {
-        params: { q: query },
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        signal: controller.signal
-      });
-
-      setSearchResults(response.data.users || []);
+      // Use cached search instead of direct API call
+      const result = await searchUsersWithCache(query, localStorage.getItem("token"));
+      setSearchResults(result.users || []);
+      
+      // Log cache status for debugging
+      if (result.cached) {
+        console.log('🎯 Search results loaded from cache!');
+      } else {
+        console.log('🌐 Search results fetched from server and cached');
+      }
     } catch (error) {
       if (!axios.isCancel(error)) {
         console.error("Search failed:", error);
@@ -213,7 +223,7 @@ const Navbar = () => {
     } finally {
       setIsSearching(false);
     }
-  }, []);
+  }, [searchUsersWithCache]);
 
   // Search input handler
   const handleSearchInputChange = useCallback((e) => {
@@ -274,7 +284,8 @@ const Navbar = () => {
     try {
       setIsLoading(true);
       await axios.post(`${API_URL}/api/auth/logout`, null, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        timeout: 8000
       });
 
       localStorage.clear();

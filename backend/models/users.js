@@ -782,24 +782,15 @@ UserSchema.methods.getMappedInterests = function() {
   };
 };
 
-// Indexes
-UserSchema.index({ username: 1 });
-UserSchema.index({ email: 1 });
-UserSchema.index({ gender: 1 });
-UserSchema.index({ createdAt: -1 });
-UserSchema.index({ followers: 1 });
-UserSchema.index({ following: 1 });
-UserSchema.index({ interests: 1 });
-UserSchema.index({ interestsSelected: 1 });
-UserSchema.index({ interestsSkipped: 1 });
-UserSchema.index({ profileSetup: 1 });
-UserSchema.index({ 'customization.visibility': 1 });
+// Compound indexes (field combinations)
 UserSchema.index({ isAdmin: 1, adminRole: 1 });
-UserSchema.index({ 'adminActionLog.timestamp': -1 });
-UserSchema.index({ 'interactionHistory.timestamp': -1 });
-UserSchema.index({ 'contentPreferences.viewedPosts': 1 });
-UserSchema.index({ 'contentPreferences.likedPosts': 1 });
-UserSchema.index({ 'contentPreferences.sharedPosts': 1 });
+UserSchema.index({ isAdmin: 1, adminRole: 1, 'adminMeta.lastLogin': -1 });
 
+// CRITICAL INDEXES - Address login, auth, relationship queries
+UserSchema.index({ username: 1 });              // Login lookups (high volume)
+UserSchema.index({ email: 1 });                 // Auth & registration
+UserSchema.index({ followers: 1 });             // Find followers of user
+UserSchema.index({ following: 1 });             // Find who user follows
+UserSchema.index({ createdAt: -1 });            // User discovery/new members
 
 module.exports = mongoose.model("User", UserSchema);

@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useCallback, useEffect } from "react";
-import { io } from "socket.io-client";
 import axios from 'axios';
 import { 
   saveAuthData, 
@@ -68,7 +67,10 @@ export const AuthContextProvider = ({ children }) => {
     if (!userId) return;
     try {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const res = await axios.get(`${BASE_URL}/api/users/settings`, { headers });
+      const res = await axios.get(`${BASE_URL}/api/users/settings`, {
+        headers,
+        timeout: 8000
+      });
       const settings = res?.data;
       const theme = settings?.theme;
       if (theme) {
@@ -107,12 +109,17 @@ export const AuthContextProvider = ({ children }) => {
       const token = localStorage.getItem("token");
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      // fetch endpoints (some endpoints return array directly, others wrap with { success, data })
-      const [mutualRes, followingRes, followersRes] = await Promise.all([
-        axios.get(`${BASE_URL}/api/users/${userId}/mutual-friends`, { headers }).catch(() => ({ data: [] })),
-        axios.get(`${BASE_URL}/api/users/${userId}/following`, { headers }).catch(() => ({ data: [] })),
-        axios.get(`${BASE_URL}/api/users/${userId}/followers`, { headers }).catch(() => ({ data: [] }))
-      ]);
+      // Single consolidated call (avoids 3× DB work + server queueing); same data as old triple fetch
+      const relRes = await axios
+        .get(`${BASE_URL}/api/users/relationships/${userId}`, {
+          headers,
+          params: { page: 1, limit: 500 },
+          timeout: 25000
+        })
+        .catch((err) => {
+          console.warn("Relationships bundle failed, falling back to legacy endpoints:", err?.message);
+          return null;
+        });
 
       const extractArray = (r) => {
         if (!r) return [];
@@ -123,7 +130,27 @@ export const AuthContextProvider = ({ children }) => {
         return [];
       };
 
-      const normalizeUsers = (arr) => (extractArray(arr) || []).map(u => ({
+      let mutualRaw = [];
+      let followingRaw = [];
+      let followersRaw = [];
+
+      if (relRes?.data?.success && relRes.data.data) {
+        const d = relRes.data.data;
+        mutualRaw = d.mutualFriends || [];
+        followingRaw = d.following || [];
+        followersRaw = d.followers || [];
+      } else {
+        const [mutualRes, followingRes, followersRes] = await Promise.all([
+          axios.get(`${BASE_URL}/api/users/${userId}/mutual-friends`, { headers, timeout: 25000 }).catch(() => ({ data: [] })),
+          axios.get(`${BASE_URL}/api/users/${userId}/following`, { headers, timeout: 25000 }).catch(() => ({ data: [] })),
+          axios.get(`${BASE_URL}/api/users/${userId}/followers`, { headers, timeout: 25000 }).catch(() => ({ data: [] }))
+        ]);
+        mutualRaw = extractArray(mutualRes);
+        followingRaw = extractArray(followingRes);
+        followersRaw = extractArray(followersRes);
+      }
+
+      const normalizeUsers = (arr) => (Array.isArray(arr) ? arr : []).map(u => ({
         ...u,
         _id: String(u._id || u.id || ''),
         name: u.name || '',
@@ -132,9 +159,9 @@ export const AuthContextProvider = ({ children }) => {
         sex: u.sex || u.gender || null
       }));
 
-      const mutual = normalizeUsers(mutualRes);
-      const following = normalizeUsers(followingRes);
-      const followers = normalizeUsers(followersRes);
+      const mutual = normalizeUsers(mutualRaw);
+      const following = normalizeUsers(followingRaw);
+      const followers = normalizeUsers(followersRaw);
 
       setUserRelationships({
         mutualFriends: mutual,
@@ -350,7 +377,8 @@ export const AuthContextProvider = ({ children }) => {
       const token = localStorage.getItem("token");
       if (token) {
         await axios.post(`${BASE_URL}/api/auth/logout`, {}, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 8000
         });
       }
     } catch (error) {
@@ -510,8 +538,8 @@ export const AuthContextProvider = ({ children }) => {
             setCurrentUser(normalized);
             setIsAdmin(true);
             axios.defaults.headers.common['Authorization'] = `Bearer ${adminToken}`;
-            await fetchAndApplyUserSettings(normalized._id || normalized.id, adminToken);
-            setLoading(false); // <-- ensure loading is set to false here
+            setLoading(false);
+            void fetchAndApplyUserSettings(normalized._id || normalized.id, adminToken);
             return;
           }
         }
@@ -522,8 +550,8 @@ export const AuthContextProvider = ({ children }) => {
             const normalizedUser = normalizeUserData(userData);
             setCurrentUser(normalizedUser);
             axios.defaults.headers.common['Authorization'] = `Bearer ${userToken}`;
-            await fetchAndApplyUserSettings(normalizedUser._id || normalizedUser.id, userToken);
-            setLoading(false); // <-- ensure loading is set to false here
+            setLoading(false);
+            void fetchAndApplyUserSettings(normalizedUser._id || normalizedUser.id, userToken);
             return;
           }
         }
@@ -539,46 +567,6 @@ export const AuthContextProvider = ({ children }) => {
       isMounted = false;
     };
   }, [normalizeUserData, fetchAndApplyUserSettings]);
-
-  // Socket.io real-time updates
-  useEffect(() => {
-    if (!currentUser?._id) return;
-    
-    const token = localStorage.getItem(currentUser.isAdmin ? 'adminToken' : 'token');
-    if (!token) return;
-  
-    const socket = io(BASE_URL, {
-      auth: {
-        token: token
-      },
-      transports: ['websocket', 'polling'],
-      autoConnect: true,
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-    });
-  
-    socket.on('connect', () => {
-      console.log('🔌 Socket connected:', socket.id);
-    });
-  
-    socket.on('connect_error', (error) => {
-      console.error('🔌 Socket connection error:', error.message);
-    });
-  
-    socket.on('user:profileUpdate', async (data) => {
-      if (data.userId === currentUser._id) {
-        await refreshUser();
-      }
-    });
-  
-    return () => {
-      if (socket.connected) {
-        socket.disconnect();
-        console.log('🔌 Socket disconnected');
-      }
-    };
-  }, [currentUser, refreshUser, BASE_URL]);
 
   return (
     <AuthContext.Provider value={{

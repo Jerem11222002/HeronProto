@@ -151,14 +151,7 @@ const filterContent = (content, userPreferences) => {
     }
 
     if (item.type === 'event') {
-      console.log('Event scoring:', {
-        title: item.title,
-        tags: itemTags,
-        directMatches,
-        relatedMatches,
-        score: Math.min(score, 1),
-        interests
-      });
+      // Event scoring logged (debug can be enabled if needed)
     }
 
     return {
@@ -182,6 +175,11 @@ const LoadingSpinner = () => (
     <span className="sr-only">Loading content...</span>
   </div>
 );
+
+// === OPTIMIZATION: Debug logging disabled by default ===
+const DEBUG = false;
+const debugLog = (...args) => DEBUG && console.log(...args);
+const debugError = (...args) => DEBUG && console.error(...args);
 
 const Home = () => {
   const { currentUser, isAdmin } = useAuth();
@@ -213,11 +211,11 @@ const Home = () => {
   const fetchCombinedFeed = useCallback(async () => {
     if (!currentUser?._id) return;
 
-    console.log(`[Home] fetchCombinedFeed: activeTab=${activeTab}, page=${page}`);
+    debugLog(`[Home] fetchCombinedFeed: activeTab=${activeTab}, page=${page}`);
 
     const requestKey = `${currentUser._id}-${page}-${activeTab}`;
     if (fetchRequestRef.current[requestKey]) {
-      console.log(`[Home] Request already in flight for: ${requestKey}`);
+      debugLog(`[Home] Request already in flight for: ${requestKey}`);
       return fetchRequestRef.current[requestKey];
     }
 
@@ -227,7 +225,7 @@ const Home = () => {
 
       const promise = new Promise(async (resolve, reject) => {
         if (!process.env.REACT_APP_API_URL) {
-          console.error('[Home] API URL not configured');
+          debugError('[Home] API URL not configured');
           reject(new Error('API URL not configured'));
           return;
         }
@@ -237,10 +235,10 @@ const Home = () => {
           page: page.toString(),
           feedType: activeTab
         });
-        console.log(`[Home] Built params: ${params.toString()}`);
+        debugLog(`[Home] Built params: ${params.toString()}`);
 
         const url = `${process.env.REACT_APP_API_URL}/api/posts/feed?${params}`;
-        console.log(`[Home] Fetching: ${url}`);
+        debugLog(`[Home] Fetching: ${url}`);
 
         const response = await fetch(url, {
           headers: {
@@ -251,17 +249,17 @@ const Home = () => {
           credentials: 'include'
         });
 
-        console.log(`[Home] Response status: ${response.status}`);
+        debugLog(`[Home] Response status: ${response.status}`);
 
         if (!response.ok) {
           const errorData = await response.text();
-          console.error(`[Home] Server error: ${response.status} - ${errorData.substring(0, 200)}`);
+          debugError(`[Home] Server error: ${response.status} - ${errorData.substring(0, 200)}`);
           reject(new Error(`Server error: ${response.status} - ${errorData}`));
           return;
         }
 
         const postsData = await response.json();
-        console.log(`[Home] Parsed response: ${postsData.items?.length} items, totalCount=${postsData.pagination?.totalCount}`);
+        debugLog(`[Home] Parsed response: ${postsData.items?.length} items, totalCount=${postsData.pagination?.totalCount}`);
         
         // Indicate to UI when backend thinks this is a cold-start user (my-feed only)
         if (activeTab === 'my-feed') {
@@ -272,12 +270,12 @@ const Home = () => {
         }
 
         if (!postsData.items || !Array.isArray(postsData.items)) {
-          console.error('[Home] Invalid response format:', { hasItems: !!postsData.items, isArray: Array.isArray(postsData.items) });
+          debugError('[Home] Invalid response format:', { hasItems: !!postsData.items, isArray: Array.isArray(postsData.items) });
           reject(new Error('Invalid response format from server'));
           return;
         }
 
-        console.log(`[Home] Valid response with ${postsData.items.length} items for ${activeTab}`);
+        debugLog(`[Home] Valid response with ${postsData.items.length} items for ${activeTab}`);
 
         // For non-my-feed tabs, items are pure posts, so just format them
         let combinedItems = postsData.items;
@@ -364,7 +362,7 @@ const Home = () => {
           }
         } else {
           // Friends/Following tabs: just format posts
-          console.log(`[Home] Formatting ${postsData.items.length} posts for ${activeTab} tab`);
+          debugLog(`[Home] Formatting ${postsData.items.length} posts for ${activeTab} tab`);
           combinedItems = postsData.items
             .filter(post => Boolean(post))
             .map(post => {
@@ -375,10 +373,10 @@ const Home = () => {
               }
               return { ...post, user: safeUser };
             });
-          console.log(`[Home] Formatted ${combinedItems.length} items`);
+          debugLog(`[Home] Formatted ${combinedItems.length} items`);
         }
 
-        console.log(`[Home] Resolving promise with ${combinedItems.length} items`);
+        debugLog(`[Home] Resolving promise with ${combinedItems.length} items`);
         resolve({ 
           combinedItems, 
           hasMore: postsData.pagination?.hasMore || postsData.hasMore 
@@ -389,27 +387,27 @@ const Home = () => {
       const result = await promise;
       delete fetchRequestRef.current[requestKey];
 
-      console.log(`[Home] Promise resolved with ${result.combinedItems.length} items`);
+      debugLog(`[Home] Promise resolved with ${result.combinedItems.length} items`);
 
       // On initial load (page 1), replace entire feed
       if (page === 1) {
-        console.log('[Home] Initial load - setting feed');
+        debugLog('[Home] Initial load - setting feed');
         setFeedItems(result.combinedItems);
         setIsInitialLoad(false);
       } else {
         // On pagination, only append to bottom
-        console.log('[Home] Pagination - appending to feed');
+        debugLog('[Home] Pagination - appending to feed');
         setFeedItems(prev => [...prev, ...result.combinedItems]);
       }
       
       setHasMore(result.hasMore);
-      console.log('[Home] Feed state updated');
+      debugLog('[Home] Feed state updated');
     } catch (err) {
-      console.error('[Home] Fetch error:', err.message, err);
+      debugError('[Home] Fetch error:', err.message, err);
       setError(err.message);
       if (page === 1) setFeedItems([]);
     } finally {
-      console.log('[Home] Clearing loading');
+      debugLog('[Home] Clearing loading');
       setLoading(false);
     }
   }, [currentUser?._id, page, getUpcomingEvents, activeTab]);
@@ -419,7 +417,7 @@ const Home = () => {
     if (!currentUser?._id) return;
     if (page === 1 && isInitialLoad) {
       // Initial load on mount or tab change
-      console.log('[Home] useEffect triggered - calling fetchCombinedFeed for tab:', activeTab);
+      debugLog('[Home] useEffect triggered - calling fetchCombinedFeed for tab:', activeTab);
       fetchCombinedFeed();
     }
   }, [currentUser?._id, activeTab, page, isInitialLoad, fetchCombinedFeed]);

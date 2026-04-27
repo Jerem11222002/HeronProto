@@ -103,8 +103,8 @@ export const useProfilePicture = (user, type = 'avatar') => {
       }
     };
 
-    socket.on('user:profileUpdate', handleProfileUpdate);
-    return () => socket.off('user:profileUpdate', handleProfileUpdate);
+    socket.on('profile:updated', handleProfileUpdate);
+    return () => socket.off('profile:updated', handleProfileUpdate);
   }, [socket, user?._id, type, loadImage]);
 
   return [

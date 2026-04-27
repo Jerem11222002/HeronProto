@@ -238,7 +238,11 @@ router.post("/login", async (req, res) => {
     const { username, password } = req.body;
     console.log("Login attempt for:", username);
 
-    const user = await User.findOne({ username }).select('+password');
+    // 🎯 OPTIMIZED: Only select fields needed for login, NOT the huge followers/following arrays
+    const user = await User.findOne({ username })
+      .select('+password _id username email name gender profilePicture profilePic customization notifications interestsSelected profileSetup interests relatedOrganizations studentId')
+      .lean() // 🚀 Use .lean() for read-only operations - ~10x faster
+      .exec();
     
     if (!user) {
       console.log("User not found:", username);
@@ -255,10 +259,20 @@ router.post("/login", async (req, res) => {
     const token = generateToken(user._id);
     console.log("Login successful for user:", username);
     
-    // sanitize user for response and use its id for settings lookup
+    // sanitize user for response 
     const sanitizedUser = sanitizeUser(user);
-    // attach canonical settings so frontend can apply user preferences immediately
-    const settings = await User.getSettingsById(sanitizedUser.id);
+    
+    // 🎯 For settings: use the lean user object directly if possible
+    const settings = {
+      userId: user._id?.toString ? user._id.toString() : user._id,
+      theme: user.customization?.theme || 'system',
+      language: user.customization?.language || 'en',
+      visibility: user.customization?.visibility || 'public',
+      notifications: user.notifications || { email: true, push: false, sms: false },
+      profilePic: user.profilePic || user.profilePicture || null,
+      profilePicture: user.profilePic || user.profilePicture || null
+    };
+    
     return res.json({
       success: true,
       token,
@@ -351,12 +365,12 @@ router.get("/verify", authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ success: false, message: "User not found" });
     }
-    res.json({ user: sanitizeUser(user) });
+    res.json({ success: true, user: sanitizeUser(user) });
   } catch (error) {
     console.error("Token verification error:", error);
-    res.status(500).json({ message: "Token verification failed" });
+    res.status(500).json({ success: false, message: "Token verification failed" });
   }
 });
 

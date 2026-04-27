@@ -5,6 +5,7 @@ const Post = require('../models/posts');
 const authenticate = require('../Middleware/authenticateToken');
 const path = require('path');
 const mongoose = require('mongoose');
+const featuredArtistsCache = require('../services/featuredArtistsCache');
 
 // Utility function to get date range based on filter
 const getDateRange = (timeFilter) => {
@@ -37,6 +38,15 @@ router.get('/top-artists/:timeFilter', authenticate, async (req, res) => {
     // whitelist time filters
     const allowed = new Set(['day','week','month','year','all']);
     const tf = allowed.has(timeFilter) ? timeFilter : 'week';
+
+    // CHECK CACHE FIRST
+    const cachedResult = featuredArtistsCache.get(tf);
+    if (cachedResult && !cachedResult.expired) {
+      console.log(`📦 [CACHE HIT] Featured artists for "${tf}"`);
+      return res.json(cachedResult.data);
+    }
+
+    console.log(`🔄 [CACHE MISS] Querying database for featured artists "${tf}"`);
     const startDate = getDateRange(tf);
 
     // Pipeline: Exclude self-shared posts from engagement and shares
@@ -279,6 +289,9 @@ router.get('/top-artists/:timeFilter', authenticate, async (req, res) => {
           createdAt: post.createdAt || new Date()
         }))
       }));
+
+    // STORE IN CACHE
+    featuredArtistsCache.set(tf, formattedArtists);
 
     res.json(formattedArtists);
   } catch (error) {

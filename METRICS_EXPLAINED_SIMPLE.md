@@ -4,6 +4,37 @@
 
 ---
 
+## 📐 **What Are These Metrics?**
+
+Think of metrics like a **report card for our recommendation system**. Just like a report card tells you how well a student is doing in each subject, these metrics tell us how well our system is recommending content to you.
+
+**Why do we need metrics?**
+- To know if recommendations are actually *good*
+- To spot problems early
+- To track if the system is improving over time
+- To answer: "Are we doing a good job?"
+
+**How do metrics work?**
+Simple comparison:
+```
+Our system recommends: Item A, Item B, Item C
+You actually liked:     Item A, Item X, Item C
+
+We compare these and calculate scores.
+Good score = we got it right! ✅
+Bad score = we missed the mark ❌
+```
+
+**The 4 metrics below measure different things:**
+1. 🎯 **Interest Alignment** — Does this match what you like?
+2. 🎲 **Prediction Accuracy** — Can we guess if you'll enjoy it?
+3. ⚠️ **Error Magnitude** — How far off are our scores?
+4. ✅ **Ranking Quality** — Is the order correct?
+
+Together, they tell us: **"Is our system working well?"**
+
+---
+
 ## 🎯 **Interest Alignment: 43%**
 
 **Simple Version:**

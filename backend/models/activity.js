@@ -7,4 +7,9 @@ const activitySchema = new mongoose.Schema({
   timestamp: { type: Date, default: Date.now }
 });
 
+// INDEXES - Enable admin audit trail and analytics
+activitySchema.index({ user: 1, timestamp: -1 });    // User activity log
+activitySchema.index({ type: 1, timestamp: -1 });    // Activity by type
+activitySchema.index({ timestamp: -1 });              // All activities sorted
+
 module.exports = mongoose.model('Activity', activitySchema);

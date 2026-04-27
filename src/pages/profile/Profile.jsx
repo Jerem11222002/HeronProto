@@ -1123,19 +1123,33 @@ const Profile = () => {
   const filteredGalleryMedia = useMemo(() => {
     if (!Array.isArray(userPosts)) return [];
 
-    const mediaItems = userPosts
-      .map(post => {
+    const mediaItems = [];
+    
+    userPosts.forEach(post => {
+      // Check for mediaArray first (new format with multiple media)
+      if (Array.isArray(post.mediaArray) && post.mediaArray.length > 0) {
+        post.mediaArray.forEach((media, index) => {
+          const url = media.url;
+          if (!url) return;
+          mediaItems.push({
+            _id: `${post._id}_${index}`,
+            url,
+            type: media.type === 'video' ? 'video' : 'photo'
+          });
+        });
+      } else {
+        // Fallback to single media field (legacy format)
         const url = post.media || post.img || null;
-        if (!url) return null;
+        if (!url) return;
         const lower = String(url).toLowerCase();
         const isVideo = post.contentType === 'video' || /\.(mp4|webm|ogg|mov|mkv)$/i.test(lower);
-        return {
+        mediaItems.push({
           _id: post._id || `${post._id || Math.random()}`,
           url,
           type: isVideo ? 'video' : 'photo'
-        };
-      })
-      .filter(Boolean);
+        });
+      }
+    });
 
     if (mediaFilter === 'all') return mediaItems;
     if (mediaFilter === 'photos') return mediaItems.filter(m => m.type === 'photo');

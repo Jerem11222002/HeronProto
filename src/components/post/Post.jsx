@@ -187,6 +187,7 @@ const SharedPost = ({ sharedPost }) => {
                 src={mediaUrl}
                 alt="Shared post content"
                 className="shared-image"
+                loading="lazy"
               />
             </div>
           )
@@ -717,6 +718,7 @@ const Post = ({ post, onDeletePost, onAddSharedPost, showOnly, fullScreen, showD
           alt="Post content"
           className={imageLoading ? 'loading' : 'loaded'}
           onClick={handleOpenFullPost}
+          loading="lazy"
           onLoad={() => setImageLoading(false)}
           onError={() => {
             setImageLoading(false);
@@ -910,7 +912,7 @@ const Post = ({ post, onDeletePost, onAddSharedPost, showOnly, fullScreen, showD
                     className={`thumbnail ${index === currentMediaIndex ? 'active' : ''}`}
                     onClick={() => setCurrentMediaIndexFunc(index)}
                   >
-                    <img src={getMediaUrl(media.url)} alt={`Thumbnail ${index + 1}`} />
+                    <img src={getMediaUrl(media.url)} alt={`Thumbnail ${index + 1}`} loading="lazy" />
                     {media.type === 'video' && (
                       <div className="video-badge">
                         <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">

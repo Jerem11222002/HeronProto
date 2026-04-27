@@ -4,6 +4,7 @@ import App from "./App";
 import { AuthContextProvider } from "./context/authContext";
 import { DarkModeContextProvider } from "./context/darkModeContext";
 import { LanguageContextProvider } from "./context/languageContext";
+import { NotificationCacheProvider } from "./context/NotificationCacheContext";
 import "./style.scss";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
@@ -12,7 +13,9 @@ root.render(
     <DarkModeContextProvider>
       <AuthContextProvider>
         <LanguageContextProvider>
-          <App />
+          <NotificationCacheProvider>
+            <App />
+          </NotificationCacheProvider>
         </LanguageContextProvider>
       </AuthContextProvider>
     </DarkModeContextProvider>

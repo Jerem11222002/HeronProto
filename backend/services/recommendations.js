@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Post = require('../models/posts');
 const Event = require('../models/event');
 const User = require('../models/users');
@@ -167,8 +168,13 @@ class RecommendationService {
         (typeof id === 'object' && id._id) ? String(id._id) : String(id)
       );
 
-      // Find followers to detect mutual relationships
-      const followersDocs = await User.find({ following: userId }).select('_id').lean();
+      const followingSubjectId = mongoose.Types.ObjectId.isValid(userId)
+        ? new mongoose.Types.ObjectId(userId)
+        : userId;
+      const followersDocs = await User.aggregate([
+        { $match: { following: followingSubjectId } },
+        { $project: { _id: 1 } }
+      ]);
       const followerIds = (followersDocs || []).map(d => String(d._id));
 
       const mutualIds = followingIds.filter(id => followerIds.includes(id));
@@ -2094,8 +2100,11 @@ static async debugUserEventVisibility(userId) {
         typeof id === 'object' && id._id ? String(id._id) : String(id)
       );
 
-      // Find followers to detect mutuals
-      const followersDocs = await User.find({ following: user._id }).select('_id').lean();
+      const uid = user._id;
+      const followersDocs = await User.aggregate([
+        { $match: { following: uid } },
+        { $project: { _id: 1 } }
+      ]);
       const followerIds = (followersDocs || []).map(d => String(d._id));
 
       // Mutual friends: intersection of following and followers
@@ -2254,7 +2263,10 @@ static async debugUserEventVisibility(userId) {
         typeof id === 'object' && id._id ? String(id._id) : String(id)
       );
 
-      const followersDocs = await User.find({ following: user._id }).select('_id').lean();
+      const followersDocs = await User.aggregate([
+        { $match: { following: user._id } },
+        { $project: { _id: 1 } }
+      ]);
       const followerIds = (followersDocs || []).map(d => String(d._id));
       const mutualIds = followingIds.filter(id => followerIds.includes(id));
 

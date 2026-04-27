@@ -5,6 +5,9 @@ const User = require("../models/users");
 const Notification = require("../models/notification");
 const authenticateToken = require("../Middleware/authenticateToken");
 const multer = require('multer');
+const mongoose = require('mongoose');
+const relationshipCache = require('../services/relationshipCache');
+const notificationCache = require('../services/notificationCache');
 const router = express.Router();
 
 // Setup multer for file uploads
@@ -38,6 +41,64 @@ const getDefaultProfilePic = (sex) => {
   return sex === 'female' ? '/assets/person/Female.jpg' : '/assets/person/Male.jpg';
 };
 
+/**
+ * Split relationships using raw following/followers id arrays (matches UserSchema virtuals).
+ * Intersecting two $lookup result sets could show mutual=0 when ids overlap but lookups dropped rows
+ * (deleted users, type quirks). Mutual = following ∩ followers on stored arrays, then resolve profiles.
+ */
+async function computeAndCacheRelationships(userId, req) {
+  const user = await User.findById(userId).select('following followers').lean();
+  if (!user) {
+    return null;
+  }
+
+  const followingIds = (user.following || []).map((id) => String(id));
+  const followerIdsRaw = user.followers || [];
+  const followersSet = new Set(followerIdsRaw.map((id) => String(id)));
+  const followingSet = new Set(followingIds);
+
+  const mutualIds = followingIds.filter((id) => followersSet.has(id));
+  const followingOnlyIds = followingIds.filter((id) => !followersSet.has(id));
+  const followersOnlyIds = followerIdsRaw
+    .map((id) => String(id))
+    .filter((id) => !followingSet.has(id));
+
+  const allIdStrs = [...new Set([...mutualIds, ...followingOnlyIds, ...followersOnlyIds])].filter((id) =>
+    mongoose.Types.ObjectId.isValid(id)
+  );
+  const oidList = allIdStrs.map((id) => new mongoose.Types.ObjectId(id));
+
+  let userDocs = [];
+  if (oidList.length > 0) {
+    userDocs = await User.find({ _id: { $in: oidList } })
+      .select('_id name username sex profilePic profilePicture')
+      .lean();
+  }
+
+  const byId = new Map(userDocs.map((u) => [String(u._id), u]));
+
+  const toItem = (idStr) => {
+    const u = byId.get(idStr);
+    if (!u) return null;
+    return {
+      _id: idStr,
+      name: u.name || '',
+      username: u.username || '',
+      sex: u.sex || null,
+      profilePic: u.profilePic || u.profilePicture || getDefaultProfilePic(u.sex),
+      isOnline: getOnlineStatus(req, idStr)
+    };
+  };
+
+  const mutual = mutualIds.map(toItem).filter(Boolean);
+  const followingOnly = followingOnlyIds.map(toItem).filter(Boolean);
+  const followersOnly = followersOnlyIds.map(toItem).filter(Boolean);
+
+  const fullResults = { mutual, followingOnly, followersOnly };
+  relationshipCache.set(userId, 'both', fullResults);
+  return fullResults;
+}
+
 // <-- Move this /me route BEFORE the param-based "/:id" route
 router.get('/me', authenticateToken, async (req, res) => {
   try {
@@ -66,64 +127,73 @@ router.get('/me', authenticateToken, async (req, res) => {
 });
 
 // Consolidated relationships endpoint (mutual, following-only, followers-only)
+// OPTIMIZED: Uses aggregation pipeline with pagination and caching
 router.get("/relationships/:userId", authenticateToken, async (req, res) => {
   try {
     const { userId } = req.params;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(500, Math.max(1, parseInt(req.query.limit) || 20));
+    const skip = (page - 1) * limit;
+    
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ success: false, message: "Invalid user ID" });
+    }
+
+    const cacheKey = `${userId}:full`;
+    
+    // Check cache first
+    const cachedResult = relationshipCache.get(userId, 'both');
+    if (cachedResult && !cachedResult.expired) {
+      console.log(`📦 [CACHE HIT] Relationships for ${userId}`);
+      // Apply pagination to cached data
+      const fullData = cachedResult.data;
+      const paginated = {
+        success: true,
+        data: {
+          mutualFriends: fullData.mutual.slice(skip, skip + limit),
+          following: fullData.followingOnly.slice(skip, skip + limit),
+          followers: fullData.followersOnly.slice(skip, skip + limit)
+        },
+        pagination: {
+          page,
+          limit,
+          totalMutual: fullData.mutual.length,
+          totalFollowing: fullData.followingOnly.length,
+          totalFollowers: fullData.followersOnly.length,
+          cached: true,
+          cacheAge: cachedResult.age
+        }
+      };
+      return res.status(200).json(paginated);
+    }
+
     console.log("📥 Fetching relationships for:", userId);
 
-    const user = await User.findById(userId)
-      .populate("followers", "_id name username profilePic profilePicture sex")
-      .populate("following", "_id name username profilePic profilePicture sex")
-      .lean();
-
-    if (!user) {
+    const fullResults = await computeAndCacheRelationships(userId, req);
+    if (!fullResults) {
       console.log("❌ User not found for relationships:", userId);
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    const followerMap = new Map((user.followers || []).map(f => [String(f._id), f]));
-    const followingMap = new Map((user.following || []).map(f => [String(f._id), f]));
-
-    const mutual = [];
-    const followingOnly = [];
-    const followersOnly = [];
-
-    (user.following || []).forEach(f => {
-      const id = String(f._id);
-      const isMutual = followerMap.has(id);
-      const item = {
-        _id: id,
-        name: f.name || "",
-        username: f.username || "",
-        sex: f.sex || null,
-        profilePic: f.profilePic || f.profilePicture || getDefaultProfilePic(f.sex),
-        isOnline: getOnlineStatus(req, id)
-      };
-      if (isMutual) mutual.push(item);
-      else followingOnly.push(item);
-    });
-
-    (user.followers || []).forEach(f => {
-      const id = String(f._id);
-      if (followingMap.has(id)) return;
-      const item = {
-        _id: id,
-        name: f.name || "",
-        username: f.username || "",
-        sex: f.sex || null,
-        profilePic: f.profilePic || f.profilePicture || getDefaultProfilePic(f.sex),
-        isOnline: getOnlineStatus(req, id)
-      };
-      followersOnly.push(item);
-    });
+    const { mutual, followingOnly, followersOnly } = fullResults;
 
     console.log(`✅ Relationships: mutual=${mutual.length}, following=${followingOnly.length}, followers=${followersOnly.length}`);
+    
+    // Return paginated results
     return res.status(200).json({
       success: true,
       data: {
-        mutualFriends: mutual,
-        following: followingOnly,
-        followers: followersOnly
+        mutualFriends: mutual.slice(skip, skip + limit),
+        following: followingOnly.slice(skip, skip + limit),
+        followers: followersOnly.slice(skip, skip + limit)
+      },
+      pagination: {
+        page,
+        limit,
+        totalMutual: mutual.length,
+        totalFollowing: followingOnly.length,
+        totalFollowers: followersOnly.length,
+        cached: false
       }
     });
   } catch (err) {
@@ -133,44 +203,180 @@ router.get("/relationships/:userId", authenticateToken, async (req, res) => {
 });
 
 // Add compatibility endpoints expected by frontend (keep BEFORE the "/:id" param route)
+// OPTIMIZED: Using aggregation pipeline with pagination and caching
 router.get("/:id/following", authenticateToken, async (req, res) => {
   try {
     const id = req.params.id;
-    const user = await User.findById(id).populate("following", "_id name username profilePic profilePicture sex").lean();
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 20)); // Max 50, default 20
+    const skip = (page - 1) * limit;
+    
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: "Invalid user ID" });
+    }
 
-    const following = (user.following || []).map(f => ({
-      _id: String(f._id),
-      name: f.name || "",
-      username: f.username || "",
-      sex: f.sex || null,
-      profilePic: f.profilePic || f.profilePicture || getDefaultProfilePic(f.sex),
-      isOnline: getOnlineStatus(req, String(f._id))
-    }));
+    // Check cache first
+    const cachedResult = relationshipCache.get(id, 'following');
+    if (cachedResult && !cachedResult.expired) {
+      console.log(`📦 [CACHE HIT] Following for ${id}`);
+      const following = cachedResult.data;
+      const paginated = following.slice(skip, skip + limit).map(f => ({
+        _id: String(f._id),
+        name: f.name || "",
+        username: f.username || "",
+        sex: f.sex || null,
+        profilePic: f.profilePic || getDefaultProfilePic(f.sex),
+        isOnline: getOnlineStatus(req, String(f._id))
+      }));
 
-    return res.status(200).json(following);
+      return res.status(200).json({
+        success: true,
+        data: paginated,
+        pagination: {
+          page,
+          limit,
+          total: following.length,
+          cached: true,
+          cacheAge: cachedResult.age
+        }
+      });
+    }
+
+    const results = await User.aggregate([
+      { $match: { _id: new mongoose.Types.ObjectId(id) } },
+      {
+        $lookup: {
+          from: "users",
+          let: { followingIds: "$following" },
+          pipeline: [
+            { $match: { $expr: { $in: ["$_id", "$$followingIds"] } } },
+            { $project: { _id: 1, name: 1, username: 1, sex: 1, profilePic: 1, profilePicture: 1 } }
+          ],
+          as: "followingList"
+        }
+      }
+    ]);
+
+    if (!results || results.length === 0) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const followingList = results[0].followingList || [];
+    
+    // Cache the full results
+    relationshipCache.set(id, 'following', followingList);
+
+    const following = followingList
+      .slice(skip, skip + limit)
+      .map(f => ({
+        _id: String(f._id),
+        name: f.name || "",
+        username: f.username || "",
+        sex: f.sex || null,
+        profilePic: f.profilePic || getDefaultProfilePic(f.sex),
+        isOnline: getOnlineStatus(req, String(f._id))
+      }));
+
+    return res.status(200).json({
+      success: true,
+      data: following,
+      pagination: {
+        page,
+        limit,
+        total: followingList.length,
+        cached: false
+      }
+    });
   } catch (err) {
     console.error("❌ Error fetching following:", err);
     return res.status(500).json({ success: false, message: "Failed to fetch following", error: err.message });
   }
 });
 
+// OPTIMIZED: Using aggregation pipeline with pagination and caching
 router.get("/:id/followers", authenticateToken, async (req, res) => {
   try {
     const id = req.params.id;
-    const user = await User.findById(id).populate("followers", "_id name username profilePic profilePicture sex").lean();
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 20)); // Max 50, default 20
+    const skip = (page - 1) * limit;
+    
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: "Invalid user ID" });
+    }
 
-    const followers = (user.followers || []).map(f => ({
-      _id: String(f._id),
-      name: f.name || "",
-      username: f.username || "",
-      sex: f.sex || null,
-      profilePic: f.profilePic || f.profilePicture || getDefaultProfilePic(f.sex),
-      isOnline: getOnlineStatus(req, String(f._id))
-    }));
+    // Check cache first
+    const cachedResult = relationshipCache.get(id, 'followers');
+    if (cachedResult && !cachedResult.expired) {
+      console.log(`📦 [CACHE HIT] Followers for ${id}`);
+      const followers = cachedResult.data;
+      const paginated = followers.slice(skip, skip + limit).map(f => ({
+        _id: String(f._id),
+        name: f.name || "",
+        username: f.username || "",
+        sex: f.sex || null,
+        profilePic: f.profilePic || getDefaultProfilePic(f.sex),
+        isOnline: getOnlineStatus(req, String(f._id))
+      }));
 
-    return res.status(200).json(followers);
+      return res.status(200).json({
+        success: true,
+        data: paginated,
+        pagination: {
+          page,
+          limit,
+          total: followers.length,
+          cached: true,
+          cacheAge: cachedResult.age
+        }
+      });
+    }
+
+    const results = await User.aggregate([
+      { $match: { _id: new mongoose.Types.ObjectId(id) } },
+      {
+        $lookup: {
+          from: "users",
+          let: { followerIds: "$followers" },
+          pipeline: [
+            { $match: { $expr: { $in: ["$_id", "$$followerIds"] } } },
+            { $project: { _id: 1, name: 1, username: 1, sex: 1, profilePic: 1, profilePicture: 1 } }
+          ],
+          as: "followersList"
+        }
+      }
+    ]);
+
+    if (!results || results.length === 0) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const followersList = results[0].followersList || [];
+    
+    // Cache the full results
+    relationshipCache.set(id, 'followers', followersList);
+
+    const followers = followersList
+      .slice(skip, skip + limit)
+      .map(f => ({
+        _id: String(f._id),
+        name: f.name || "",
+        username: f.username || "",
+        sex: f.sex || null,
+        profilePic: f.profilePic || getDefaultProfilePic(f.sex),
+        isOnline: getOnlineStatus(req, String(f._id))
+      }));
+
+    return res.status(200).json({
+      success: true,
+      data: followers,
+      pagination: {
+        page,
+        limit,
+        total: followersList.length,
+        cached: false
+      }
+    });
   } catch (err) {
     console.error("❌ Error fetching followers:", err);
     return res.status(500).json({ success: false, message: "Failed to fetch followers", error: err.message });
@@ -180,25 +386,32 @@ router.get("/:id/followers", authenticateToken, async (req, res) => {
 router.get("/:id/mutual-friends", authenticateToken, async (req, res) => {
   try {
     const id = req.params.id;
-    const user = await User.findById(id)
-      .populate("followers", "_id")
-      .populate("following", "_id name username profilePic profilePicture sex")
-      .lean();
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: "Invalid user ID" });
+    }
 
-    const followerIds = new Set((user.followers || []).map(f => String(f._id)));
-    const mutual = (user.following || [])
-      .filter(f => followerIds.has(String(f._id)))
-      .map(f => ({
-        _id: String(f._id),
-        name: f.name || "",
-        username: f.username || "",
-        sex: f.sex || null,
-        profilePic: f.profilePic || f.profilePicture || getDefaultProfilePic(f.sex),
-        isOnline: getOnlineStatus(req, String(f._id))
-      }));
+    let cached = relationshipCache.get(id, "both");
+    let mutual;
+    if (cached && !cached.expired) {
+      mutual = cached.data.mutual;
+    } else {
+      const full = await computeAndCacheRelationships(id, req);
+      if (!full) {
+        return res.status(404).json({ success: false, message: "User not found" });
+      }
+      mutual = full.mutual;
+    }
 
-    return res.status(200).json(mutual);
+    const out = mutual.map((m) => ({
+      _id: String(m._id),
+      name: m.name || "",
+      username: m.username || "",
+      sex: m.sex || null,
+      profilePic: m.profilePic || getDefaultProfilePic(m.sex),
+      isOnline: getOnlineStatus(req, String(m._id))
+    }));
+
+    return res.status(200).json(out);
   } catch (err) {
     console.error("❌ Error fetching mutual friends:", err);
     return res.status(500).json({ success: false, message: "Failed to fetch mutual friends", error: err.message });
@@ -271,6 +484,9 @@ router.post("/follow/:userId", authenticateToken, async (req, res) => {
       userToFollow.updateOne({ $push: { followers: currentUser._id } })
     ]);
 
+    // INVALIDATE CACHE: Clear relationship caches for both users
+    relationshipCache.invalidateOnChange(String(currentUser._id), String(userToFollow._id));
+
     // Create follow notification
     const notification = await Notification.create({
       userId: userToFollow._id,
@@ -283,6 +499,9 @@ router.post("/follow/:userId", authenticateToken, async (req, res) => {
         followerPicture: currentUser.profilePicture || getDefaultProfilePic(currentUser.sex)
       }
     });
+
+    // INVALIDATE CACHE: Clear notification cache for the follower
+    notificationCache.invalidateOnNewNotification(String(userToFollow._id));
 
     // Check for mutual follow
     const isMutualFollow = userToFollow.following.includes(currentUser._id);
@@ -300,6 +519,9 @@ router.post("/follow/:userId", authenticateToken, async (req, res) => {
           followerPicture: userToFollow.profilePicture || getDefaultProfilePic(userToFollow.sex)
         }
       });
+
+      // INVALIDATE CACHE: Clear notification cache for current user
+      notificationCache.invalidateOnNewNotification(String(currentUser._id));
     }
 
     // Prepare user data for response
@@ -341,7 +563,8 @@ router.post("/follow/:userId", authenticateToken, async (req, res) => {
       follower: currentUser._id,
       following: userToFollow._id,
       isMutualFollow,
-      notificationCreated: true
+      notificationCreated: true,
+      cacheInvalidated: true
     });
 
     res.status(200).json({ 
@@ -385,6 +608,9 @@ router.post("/unfollow/:userId", authenticateToken, async (req, res) => {
       userToUnfollow.updateOne({ $pull: { followers: currentUser._id } })
     ]);
 
+    // INVALIDATE CACHE: Clear relationship caches for both users
+    relationshipCache.invalidateOnChange(String(currentUser._id), String(userToUnfollow._id));
+
     // Emit socket event for unfollow
     const io = req.app.get('io');
     io.emit('follow:updated', {
@@ -395,7 +621,8 @@ router.post("/unfollow/:userId", authenticateToken, async (req, res) => {
 
     console.log("✅ Unfollow successful:", {
       unfollower: currentUser._id,
-      unfollowed: userToUnfollow._id
+      unfollowed: userToUnfollow._id,
+      cacheInvalidated: true
     });
 
     res.status(200).json({ 

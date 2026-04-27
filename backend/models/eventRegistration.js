@@ -208,4 +208,7 @@ eventRegistrationSchema.index({ eventId: 1, userId: 1 }, { unique: true });
 eventRegistrationSchema.index({ status: 1 });
 eventRegistrationSchema.index({ registrationDate: -1 });
 
+// TIER 2 INDEX - User registration history with status filter
+eventRegistrationSchema.index({ userId: 1, status: 1, registrationDate: -1 });
+
 module.exports = mongoose.model('EventRegistration', eventRegistrationSchema);

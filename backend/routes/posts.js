@@ -13,6 +13,8 @@ const { spawn } = require('child_process');
 const natural = require('natural');
 const tokenizer = new natural.WordTokenizer();
 const { RecommendationService, ORGANIZATION_CATEGORIES } = require('../services/recommendations');
+const featuredArtistsCache = require('../services/featuredArtistsCache');
+const feedCache = require('../services/feedCache');
 
 
 
@@ -522,6 +524,12 @@ router.post("/", authenticate, async (req, res) => {
       img: savedPost.media // Add img field for backward compatibility
     };
 
+    // INVALIDATE CACHE: Featured artists rankings change when new post is created
+    featuredArtistsCache.invalidateOnNewPost();
+    
+    // INVALIDATE CACHE: Feed recommendations change when new post is created
+    feedCache.invalidateAll();
+
     req.io.emit('post:created', formattedPost);
     res.status(201).json(formattedPost);
 
@@ -779,6 +787,13 @@ router.delete("/:id", authenticate, async (req, res) => {
     }
 
     await post.deleteOne();
+    
+    // INVALIDATE CACHE: Featured artists rankings change when post is deleted
+    featuredArtistsCache.invalidateOnDelete();
+    
+    // INVALIDATE CACHE: Feed recommendations change when post is deleted
+    feedCache.invalidateAll();
+    
     req.io.emit('post:deleted', { 
       postId: post._id,
       mediaType: post.mediaType 
@@ -818,13 +833,19 @@ router.get("/feed", authenticate, async (req, res) => {
     const { 
       sortBy = 'hybrid',
       page = 1, 
-      limit = 50,
+      limit = 30,  // Reduced from 50 for faster initial load
       includeEvents = true,
       feedType = 'my-feed',  // NEW: 'my-feed' | 'friends' | 'following'
       maxPostsPerUser = 3  // NEW: limit posts from single user to avoid bias
     } = req.query;
 
     console.info(`[/feed] Request: feedType=${feedType}, page=${page}, limit=${limit}, user=${req.user._id}`);
+
+    // Check cache first (CACHE HIT - instant response)
+    const cachedFeed = feedCache.get(req.user._id, feedType, page);
+    if (cachedFeed) {
+      return res.json(cachedFeed.data);
+    }
 
     if (!RecommendationService?.getHybridFeed) {
       throw new Error('Recommendation service not properly initialized');
@@ -1104,6 +1125,24 @@ router.get("/feed", authenticate, async (req, res) => {
         usersFetched: Object.keys(usersMap).length
       } : undefined
     });
+
+    // Store in cache for next 2 minutes (CACHE STORAGE)
+    const feedResponse = {
+      feedType: feedType,
+      items: formattedFeed,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalCount: feed.pagination?.totalCount || feed.total || formattedFeed.length,
+        hasMore: feed.pagination?.hasMore !== undefined ? feed.pagination.hasMore : feed.hasMore
+      },
+      debug: feedType === 'my-feed' ? {
+        ...feed.debug,
+        usersFound: users.length,
+        usersFetched: Object.keys(usersMap).length
+      } : undefined
+    };
+    feedCache.set(req.user._id, feedType, page, feedResponse);
 
     console.info(`[/feed] Response sent: feedType=${feedType}, items=${formattedFeed.length}, totalCount=${feed.pagination?.totalCount}`);
 
@@ -1470,6 +1509,12 @@ router.post("/:id/share", authenticate, async (req, res) => {
       ...savedPost.toObject(),
       sharedPost: sharedPostObj
     };
+
+    // INVALIDATE CACHE: Featured artists rankings change when post is shared
+    featuredArtistsCache.invalidateOnShare();
+    
+    // INVALIDATE CACHE: Feed recommendations change when post is shared
+    feedCache.invalidateAll();
 
     req.io?.emit('post:shared', responsePost);
 

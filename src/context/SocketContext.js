@@ -2,8 +2,9 @@ import { createContext, useContext, useEffect, useState, useCallback, useRef } f
 import io from 'socket.io-client';
 
 const SOCKET_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-const MAX_RETRIES = 5;
-const RETRY_DELAY = 2000;
+const MAX_RETRIES = 1;  // Reduced from 5 to fail faster
+const RETRY_DELAY = 1000;  // Reduced from 2000ms to 1000ms
+const CONNECTION_TIMEOUT = 3000;  // 3 second timeout before giving up
 
 const SocketContext = createContext();
 
@@ -29,7 +30,6 @@ const SocketProvider = ({ children }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [connectionError, setConnectionError] = useState(null);
   const [onlineUsers, setOnlineUsers] = useState(new Set());
-  const [retryCount, setRetryCount] = useState(0);
   const [isCleaningUp, setIsCleaningUp] = useState(false);
 
   const cleanupSocket = useCallback((socket) => {
@@ -58,13 +58,20 @@ const SocketProvider = ({ children }) => {
       return;
     }
 
+    // Check if we already tried and failed - don't keep creating new sockets
+    if (socketRef.current?.id) {
+      console.warn('⚠️ Previous socket attempt failed, not retrying');
+      return;
+    }
+
     const newSocket = io(SOCKET_URL, {
       path: '/socket.io/',
       transports: ['polling', 'websocket'],
       reconnection: true,
       reconnectionAttempts: MAX_RETRIES,
       reconnectionDelay: RETRY_DELAY,
-      reconnectionDelayMax: 10000,
+      reconnectionDelayMax: 5000,
+      timeout: CONNECTION_TIMEOUT,
       auth: {
         token: token
       },
@@ -102,7 +109,6 @@ const SocketProvider = ({ children }) => {
         console.log('✅ Connection established');
         setIsConnected(true);
         setConnectionError(null);
-        setRetryCount(0);
       },
       'authenticated': (data) => {
         console.log('🔑 Socket authenticated', data);
@@ -120,25 +126,24 @@ const SocketProvider = ({ children }) => {
         }
       },
       'auth_error': (error) => {
-        console.error('❌ Socket authentication failed:', error);
-        setConnectionError('Authentication failed');
+        console.warn('⚠️ Socket authentication failed (non-critical):', error.message);
+        // Don't retry auth errors - socket is optional, app works fine without it
         cleanupSocket(newSocket);
       },
       'connect_error': (error) => {
-        console.error('❌ Socket connection error:', error);
-        console.error('Error type:', error.type);
-        console.error('Error data:', error.data);
-        console.error('Error message:', error.message);
+        console.warn('⚠️ Socket connection error (non-critical):', error.message);
         setIsConnected(false);
         setConnectionError(error.message || 'Connection error');
         
-        if (retryCount < MAX_RETRIES) {
-          console.log(`🔄 Retrying in ${RETRY_DELAY}ms... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
-          setRetryCount(prev => prev + 1);
-          debouncedConnect();
-        } else {
-          console.error('❌ Max retries reached, stopping socket connection attempts');
+        // Stop retrying on auth errors - they won't succeed without proper token setup
+        if (error.message && error.message.includes('Authentication')) {
+          console.warn('⚠️ Authentication error - giving up on socket connection');
+          cleanupSocket(newSocket);
+          return;
         }
+        
+        // Socket.io handles retries internally, just let it retry
+        console.warn(`⚠️ Connection error: ${error.message}, socket.io will retry internally`);
       },
       'disconnect': (reason) => {
         console.log('🔌 Socket disconnected:', reason);
@@ -181,6 +186,17 @@ const SocketProvider = ({ children }) => {
           });
         }
       },
+      'profile:updated': (data) => {
+        if (data?.updates) {
+          profileUpdateHandlersRef.current.forEach(handler => {
+            try {
+              handler(data);
+            } catch (error) {
+              console.error('❌ Error in profile:updated handler:', error);
+            }
+          });
+        }
+      },
       'profile:update:error': (error) => {
         console.error('❌ Profile update error:', error);
       }
@@ -198,7 +214,7 @@ const SocketProvider = ({ children }) => {
       });
       cleanupSocket(newSocket);
     };
-  }, [retryCount, isCleaningUp, cleanupSocket]);
+  }, [isCleaningUp, cleanupSocket]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');

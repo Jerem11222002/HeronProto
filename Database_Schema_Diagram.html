@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HeronProto Database Schema - Social Media Recommender System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+                sans-serif;
+            background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            color: #e0e0e0;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .header p {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .entity-box {
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .entity-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4);
+        }
+
+        .entity-header {
+            padding: 16px;
+            font-weight: 700;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #1a1f2e;
+        }
+
+        .entity-body {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.02);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .field {
+            margin-bottom: 12px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #d0d0d0;
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        .field-key {
+            color: #ffb703;
+            font-weight: 600;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-pk {
+            background: rgba(255, 183, 3, 0.2);
+            color: #ffb703;
+            border: 1px solid #ffb703;
+        }
+
+        .badge-fk {
+            background: rgba(255, 87, 87, 0.2);
+            color: #ff5757;
+            border: 1px solid #ff5757;
+        }
+
+        /* Color themes for different entity types */
+        .tags .entity-header {
+            background: #d4af37;
+            color: #1a1f2e;
+        }
+
+        .users .entity-header {
+            background: #3b82f6;
+            color: #ffffff;
+        }
+
+        .interactions .entity-header {
+            background: #dc2626;
+            color: #ffffff;
+        }
+
+        .posts .entity-header {
+            background: #10b981;
+            color: #ffffff;
+        }
+
+        .comments .entity-header {
+            background: #f59e0b;
+            color: #1a1f2e;
+        }
+
+        .preferences .entity-header {
+            background: #06b6d4;
+            color: #1a1f2e;
+        }
+
+        .friendships .entity-header {
+            background: #a78bfa;
+            color: #ffffff;
+        }
+
+        .similarities .entity-header {
+            background: #34d399;
+            color: #1a1f2e;
+        }
+
+        .relationships-section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 30px;
+            margin-top: 40px;
+        }
+
+        .relationships-section h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #ffffff;
+        }
+
+        .relationship-item {
+            margin-bottom: 16px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border-left: 3px solid #3b82f6;
+            border-radius: 4px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .relationship-item code {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #ffb703;
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        .relationship-type {
+            display: inline-block;
+            padding: 2px 8px;
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid #3b82f6;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #3b82f6;
+            margin: 0 6px;
+            text-transform: uppercase;
+        }
+
+        .legend {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+            color: #b0b0b0;
+        }
+
+        .legend-color {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .legend-color.tags {
+            background: #d4af37;
+        }
+
+        .legend-color.users {
+            background: #3b82f6;
+        }
+
+        .legend-color.interactions {
+            background: #dc2626;
+        }
+
+        .legend-color.posts {
+            background: #10b981;
+        }
+
+        .legend-color.comments {
+            background: #f59e0b;
+        }
+
+        .legend-color.preferences {
+            background: #06b6d4;
+        }
+
+        .legend-color.friendships {
+            background: #a78bfa;
+        }
+
+        .legend-color.similarities {
+            background: #34d399;
+        }
+
+        .info-box {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 30px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #b0d4ff;
+        }
+
+        .info-box strong {
+            color: #3b82f6;
+        }
+
+        .notes {
+            margin-top: 40px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            font-size: 12px;
+            color: #888;
+            line-height: 1.8;
+        }
+
+        .notes strong {
+            color: #d0d0d0;
+        }
+
+        @media print {
+            body {
+                background: white;
+                color: #333;
+            }
+
+            .entity-box {
+                page-break-inside: avoid;
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+
+            .header {
+                color: #000;
+            }
+
+            .header h1 {
+                color: #000;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Database Schema</h1>
+            <p>Social Media Recommender System</p>
+            <p style="font-size: 12px; margin-top: 10px; color: #666;">HeronProto Platform Architecture</p>
+        </div>
+
+        <div class="info-box">
+            <strong>Schema Overview:</strong> This diagram shows the complete database design for the HeronProto social media recommender system, including user interactions, content management, and recommendation algorithms.
+        </div>
+
+        <div class="grid">
+            <!-- USERS -->
+            <div class="entity-box users">
+                <div class="entity-header">USERS</div>
+                <div class="entity-body">
+                    <div class="field">
+                        <span class="field-key">UserID</span>
+                        <span class="badge badge-pk">PK</span>
+                    </div>
+                    <div class="field">Username</div>
+                    <div class="field">Email</div>
+                    <div class="field">PasswordHash</div>
+                    <div class="field">Name</div>
+                    <div class="field">Bio</div>
+                    <div class="field">ProfilePicture</div>
+                    <div class="field">Interests []</div>
+                    <div class="field">CreatedAt</div>
+                    <div class="field">LastLogin</div>
+                    <div class="field">IsAdmin</div>
+                </div>
+            </div>
+
+            <!-- POSTS -->
+            <div class="entity-box posts">
+                <div class="entity-header">POSTS</div>
+                <div class="entity-body">
+                    <div class="field">
+                        <span class="field-key">PostID</span>
+                        <span class="badge badge-pk">PK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-key">AuthorID</span>
+                        <span class="badge badge-fk">FK to USERS</span>
+                    </div>
+                    <div class="field">Title</div>
+                    <div class="field">ContentBody</div>
+                    <div class="field">ContentURL</div>
+                    <div class="field">MediaArray []</div>
+                    <div class="field">Tags []</div>
+                    <div class="field">Organization</div>
+                    <div class="field">Visibility</div>
+                    <div class="field">CreatedAt</div>
+                    <div class="field">UpdatedAt</div>
+                    <div class="field">EngagementMetrics</div>
+                </div>
+            </div>
+
+            <!-- COMMENTS -->
+            <div class="entity-box comments">
+                <div class="entity-header">COMMENTS</div>
+                <div class="entity-body">
+                    <div class="field">
+                        <span class="field-key">CommentID</span>
+                        <span class="badge badge-pk">PK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-key">PostID</span>
+                        <span class="badge badge-fk">FK to POSTS</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-key">AuthorID</span>
+                        <span class="badge badge-fk">FK to USERS</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-key">ParentCommentID</span>
+                        <span class="badge badge-fk">FK to COMMENTS</span>
+                    </div>
+                    <div class="field">Text</div>
+                    <div class="field">Depth</div>
+                    <div class="field">LikesCount</div>
+                    <div class="field">CreatedAt</div>
+                    <div class="field">EditedAt</div>
+                </div>
+            </div>
+
+            <!-- TAGS -->
+            <div class="entity-box tags">
+                <div class="entity-header">TAGS</div>
+                <div class="entity-body">
+                    <div class="field">
+                        <span class="field-key">TagID</span>
+                        <span class="badge badge-pk">PK</span>
+                    </div>
+                    <div class="field">TagName</div>
+                    <div class="field">Description</div>
+                    <div class="field">Category</div>
+                    <div class="field">RelatedTags []</div>
+                    <div class="field">Popularity</div>
+                    <div class="field">CreatedAt</div>
+                </div>
+            </div>
+
+            <!-- INTERACTIONS -->
+            <div class="entity-box interactions">
+                <div class="entity-header">INTERACTIONS</div>
+                <div class="entity-body">
+                    <div class="field">
+                        <span class="field-key">InteractionID</span>
+                        <span class="badge badge-pk">PK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-key">UserID</span>
+                        <span class="badge badge-fk">FK to USERS</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-key">PostID</span>
+                        <span class="badge badge-fk">FK to POSTS</span>
+                    </div>
+                    <div class="field">Type [Like, View, Share, Comment]</div>
+                    <div class="field">Timestamp</div>
+                    <div class="field">Duration (minutes)</div>
+                    <div class="field">Weight/Score</div>
+                </div>
+            </div>
+
+            <!-- USER PREFERENCES -->
+            <div class="entity-box preferences">
+                <div class="entity-header">USER_PREFERENCES</div>
+                <div class="entity-body">
+                    <div class="field">
+                        <span class="field-key">PreferenceID</span>
+                        <span class="badge badge-pk">PK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-key">UserID</span>
+                        <span class="badge badge-fk">FK to USERS</span>
+                    </div>
+                    <div class="field">PreferenceScore</div>
+                    <div class="field">ImplicitPreferences</div>
+                    <div class="field">ContentPreferences</div>
+                    <div class="field">InteractionHistory []</div>
+                    <div class="field">LastUpdated</div>
+                </div>
+            </div>
+
+            <!-- FRIENDSHIPS -->
+            <div class="entity-box friendships">
+                <div class="entity-header">FRIENDSHIPS</div>
+                <div class="entity-body">
+                    <div class="field">
+                        <span class="field-key">RelationshipID</span>
+                        <span class="badge badge-pk">PK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-key">UserID1</span>
+                        <span class="badge badge-fk">FK to USERS</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-key">UserID2</span>
+                        <span class="badge badge-fk">FK to USERS</span>
+                    </div>
+                    <div class="field">RelationType [Follow, Friend]</div>
+                    <div class="field">Status [Pending, Confirmed]</div>
+                    <div class="field">CreatedAt</div>
+                </div>
+            </div>
+
+            <!-- POST SIMILARITIES -->
+            <div class="entity-box similarities">
+                <div class="entity-header">POST_SIMILARITIES</div>
+                <div class="entity-body">
+                    <div class="field">
+                        <span class="field-key">SimilarityID</span>
+                        <span class="badge badge-pk">PK</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-key">PostID1</span>
+                        <span class="badge badge-fk">FK to POSTS</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-key">PostID2</span>
+                        <span class="badge badge-fk">FK to POSTS</span>
+                    </div>
+                    <div class="field">SimilarityScore (0-1)</div>
+                    <div class="field">Method [Algorithm Used]</div>
+                    <div class="field">LastCalculated</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RELATIONSHIPS SECTION -->
+        <div class="relationships-section">
+            <h2>Entity Relationships</h2>
+            
+            <div class="relationship-item">
+                <strong>Users & Posts</strong>
+                <span class="relationship-type">1:N</span>
+                <code>USERS.UserID</code> → <code>POSTS.AuthorID</code>
+                <p style="margin-top: 6px; color: #999;">One user can create many posts</p>
+            </div>
+
+            <div class="relationship-item">
+                <strong>Users & Comments</strong>
+                <span class="relationship-type">1:N</span>
+                <code>USERS.UserID</code> → <code>COMMENTS.AuthorID</code>
+                <p style="margin-top: 6px; color: #999;">One user can write many comments</p>
+            </div>
+
+            <div class="relationship-item">
+                <strong>Posts & Comments</strong>
+                <span class="relationship-type">1:N</span>
+                <code>POSTS.PostID</code> → <code>COMMENTS.PostID</code>
+                <p style="margin-top: 6px; color: #999;">One post can have many comments</p>
+            </div>
+
+            <div class="relationship-item">
+                <strong>Comments & Comments (Threaded)</strong>
+                <span class="relationship-type">1:N</span>
+                <code>COMMENTS.CommentID</code> → <code>COMMENTS.ParentCommentID</code>
+                <p style="margin-top: 6px; color: #999;">Comments can reply to other comments (nested structure)</p>
+            </div>
+
+            <div class="relationship-item">
+                <strong>Users & Interactions</strong>
+                <span class="relationship-type">M:N</span>
+                <code>USERS.UserID</code> ↔ <code>INTERACTIONS.UserID</code>
+                <p style="margin-top: 6px; color: #999;">Users perform multiple interactions; interactions tracked for each user</p>
+            </div>
+
+            <div class="relationship-item">
+                <strong>Posts & Interactions</strong>
+                <span class="relationship-type">M:N</span>
+                <code>POSTS.PostID</code> ↔ <code>INTERACTIONS.PostID</code>
+                <p style="margin-top: 6px; color: #999;">Posts receive multiple interactions; interactions reference specific posts</p>
+            </div>
+
+            <div class="relationship-item">
+                <strong>Users & User Preferences</strong>
+                <span class="relationship-type">1:1</span>
+                <code>USERS.UserID</code> → <code>USER_PREFERENCES.UserID</code>
+                <p style="margin-top: 6px; color: #999;">Each user has one preference profile</p>
+            </div>
+
+            <div class="relationship-item">
+                <strong>Posts & Post Similarities</strong>
+                <span class="relationship-type">M:N</span>
+                <code>POSTS.PostID</code> ↔ <code>POST_SIMILARITIES</code>
+                <p style="margin-top: 6px; color: #999;">Posts compared for similarity to other posts (recommendation algorithm)</p>
+            </div>
+
+            <div class="relationship-item">
+                <strong>Users & Friendships</strong>
+                <span class="relationship-type">M:N</span>
+                <code>USERS.UserID</code> ↔ <code>FRIENDSHIPS</code>
+                <p style="margin-top: 6px; color: #999;">Users have social connections with other users (followers/following)</p>
+            </div>
+
+            <div class="relationship-item">
+                <strong>Posts & Tags</strong>
+                <span class="relationship-type">M:N</span>
+                <code>POSTS.Tags[]</code> ↔ <code>TAGS.TagID</code>
+                <p style="margin-top: 6px; color: #999;">Posts tagged with multiple tags; tags applied to multiple posts</p>
+            </div>
+        </div>
+
+        <!-- LEGEND -->
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color tags"></div>
+                <span>Tags - Content categorization</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color users"></div>
+                <span>Users - User accounts & profiles</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color interactions"></div>
+                <span>Interactions - User engagement data</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color posts"></div>
+                <span>Posts - User-generated content</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color comments"></div>
+                <span>Comments - Discussion threads</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color preferences"></div>
+                <span>Preferences - User preference profiles</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color friendships"></div>
+                <span>Friendships - Social connections</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color similarities"></div>
+                <span>Similarities - Content recommendations</span>
+            </div>
+        </div>
+
+        <!-- NOTES -->
+        <div class="notes">
+            <strong>Implementation Notes:</strong>
+            <ul style="margin-left: 20px; margin-top: 10px;">
+                <li>All timestamps use UTC for consistency</li>
+                <li>Foreign keys ensure referential integrity</li>
+                <li>Arrays (denoted with []) are embedded MongoDB arrays</li>
+                <li>Interaction weights are normalized (0-1 scale) for scoring</li>
+                <li>User preferences updated incrementally based on interactions</li>
+                <li>Post similarities pre-calculated for performance optimization</li>
+                <li>All indexes created on FK fields for fast lookups</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

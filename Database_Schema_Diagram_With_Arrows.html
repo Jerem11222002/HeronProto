@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HeronProto Database Schema - Social Media Recommender System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+                sans-serif;
+            background: linear-gradient(135deg, #0a0e17 0%, #1a1f2e 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            color: #e0e0e0;
+        }
+
+        .container {
+            max-width: 2000px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .header p {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .diagram-container {
+            position: relative;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 40px;
+            margin-bottom: 40px;
+            overflow-x: auto;
+            min-height: 600px;
+        }
+
+        .diagram {
+            position: relative;
+            display: inline-block;
+            min-width: 100%;
+            min-height: 600px;
+        }
+
+        svg.connections {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .entities {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 40px;
+            padding: 20px;
+        }
+
+        .entity-box {
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            min-width: 240px;
+        }
+
+        .entity-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .entity-header {
+            padding: 14px;
+            font-weight: 700;
+            font-size: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #1a1f2e;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .entity-header::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .entity-body {
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 12px;
+        }
+
+        .field {
+            margin-bottom: 10px;
+            line-height: 1.5;
+            color: #d0d0d0;
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        .field-key {
+            color: #ffb703;
+            font-weight: 600;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 2px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-left: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .badge-pk {
+            background: rgba(255, 183, 3, 0.3);
+            color: #ffb703;
+            border: 1px solid #ffb703;
+        }
+
+        .badge-fk {
+            background: rgba(255, 87, 87, 0.3);
+            color: #ff5757;
+            border: 1px solid #ff5757;
+        }
+
+        /* Color themes */
+        .tags .entity-header {
+            background: #d4af37;
+            color: #1a1f2e;
+        }
+
+        .tags .entity-header::before {
+            background: #d4af37;
+        }
+
+        .users .entity-header {
+            background: #3b82f6;
+            color: #ffffff;
+        }
+
+        .users .entity-header::before {
+            background: #3b82f6;
+        }
+
+        .interactions .entity-header {
+            background: #dc2626;
+            color: #ffffff;
+        }
+
+        .interactions .entity-header::before {
+            background: #dc2626;
+        }
+
+        .posts .entity-header {
+            background: #10b981;
+            color: #ffffff;
+        }
+
+        .posts .entity-header::before {
+            background: #10b981;
+        }
+
+        .comments .entity-header {
+            background: #f59e0b;
+            color: #1a1f2e;
+        }
+
+        .comments .entity-header::before {
+            background: #f59e0b;
+        }
+
+        .preferences .entity-header {
+            background: #06b6d4;
+            color: #1a1f2e;
+        }
+
+        .preferences .entity-header::before {
+            background: #06b6d4;
+        }
+
+        .friendships .entity-header {
+            background: #a78bfa;
+            color: #ffffff;
+        }
+
+        .friendships .entity-header::before {
+            background: #a78bfa;
+        }
+
+        .similarities .entity-header {
+            background: #34d399;
+            color: #1a1f2e;
+        }
+
+        .similarities .entity-header::before {
+            background: #34d399;
+        }
+
+        .arrow-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            fill: #e0e0e0;
+            background: rgba(10, 14, 23, 0.8);
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .relationships-section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 30px;
+            margin-top: 40px;
+        }
+
+        .relationships-section h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #ffffff;
+        }
+
+        .relationship-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+        }
+
+        .relationship-item {
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border-left: 3px solid #3b82f6;
+            border-radius: 4px;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .relationship-item code {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #ffb703;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 11px;
+        }
+
+        .relationship-type {
+            display: inline-block;
+            padding: 2px 6px;
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid #3b82f6;
+            border-radius: 2px;
+            font-size: 10px;
+            font-weight: 700;
+            color: #3b82f6;
+            margin: 0 4px;
+            text-transform: uppercase;
+        }
+
+        .legend {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-top: 40px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+            color: #b0b0b0;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        .legend-color.tags { background: #d4af37; }
+        .legend-color.users { background: #3b82f6; }
+        .legend-color.interactions { background: #dc2626; }
+        .legend-color.posts { background: #10b981; }
+        .legend-color.comments { background: #f59e0b; }
+        .legend-color.preferences { background: #06b6d4; }
+        .legend-color.friendships { background: #a78bfa; }
+        .legend-color.similarities { background: #34d399; }
+
+        .info-box {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 30px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #b0d4ff;
+        }
+
+        .info-box strong {
+            color: #3b82f6;
+        }
+
+        @media print {
+            body {
+                background: white;
+                color: #333;
+            }
+
+            .diagram-container {
+                background: white;
+                border: 1px solid #ddd;
+            }
+
+            .entity-box {
+                box-shadow: none;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .diagram-container {
+                padding: 20px;
+            }
+
+            .entities {
+                gap: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Database Schema</h1>
+            <p>Social Media Recommender System</p>
+            <p style="font-size: 12px; margin-top: 10px; color: #666;">HeronProto Platform Architecture</p>
+        </div>
+
+        <div class="info-box">
+            <strong>Schema Overview:</strong> Complete database design for the HeronProto social media recommender system with visual entity relationships, user interactions, content management, and recommendation algorithms.
+        </div>
+
+        <div class="diagram-container">
+            <div class="diagram">
+                <svg class="connections" id="connectionsSvg"></svg>
+                
+                <div class="entities">
+                    <!-- TAGS -->
+                    <div class="entity-box tags" id="entity-tags">
+                        <div class="entity-header">TAGS</div>
+                        <div class="entity-body">
+                            <div class="field"><span class="field-key">TagID</span> <span class="badge badge-pk">PK</span></div>
+                            <div class="field">TagName</div>
+                            <div class="field">Description</div>
+                            <div class="field">Category</div>
+                            <div class="field">RelatedTags []</div>
+                            <div class="field">Popularity</div>
+                        </div>
+                    </div>
+
+                    <!-- USERS -->
+                    <div class="entity-box users" id="entity-users">
+                        <div class="entity-header">USERS</div>
+                        <div class="entity-body">
+                            <div class="field"><span class="field-key">UserID</span> <span class="badge badge-pk">PK</span></div>
+                            <div class="field">Username</div>
+                            <div class="field">Email</div>
+                            <div class="field">PasswordHash</div>
+                            <div class="field">Name</div>
+                            <div class="field">Bio</div>
+                            <div class="field">Interests []</div>
+                            <div class="field">LastLogin</div>
+                        </div>
+                    </div>
+
+                    <!-- INTERACTIONS -->
+                    <div class="entity-box interactions" id="entity-interactions">
+                        <div class="entity-header">INTERACTIONS</div>
+                        <div class="entity-body">
+                            <div class="field"><span class="field-key">InteractionID</span> <span class="badge badge-pk">PK</span></div>
+                            <div class="field"><span class="field-key">UserID</span> <span class="badge badge-fk">FK</span></div>
+                            <div class="field"><span class="field-key">PostID</span> <span class="badge badge-fk">FK</span></div>
+                            <div class="field">Type [Like, View, Share]</div>
+                            <div class="field">Timestamp</div>
+                            <div class="field">Duration [if View]</div>
+                            <div class="field">Weight/Score</div>
+                        </div>
+                    </div>
+
+                    <!-- POSTS -->
+                    <div class="entity-box posts" id="entity-posts">
+                        <div class="entity-header">POSTS</div>
+                        <div class="entity-body">
+                            <div class="field"><span class="field-key">PostID</span> <span class="badge badge-pk">PK</span></div>
+                            <div class="field"><span class="field-key">AuthorID</span> <span class="badge badge-fk">FK to USERS</span></div>
+                            <div class="field">Title</div>
+                            <div class="field">ContentBody</div>
+                            <div class="field">ContentURL</div>
+                            <div class="field">MediaArray []</div>
+                            <div class="field">Tags []</div>
+                            <div class="field">Organization</div>
+                        </div>
+                    </div>
+
+                    <!-- COMMENTS -->
+                    <div class="entity-box comments" id="entity-comments">
+                        <div class="entity-header">COMMENTS</div>
+                        <div class="entity-body">
+                            <div class="field"><span class="field-key">CommentID</span> <span class="badge badge-pk">PK</span></div>
+                            <div class="field"><span class="field-key">PostID</span> <span class="badge badge-fk">FK to POSTS</span></div>
+                            <div class="field"><span class="field-key">AuthorID</span> <span class="badge badge-fk">FK to USERS</span></div>
+                            <div class="field"><span class="field-key">ParentCommentID</span> <span class="badge badge-fk">FK [null]</span></div>
+                            <div class="field">Text</div>
+                            <div class="field">Depth</div>
+                            <div class="field">LikesCount</div>
+                        </div>
+                    </div>
+
+                    <!-- USER PREFERENCES -->
+                    <div class="entity-box preferences" id="entity-preferences">
+                        <div class="entity-header">USER_PREFERENCES</div>
+                        <div class="entity-body">
+                            <div class="field"><span class="field-key">PreferenceID</span> <span class="badge badge-pk">PK</span></div>
+                            <div class="field"><span class="field-key">UserID</span> <span class="badge badge-fk">FK to USERS</span></div>
+                            <div class="field">PreferenceScore</div>
+                            <div class="field">ImplicitPreferences</div>
+                            <div class="field">ContentPreferences</div>
+                            <div class="field">InteractionHistory []</div>
+                            <div class="field">LastUpdated</div>
+                        </div>
+                    </div>
+
+                    <!-- POST SIMILARITIES -->
+                    <div class="entity-box similarities" id="entity-similarities">
+                        <div class="entity-header">POST_SIMILARITIES</div>
+                        <div class="entity-body">
+                            <div class="field"><span class="field-key">SimilarityID</span> <span class="badge badge-pk">PK</span></div>
+                            <div class="field"><span class="field-key">PostID1</span> <span class="badge badge-fk">FK to POSTS</span></div>
+                            <div class="field"><span class="field-key">PostID2</span> <span class="badge badge-fk">FK to POSTS</span></div>
+                            <div class="field">SimilarityScore</div>
+                            <div class="field">Method</div>
+                            <div class="field">LastCalculated</div>
+                        </div>
+                    </div>
+
+                    <!-- FRIENDSHIPS -->
+                    <div class="entity-box friendships" id="entity-friendships">
+                        <div class="entity-header">FRIENDSHIPS</div>
+                        <div class="entity-body">
+                            <div class="field"><span class="field-key">RelationshipID</span> <span class="badge badge-pk">PK</span></div>
+                            <div class="field"><span class="field-key">UserID1</span> <span class="badge badge-fk">FK to USERS</span></div>
+                            <div class="field"><span class="field-key">UserID2</span> <span class="badge badge-fk">FK to USERS</span></div>
+                            <div class="field">RelationType</div>
+                            <div class="field">Status</div>
+                            <div class="field">CreatedAt</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RELATIONSHIPS SECTION -->
+        <div class="relationships-section">
+            <h2>Key Relationships</h2>
+            
+            <div class="relationship-grid">
+                <div class="relationship-item">
+                    <strong>Users → Posts</strong>
+                    <span class="relationship-type">1:N</span>
+                    <p style="margin-top: 6px; color: #999;">One user creates many posts</p>
+                </div>
+
+                <div class="relationship-item">
+                    <strong>Users ↔ Interactions</strong>
+                    <span class="relationship-type">M:N</span>
+                    <p style="margin-top: 6px; color: #999;">Users perform interactions on posts</p>
+                </div>
+
+                <div class="relationship-item">
+                    <strong>Posts ↔ Interactions</strong>
+                    <span class="relationship-type">M:N</span>
+                    <p style="margin-top: 6px; color: #999;">Posts receive multiple interactions</p>
+                </div>
+
+                <div class="relationship-item">
+                    <strong>Users → Comments</strong>
+                    <span class="relationship-type">1:N</span>
+                    <p style="margin-top: 6px; color: #999;">One user writes many comments</p>
+                </div>
+
+                <div class="relationship-item">
+                    <strong>Posts → Comments</strong>
+                    <span class="relationship-type">1:N</span>
+                    <p style="margin-top: 6px; color: #999;">One post has many comments</p>
+                </div>
+
+                <div class="relationship-item">
+                    <strong>Posts ↔ Tags</strong>
+                    <span class="relationship-type">M:N</span>
+                    <p style="margin-top: 6px; color: #999;">Posts tagged with multiple tags</p>
+                </div>
+
+                <div class="relationship-item">
+                    <strong>Users → Preferences</strong>
+                    <span class="relationship-type">1:1</span>
+                    <p style="margin-top: 6px; color: #999;">Each user has one preference profile</p>
+                </div>
+
+                <div class="relationship-item">
+                    <strong>Posts → Similarities</strong>
+                    <span class="relationship-type">M:N</span>
+                    <p style="margin-top: 6px; color: #999;">Posts compared for content similarity</p>
+                </div>
+
+                <div class="relationship-item">
+                    <strong>Users ↔ Friendships</strong>
+                    <span class="relationship-type">M:N</span>
+                    <p style="margin-top: 6px; color: #999;">Users have social connections</p>
+                </div>
+
+                <div class="relationship-item">
+                    <strong>Comments (Threaded)</strong>
+                    <span class="relationship-type">1:N</span>
+                    <p style="margin-top: 6px; color: #999;">Comments can reply to comments</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- LEGEND -->
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color tags"></div>
+                <span>Tags</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color users"></div>
+                <span>Users</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color interactions"></div>
+                <span>Interactions</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color posts"></div>
+                <span>Posts</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color comments"></div>
+                <span>Comments</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color preferences"></div>
+                <span>User Preferences</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color friendships"></div>
+                <span>Friendships</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color similarities"></div>
+                <span>Post Similarities</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Function to draw arrows between entities with proper cardinality notation
+        function drawConnections() {
+            const svg = document.getElementById('connectionsSvg');
+            const container = svg.parentElement;
+            
+            // Clear existing arrows
+            svg.innerHTML = '';
+
+            // Helper function to get element center position
+            function getElementCenter(elementId) {
+                const elem = document.getElementById(elementId);
+                if (!elem) return null;
+                
+                const rect = elem.getBoundingClientRect();
+                const containerRect = container.getBoundingClientRect();
+                
+                return {
+                    x: rect.left - containerRect.left + rect.width / 2,
+                    y: rect.top - containerRect.top + rect.height / 2
+                };
+            }
+
+            // Arrow drawing function with cardinality notation
+            // fromCardinality: 'one' | 'many'
+            // toCardinality: 'one' | 'many'
+            function drawRelationship(fromId, toId, label, fromCardinality, toCardinality, color = '#3b82f6') {
+                const from = getElementCenter(fromId);
+                const to = getElementCenter(toId);
+                
+                if (!from || !to) return;
+
+                // Calculate line path with slight curve
+                const mx = (from.x + to.x) / 2;
+                const my = (from.y + to.y) / 2;
+                const dx = to.x - from.x;
+                const dy = to.y - from.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const offsetX = -dy / distance * 15;
+                const offsetY = dx / distance * 15;
+
+                // Draw main line
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                line.setAttribute('d', `M ${from.x} ${from.y} Q ${mx + offsetX} ${my + offsetY} ${to.x} ${to.y}`);
+                line.setAttribute('stroke', color);
+                line.setAttribute('stroke-width', '2');
+                line.setAttribute('fill', 'none');
+                svg.appendChild(line);
+
+                // Normalize direction vector
+                const normX = dx / distance;
+                const normY = dy / distance;
+                
+                // Draw cardinality symbols at "from" end
+                drawCardinality(from.x + normX * 5, from.y + normY * 5, fromCardinality, Math.atan2(dy, dx), color, svg);
+                
+                // Draw cardinality symbols at "to" end
+                drawCardinality(to.x - normX * 15, to.y - normY * 15, toCardinality, Math.atan2(dy, dx), color, svg);
+
+                // Add label
+                if (label) {
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', mx + offsetX);
+                    text.setAttribute('y', my + offsetY - 8);
+                    text.setAttribute('text-anchor', 'middle');
+                    text.setAttribute('font-size', '11');
+                    text.setAttribute('font-weight', '600');
+                    text.setAttribute('fill', '#e0e0e0');
+                    text.setAttribute('text-transform', 'uppercase');
+                    text.setAttribute('letter-spacing', '0.5');
+                    text.textContent = label;
+                    
+                    // Add background rect
+                    const textWidth = label.length * 6;
+                    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    rect.setAttribute('x', mx + offsetX - textWidth / 2 - 2);
+                    rect.setAttribute('y', my + offsetY - 14);
+                    rect.setAttribute('width', textWidth + 4);
+                    rect.setAttribute('height', 14);
+                    rect.setAttribute('fill', 'rgba(10, 14, 23, 0.95)');
+                    rect.setAttribute('rx', '3');
+                    svg.appendChild(rect);
+                    svg.appendChild(text);
+                }
+            }
+
+            // Draw cardinality symbols
+            function drawCardinality(x, y, cardinality, angle, color, svgElement) {
+                if (cardinality === 'one') {
+                    // Draw single line perpendicular to the relationship line
+                    const perpX = Math.cos(angle + Math.PI / 2);
+                    const perpY = Math.sin(angle + Math.PI / 2);
+                    
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', x - perpX * 6);
+                    line.setAttribute('y1', y - perpY * 6);
+                    line.setAttribute('x2', x + perpX * 6);
+                    line.setAttribute('y2', y + perpY * 6);
+                    line.setAttribute('stroke', color);
+                    line.setAttribute('stroke-width', '2');
+                    svgElement.appendChild(line);
+                    
+                } else if (cardinality === 'many') {
+                    // Draw crow's foot (three branches)
+                    const perpX = Math.cos(angle + Math.PI / 2);
+                    const perpY = Math.sin(angle + Math.PI / 2);
+                    
+                    // Main stem
+                    const stem = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    stem.setAttribute('x1', x);
+                    stem.setAttribute('y1', y - 8);
+                    stem.setAttribute('x2', x);
+                    stem.setAttribute('y2', y + 8);
+                    stem.setAttribute('stroke', color);
+                    stem.setAttribute('stroke-width', '2');
+                    svgElement.appendChild(stem);
+                    
+                    // Top branch
+                    const topBranch = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    topBranch.setAttribute('x1', x);
+                    topBranch.setAttribute('y1', y - 8);
+                    topBranch.setAttribute('x2', x + perpX * 8);
+                    topBranch.setAttribute('y2', y - 8 + perpY * 8);
+                    topBranch.setAttribute('stroke', color);
+                    topBranch.setAttribute('stroke-width', '2');
+                    svgElement.appendChild(topBranch);
+                    
+                    // Bottom branch
+                    const botBranch = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    botBranch.setAttribute('x1', x);
+                    botBranch.setAttribute('y1', y + 8);
+                    botBranch.setAttribute('x2', x + perpX * 8);
+                    botBranch.setAttribute('y2', y + 8 + perpY * 8);
+                    botBranch.setAttribute('stroke', color);
+                    botBranch.setAttribute('stroke-width', '2');
+                    svgElement.appendChild(botBranch);
+                }
+            }
+
+            // Draw all relationships with proper cardinality notation
+            // Format: drawRelationship(fromId, toId, label, fromCard, toCard, color)
+            drawRelationship('entity-users', 'entity-interactions', 'M:N', 'one', 'many', '#3b82f6');
+            drawRelationship('entity-interactions', 'entity-posts', 'M:N', 'many', 'one', '#dc2626');
+            drawRelationship('entity-tags', 'entity-posts', 'M:N', 'many', 'many', '#d4af37');
+            drawRelationship('entity-users', 'entity-posts', '1:N', 'one', 'many', '#3b82f6');
+            drawRelationship('entity-users', 'entity-comments', '1:N', 'one', 'many', '#f59e0b');
+            drawRelationship('entity-posts', 'entity-comments', '1:N', 'one', 'many', '#10b981');
+            drawRelationship('entity-posts', 'entity-preferences', '1:1', 'one', 'one', '#06b6d4');
+            drawRelationship('entity-preferences', 'entity-similarities', '1:N', 'one', 'many', '#06b6d4');
+            drawRelationship('entity-posts', 'entity-similarities', 'M:N', 'many', 'many', '#34d399');
+            drawRelationship('entity-users', 'entity-friendships', 'M:N', 'many', 'many', '#a78bfa');
+        }
+
+        // Draw connections on load and resize
+        window.addEventListener('load', drawConnections);
+        window.addEventListener('resize', drawConnections);
+
+        // Redraw when visibility changes
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                setTimeout(drawConnections, 100);
+            }
+        });
+    </script>
+</body>
+</html>

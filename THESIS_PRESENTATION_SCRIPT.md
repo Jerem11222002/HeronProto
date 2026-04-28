@@ -81,7 +81,7 @@ Now, how do we know our algorithm actually works? We evaluated it using continuo
 **Validation Results:**
 | User | RMSE | MAE | MRR | Accuracy | Coverage |
 |------|------|-----|-----|----------|----------|
-| Alice (Dancer) | 0.3171 | 0.2625 | 1.0 | 0.9908 | 100% |
+| Meka (Dancer) | 0.3171 | 0.2625 | 1.0 | 0.9908 | 100% |
 | Bob (Tech) | 0.1467 | 0.1146 | 1.0 | 0.9906 | 100% |
 | Carol (Artist) | 0.2214 | 0.1979 | 1.0 | 1.0 | 100% |
 | Dave (Multi) | 0.2745 | 0.2437 | 1.0 | 0.9997 | 100% |

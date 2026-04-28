@@ -1,0 +1,83 @@
+[
+  {
+    "user": "User A (Cold-start)",
+    "interests": 0,
+    "cosine_similarity": 0.452,
+    "rmse": 0.620,
+    "mae": 0.502,
+    "mrr": 0.250,
+    "accuracy": 0.620,
+    "coverage": 85
+  },
+  {
+    "user": "User B (Rich profile)",
+    "interests": "5+",
+    "cosine_similarity": 0.980,
+    "rmse": 0.122,
+    "mae": 0.089,
+    "mrr": 1.000,
+    "accuracy": 0.993,
+    "coverage": 100
+  },
+  {
+    "user": "User C (Moderate)",
+    "interests": 3,
+    "cosine_similarity": 0.882,
+    "rmse": 0.221,
+    "mae": 0.179,
+    "mrr": 1.000,
+    "accuracy": 0.995,
+    "coverage": 100
+  },
+  {
+    "user": "User D (Single interest)",
+    "interests": 1,
+    "cosine_similarity": 0.721,
+    "rmse": 0.350,
+    "mae": 0.280,
+    "mrr": 0.900,
+    "accuracy": 0.970,
+    "coverage": 95
+  }
+  ,
+  {
+    "user": "User E (Cold alt)",
+    "interests": 0,
+    "cosine_similarity": 0.430,
+    "rmse": 0.650,
+    "mae": 0.520,
+    "mrr": 0.200,
+    "accuracy": 0.600,
+    "coverage": 80
+  },
+  {
+    "user": "User F (Small profile)",
+    "interests": 2,
+    "cosine_similarity": 0.795,
+    "rmse": 0.240,
+    "mae": 0.190,
+    "mrr": 0.950,
+    "accuracy": 0.985,
+    "coverage": 98
+  },
+  {
+    "user": "User G (Very rich)",
+    "interests": 8,
+    "cosine_similarity": 0.991,
+    "rmse": 0.100,
+    "mae": 0.075,
+    "mrr": 1.000,
+    "accuracy": 0.997,
+    "coverage": 100
+  },
+  {
+    "user": "Average",
+    "interests": "-",
+    "cosine_similarity": 0.750,
+    "rmse": 0.329,
+    "mae": 0.262,
+    "mrr": 0.757,
+    "accuracy": 0.880,
+    "coverage": 94
+  }
+]

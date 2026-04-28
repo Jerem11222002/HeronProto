@@ -1,0 +1,40 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run DB metrics diagnostic",
+			"type": "shell",
+			"command": "node tmp_db_metrics_test.js",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run DB metrics diagnostic 2",
+			"type": "shell",
+			"command": "node tmp_db_metrics_test.js",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run DB metrics checker",
+			"type": "shell",
+			"command": "node tmp_db_metrics_checker.js",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Cleanup temp diagnostics",
+			"type": "shell",
+			"command": "del tmp_db_metrics_test.js tmp_db_metrics_checker.js",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Cleanup temp diagnostic files",
+			"type": "shell",
+			"command": "Remove-Item tmp_db_metrics_test.js, tmp_db_metrics_checker.js",
+			"isBackground": false,
+			"problemMatcher": []
+		}
+	]
+}

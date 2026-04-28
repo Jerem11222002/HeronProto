@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HeronProto Entity Relationship Diagram - Updated</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        h2 {
+            color: #0078d4;
+            border-bottom: 2px solid #0078d4;
+            padding-bottom: 10px;
+            margin-top: 30px;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+        .info {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 13px;
+        }
+        .diagram-section {
+            margin-bottom: 40px;
+            page-break-inside: avoid;
+        }
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            background-color: #fafafa;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+        }
+        .controls {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        button {
+            background-color: #0078d4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 0 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #106ebe;
+        }
+        .legend {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            border-left: 4px solid #0078d4;
+        }
+        .legend h3 {
+            margin-top: 0;
+            color: #333;
+            font-size: 15px;
+        }
+        .legend-item {
+            margin: 8px 0;
+            font-size: 13px;
+            color: #555;
+            line-height: 1.5;
+        }
+        .legend-code {
+            background-color: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .entity-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .entity-card {
+            background-color: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 15px;
+            font-size: 12px;
+        }
+        .entity-card strong {
+            color: #0078d4;
+            display: block;
+            margin-bottom: 8px;
+        }
+        .entity-card p {
+            margin: 4px 0;
+            color: #555;
+            line-height: 1.4;
+        }
+        @media print {
+            .container {
+                box-shadow: none;
+                padding: 20px;
+            }
+            .controls {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>HeronProto Database Architecture</h1>
+        <p class="info">Entity Relationship Diagram (ERD) - Organized by functional area for documentation | Updated April 27, 2026</p>
+
+        <div class="diagram-section">
+            <h2>Core Content & Social Features</h2>
+            <div class="mermaid">
+erDiagram
+    USER ||--o{ POST : creates
+    USER ||--o{ COMMENT : writes
+    USER }o--|| USER : follows
+    POST ||--o{ COMMENT : has
+    POST ||--o{ USER : "liked by"
+    POST }o--|| POST : "shared by"
+    COMMENT ||--o{ COMMENT : "replies to"
+
+    USER {
+        ObjectId _id PK
+        string username UK
+        string email UK
+        string name
+        string bio
+        string[] interests
+        boolean isAdmin
+        string adminRole
+        ObjectId[] followers FK
+        ObjectId[] following FK
+    }
+
+    POST {
+        ObjectId _id PK
+        ObjectId userId FK
+        string desc
+        object[] mediaArray
+        string[] tags
+        string organization
+        ObjectId[] likes FK
+        ObjectId[] comments FK
+        object engagementMetrics
+        timestamp createdAt
+    }
+
+    COMMENT {
+        ObjectId _id PK
+        ObjectId postId FK
+        string userId FK
+        string text
+        ObjectId replyTo FK
+        string[] likes FK
+        number depth
+        timestamp createdAt
+    }
+            </div>
+        </div>
+
+        <div class="diagram-section">
+            <h2>Events & Registrations</h2>
+            <div class="mermaid">
+erDiagram
+    USER ||--o{ EVENT : creates
+    USER ||--o{ EVENT_REGISTRATION : registers
+    EVENT ||--o{ EVENT_REGISTRATION : has
+    EVENT ||--o{ USER : "interested in"
+    EVENT ||--o{ USER : "has participants"
+
+    USER {
+        ObjectId _id PK
+        string username UK
+        string name
+    }
+
+    EVENT {
+        ObjectId _id PK
+        string title
+        string organization
+        date date
+        string location
+        string status
+        ObjectId createdBy FK
+        ObjectId[] participants FK
+        string[] tags
+        object registrationForm
+        timestamp createdAt
+    }
+
+    EVENT_REGISTRATION {
+        ObjectId _id PK
+        ObjectId eventId FK
+        ObjectId userId FK
+        string status
+        object emergencyContact
+        string experience
+        timestamp registrationDate
+    }
+            </div>
+        </div>
+
+        <div class="diagram-section">
+            <h2>Messaging & Notifications</h2>
+            <div class="mermaid">
+erDiagram
+    USER ||--o{ CONVERSATION : participates
+    USER ||--o{ MESSAGE : sends
+    USER ||--o{ NOTIFICATION : "sends & receives"
+    CONVERSATION ||--o{ MESSAGE : contains
+    MESSAGE }o--|| MESSAGE : "replies/forwards"
+
+    USER {
+        ObjectId _id PK
+        string username UK
+        string name
+    }
+
+    CONVERSATION {
+        ObjectId _id PK
+        ObjectId[] participants FK
+        ObjectId[] messages FK
+        timestamp updatedAt
+    }
+
+    MESSAGE {
+        ObjectId _id PK
+        ObjectId conversationId FK
+        ObjectId sender FK
+        string text
+        object[] attachments
+        ObjectId replyTo FK
+        boolean read
+        timestamp createdAt
+    }
+
+    NOTIFICATION {
+        ObjectId _id PK
+        ObjectId userId FK
+        ObjectId senderId FK
+        string type
+        string message
+        boolean read
+        string priority
+        timestamp createdAt
+    }
+            </div>
+        </div>
+
+        <div class="legend">
+            <h3>📋 Diagram Overview</h3>
+            <p style="margin: 10px 0; color: #555; font-size: 13px;">
+                The entity relationship diagrams are organized into three functional areas for clarity and documentation purposes.
+            </p>
+
+            <h3 style="margin-top: 20px; margin-bottom: 10px;">Legend & Notation</h3>
+            <div class="legend-item">
+                <strong>PK</strong> = Primary Key (Unique identifier for each record)
+            </div>
+            <div class="legend-item">
+                <strong>FK</strong> = Foreign Key (Reference to another entity)
+            </div>
+            <div class="legend-item">
+                <strong>UK</strong> = Unique Key (Must be unique in the database)
+            </div>
+            <div class="legend-item">
+                <strong>||--o{</strong> = One-to-Many (one record relates to multiple)
+            </div>
+            <div class="legend-item">
+                <strong>}o--||</strong> = Many-to-One (multiple records relate to one)
+            </div>
+
+            <h3 style="margin-top: 20px; margin-bottom: 10px;">🔹 Diagram 1: Core Content & Social Features</h3>
+            <div class="entity-card">
+                <strong>USER</strong>
+                <p>Core user entity with authentication, profiles, interests, and social relationships (followers/following)</p>
+            </div>
+            <div class="entity-card">
+                <strong>POST</strong>
+                <p>User-generated content with media support, tags, likes, and comments. Can be shared by other users</p>
+            </div>
+            <div class="entity-card">
+                <strong>COMMENT</strong>
+                <p>Nested comments on posts with threading support (replies to other comments). Supports likes</p>
+            </div>
+
+            <h3 style="margin-top: 20px; margin-bottom: 10px;">🔹 Diagram 2: Events & Registrations</h3>
+            <div class="entity-card">
+                <strong>EVENT</strong>
+                <p>Organization events with registration forms, ticketing info, and participant tracking</p>
+            </div>
+            <div class="entity-card">
+                <strong>EVENT_REGISTRATION</strong>
+                <p>Detailed registration records storing participant information, status, and event-specific details</p>
+            </div>
+
+            <h3 style="margin-top: 20px; margin-bottom: 10px;">🔹 Diagram 3: Messaging & Notifications</h3>
+            <div class="entity-card">
+                <strong>CONVERSATION</strong>
+                <p>Direct message threads between multiple participants</p>
+            </div>
+            <div class="entity-card">
+                <strong>MESSAGE</strong>
+                <p>Individual messages with attachments, reactions, and threading (reply/forward support)</p>
+            </div>
+            <div class="entity-card">
+                <strong>NOTIFICATION</strong>
+                <p>System notifications for user activities (likes, comments, messages, follows, etc.)</p>
+            </div>
+        </div>
+
+        <div class="controls">
+            <p>💡 <strong>Export Options:</strong></p>
+            <button onclick="downloadPNG()">📥 Download as PNG</button>
+            <button onclick="downloadSVG()">📥 Download as SVG</button>
+            <button onclick="printPage()">🖨️ Print / Save as PDF</button>
+        </div>
+    </div>
+
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true, 
+            theme: 'default',
+            logLevel: 'error',
+            er: {
+                fontSize: 12,
+                width: '90%'
+            }
+        });
+
+        function downloadPNG() {
+            alert('To save as PNG:\n1. Right-click on the diagram\n2. Select "Save image as..."\n\nOr use Print → Save as PDF for better quality.');
+        }
+
+        function downloadSVG() {
+            alert('To save as SVG:\n1. Right-click on the diagram\n2. Select "Save image as..."\n\nThe SVG can then be opened in any editor or converted to other formats.');
+        }
+
+        function printPage() {
+            window.print();
+        }
+    </script>
+</body>
+</html>

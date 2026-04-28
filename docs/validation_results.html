@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Validation Results — Heron Fusion</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>body{font-family:Arial,Helvetica,sans-serif;margin:24px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:8px;text-align:left}th{background:#f4f4f4}</style>
+</head>
+<body>
+  <h1>Validation Results — Heron Fusion</h1>
+  <p>Source: <a href="../validation_results.csv">validation_results.csv</a> | <a href="../validation_results.json">validation_results.json</a></p>
+  <table>
+    <thead>
+      <tr><th>User</th><th>Interests</th><th>Cosine Similarity</th><th>RMSE</th><th>MAE</th><th>MRR</th><th>Accuracy</th><th>Coverage</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>User A (Cold-start)</td><td>0</td><td>0.452</td><td>0.620</td><td>0.502</td><td>0.250</td><td>0.620</td><td>85%</td></tr>
+      <tr><td>User B (Rich profile)</td><td>5+</td><td>0.980</td><td>0.122</td><td>0.089</td><td>1.000</td><td>0.993</td><td>100%</td></tr>
+      <tr><td>User C (Moderate)</td><td>3</td><td>0.882</td><td>0.221</td><td>0.179</td><td>1.000</td><td>0.995</td><td>100%</td></tr>
+      <tr><td>User D (Single interest)</td><td>1</td><td>0.721</td><td>0.350</td><td>0.280</td><td>0.900</td><td>0.970</td><td>95%</td></tr>
+      <tr><td>User E (Cold alt)</td><td>0</td><td>0.430</td><td>0.650</td><td>0.520</td><td>0.200</td><td>0.600</td><td>80%</td></tr>
+      <tr><td>User F (Small profile)</td><td>2</td><td>0.795</td><td>0.240</td><td>0.190</td><td>0.950</td><td>0.985</td><td>98%</td></tr>
+      <tr><td>User G (Very rich)</td><td>8</td><td>0.991</td><td>0.100</td><td>0.075</td><td>1.000</td><td>0.997</td><td>100%</td></tr>
+      <tr><td><strong>Average</strong></td><td>-</td><td><strong>0.750</strong></td><td><strong>0.329</strong></td><td><strong>0.262</strong></td><td><strong>0.757</strong></td><td><strong>0.880</strong></td><td><strong>94%</strong></td></tr>
+    </tbody>
+  </table>
+  <p>Generated on: April 28, 2026</p>
+</body>
+</html>

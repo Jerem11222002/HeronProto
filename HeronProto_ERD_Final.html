@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HeronProto Entity Relationship Diagram</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .info {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 13px;
+        }
+
+        h2 {
+            color: #0078d4;
+            border-bottom: 2px solid #0078d4;
+            padding-bottom: 10px;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+
+        .diagram-section {
+            margin-bottom: 50px;
+            page-break-inside: avoid;
+        }
+
+        .diagram-container {
+            position: relative;
+            background-color: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 20px;
+            min-height: 350px;
+            overflow-x: auto;
+        }
+
+        svg.connections {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .entities {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .entity-box {
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid #ddd;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: all 0.2s;
+            cursor: default;
+            min-width: 200px;
+        }
+
+        .entity-box:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .entity-header {
+            padding: 12px;
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .entity-header::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .entity-body {
+            padding: 12px;
+            background: #fafafa;
+            border-top: 1px solid #e0e0e0;
+            font-size: 11px;
+        }
+
+        .field {
+            margin-bottom: 8px;
+            line-height: 1.4;
+            color: #333;
+            font-family: 'Courier New', monospace;
+        }
+
+        .field-key {
+            color: #0078d4;
+            font-weight: 600;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 5px;
+            border-radius: 2px;
+            font-size: 9px;
+            font-weight: 600;
+            margin-left: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .badge-pk {
+            background: #fff4e6;
+            color: #cc9900;
+            border: 1px solid #ffe58f;
+        }
+
+        .badge-fk {
+            background: #ffe7e7;
+            color: #cc0000;
+            border: 1px solid #ffccc7;
+        }
+
+        /* Entity color themes */
+        .users .entity-header { background: #1890ff; }
+        .users .entity-header::before { background: #1890ff; }
+
+        .posts .entity-header { background: #52c41a; }
+        .posts .entity-header::before { background: #52c41a; }
+
+        .comments .entity-header { background: #faad14; }
+        .comments .entity-header::before { background: #faad14; }
+
+        .interactions .entity-header { background: #ff4d4f; }
+        .interactions .entity-header::before { background: #ff4d4f; }
+
+        .preferences .entity-header { background: #13c2c2; }
+        .preferences .entity-header::before { background: #13c2c2; }
+
+        .events .entity-header { background: #722ed1; }
+        .events .entity-header::before { background: #722ed1; }
+
+        .registrations .entity-header { background: #eb2f96; }
+        .registrations .entity-header::before { background: #eb2f96; }
+
+        .conversations .entity-header { background: #1890ff; }
+        .conversations .entity-header::before { background: #1890ff; }
+
+        .messages .entity-header { background: #52c41a; }
+        .messages .entity-header::before { background: #52c41a; }
+
+        .notifications .entity-header { background: #faad14; }
+        .notifications .entity-header::before { background: #faad14; }
+
+        .friendships .entity-header { background: #722ed1; }
+        .friendships .entity-header::before { background: #722ed1; }
+
+        .similarities .entity-header { background: #eb2f96; }
+        .similarities .entity-header::before { background: #eb2f96; }
+
+        .tags .entity-header { background: #13c2c2; }
+        .tags .entity-header::before { background: #13c2c2; }
+
+        .legend {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            border-left: 4px solid #0078d4;
+        }
+
+        .legend h3 {
+            margin-top: 0;
+            color: #333;
+            font-size: 15px;
+        }
+
+        .legend-item {
+            margin: 8px 0;
+            font-size: 13px;
+            color: #555;
+            line-height: 1.5;
+        }
+
+        .entity-card {
+            background-color: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 15px;
+            font-size: 12px;
+        }
+
+        .entity-card strong {
+            color: #0078d4;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .entity-card p {
+            margin: 4px 0;
+            color: #555;
+            line-height: 1.4;
+        }
+
+        .controls {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        button {
+            background-color: #0078d4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 0 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background-color: #106ebe;
+        }
+
+        @media print {
+            .container {
+                box-shadow: none;
+            }
+            .controls {
+                display: none;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .entities {
+                gap: 15px;
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>HeronProto Database Architecture</h1>
+        <p class="info">Entity Relationship Diagram (ERD) - Organized by functional area | Updated April 27, 2026</p>
+
+        <div class="diagram-section">
+            <h2>Core Content & Social Features</h2>
+            <div class="diagram-container">
+                <svg class="connections" id="connections-1"></svg>
+                <div class="entities" id="entities-1">
+                    <div class="entity-box users" id="s1-users">
+                        <div class="entity-header">USERS</div>
+                        <div class="entity-body">
+                            <div class="field"><span class="field-key">UserID</span> <span class="badge badge-pk">PK</span></div>
+                            <div class="field">Username</div>
+                            <div class="field">Email</div>
+                            <div class="field">Password Hash</div>
+                            <div class="field">Name, Bio</div>
+                            <div class="field">Interests []</div>
+                            <div class="field">Followers/Following</div>
+                        </div>
+                    </div>
+
+                    <div class="entity-box posts" id="s1-posts">
+                        <div class="entity-header">POSTS</div>
+                        <div class="entity-body">
+                            <div class="field"><span class="field-key">PostID</span> <span class="badge badge-pk">PK</span></div>
+                            <div class="field"><span class="field-key">UserID</span> <span class="badge badge-fk">FK</span></div>
+                            <div class="field">Title, Description</div>
+                            <div class="field">Media Array []</div>
+                            <div class="field">Tags []</div>
+                            <div class="field">Likes []</div>
+                            <div class="field">Comments []</div>
+                            <div class="field">Engagement Metrics</div>
+                        </div>
+                    </div>
+
+                    <div class="entity-box comments" id="s1-comments">
+                        <div class="entity-header">COMMENTS</div>
+                        <div class="entity-body">
+                            <div class="field"><span class="field-key">CommentID</span> <span class="badge badge-pk">PK</span></div>
+                            <div class="field"><span class="field-key">PostID</span> <span class="badge badge-fk">FK</span></div>
+                            <div class="field"><span class="field-key">UserID</span> <span class="badge badge-fk">FK</span></div>
+                            <div class="field"><span class="field-key">ParentCommentID</span> <span class="badge badge-fk">FK</span></div>
+                            <div class="field">Text</div>
+                            <div class="field">Likes []</div>
+                            <div class="field">Depth</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="diagram-section">
+            <h2>Events & Registrations</h2>
+            <div class="diagram-container">
+                <svg class="connections" id="connections-2"></svg>
+                <div class="entities" id="entities-2">
+                    <div class="entity-box users" id="s2-users">
+                        <div class="entity-header">USERS</div>
+                        <div class="entity-body">
+                            <div class="field"><span class="field-key">UserID</span> <span class="badge badge-pk">PK</span></div>
+                            <div class="field">Username, Name</div>
+                            <div class="field">Email</div>
+                            <div class="field">Student ID</div>
+                        </div>
+                    </div>
+
+                    <div class="entity-box events" id="s2-events">
+                        <div class="entity-header">EVENTS</div>
+                        <div class="entity-body">
+                            <div class="field"><span class="field-key">EventID</span> <span class="badge badge-pk">PK</span></div>
+                            <div class="field"><span class="field-key">CreatedByID</span> <span class="badge badge-fk">FK</span></div>
+                            <div class="field">Title</div>
+                            <div class="field">Organization</div>
+                            <div class="field">Date, Location</div>
+                            <div class="field">Status</div>
+                            <div class="field">Registration Form</div>
+                        </div>
+                    </div>
+
+                    <div class="entity-box registrations" id="s2-registrations">
+                        <div class="entity-header">EVENT_REGISTRATION</div>
+                        <div class="entity-body">
+                            <div class="field"><span class="field-key">RegistrationID</span> <span class="badge badge-pk">PK</span></div>
+                            <div class="field"><span class="field-key">EventID</span> <span class="badge badge-fk">FK</span></div>
+                            <div class="field"><span class="field-key">UserID</span> <span class="badge badge-fk">FK</span></div>
+                            <div class="field">Status</div>
+                            <div class="field">Email, Phone</div>
+                            <div class="field">Year Level, Course</div>
+                            <div class="field">Registration Date</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="diagram-section">
+            <h2>Messaging & Notifications</h2>
+            <div class="diagram-container">
+                <svg class="connections" id="connections-3"></svg>
+                <div class="entities" id="entities-3">
+                    <div class="entity-box conversations" id="s3-conversations">
+                        <div class="entity-header">CONVERSATIONS</div>
+                        <div class="entity-body">
+                            <div class="field"><span class="field-key">ConversationID</span> <span class="badge badge-pk">PK</span></div>
+                            <div class="field">Participants []</div>
+                            <div class="field">Messages []</div>
+                            <div class="field">Created At</div>
+                            <div class="field">Updated At</div>
+                        </div>
+                    </div>
+
+                    <div class="entity-box messages" id="s3-messages">
+                        <div class="entity-header">MESSAGES</div>
+                        <div class="entity-body">
+                            <div class="field"><span class="field-key">MessageID</span> <span class="badge badge-pk">PK</span></div>
+                            <div class="field"><span class="field-key">ConversationID</span> <span class="badge badge-fk">FK</span></div>
+                            <div class="field"><span class="field-key">SenderID</span> <span class="badge badge-fk">FK</span></div>
+                            <div class="field">Text</div>
+                            <div class="field">Attachments []</div>
+                            <div class="field">Read By []</div>
+                            <div class="field">Edited, Deleted</div>
+                        </div>
+                    </div>
+
+                    <div class="entity-box notifications" id="s3-notifications">
+                        <div class="entity-header">NOTIFICATIONS</div>
+                        <div class="entity-body">
+                            <div class="field"><span class="field-key">NotificationID</span> <span class="badge badge-pk">PK</span></div>
+                            <div class="field"><span class="field-key">UserID</span> <span class="badge badge-fk">FK</span></div>
+                            <div class="field"><span class="field-key">SenderID</span> <span class="badge badge-fk">FK</span></div>
+                            <div class="field">Type</div>
+                            <div class="field">Message</div>
+                            <div class="field">Priority</div>
+                            <div class="field">Read, Archived</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="legend">
+            <h3>📋 Legend & Notation</h3>
+            <div class="legend-item">
+                <strong>PK</strong> = Primary Key (Unique identifier)
+            </div>
+            <div class="legend-item">
+                <strong>FK</strong> = Foreign Key (Reference to another entity)
+            </div>
+            <div class="legend-item">
+                <strong>Single Line (|)</strong> = One side of relationship
+            </div>
+            <div class="legend-item">
+                <strong>Crow's Foot (⦟)</strong> = Many side of relationship
+            </div>
+
+            <h3 style="margin-top: 20px; margin-bottom: 10px;">🔹 Section 1: Core Content & Social Features</h3>
+            <div class="entity-card">
+                <strong>USERS</strong>
+                <p>Core user entity with authentication, profiles, interests, and social relationships</p>
+            </div>
+            <div class="entity-card">
+                <strong>POSTS</strong>
+                <p>User-generated content with media, tags, engagement metrics, and social interactions</p>
+            </div>
+            <div class="entity-card">
+                <strong>COMMENTS</strong>
+                <p>Nested comments with threading support and like functionality</p>
+            </div>
+
+            <h3 style="margin-top: 20px; margin-bottom: 10px;">🔹 Section 2: Events & Registrations</h3>
+            <div class="entity-card">
+                <strong>EVENTS</strong>
+                <p>Organization events with registration forms and participant tracking</p>
+            </div>
+            <div class="entity-card">
+                <strong>EVENT_REGISTRATION</strong>
+                <p>Detailed registration records with participant information</p>
+            </div>
+
+            <h3 style="margin-top: 20px; margin-bottom: 10px;">🔹 Section 3: Messaging & Notifications</h3>
+            <div class="entity-card">
+                <strong>CONVERSATIONS</strong>
+                <p>Direct message threads between multiple participants</p>
+            </div>
+            <div class="entity-card">
+                <strong>MESSAGES</strong>
+                <p>Individual messages with attachments and threading support</p>
+            </div>
+            <div class="entity-card">
+                <strong>NOTIFICATIONS</strong>
+                <p>User activity notifications for various system events</p>
+            </div>
+        </div>
+
+        <div class="controls">
+            <p>💡 <strong>Export:</strong></p>
+            <button onclick="window.print()">🖨️ Print / Save as PDF</button>
+        </div>
+    </div>
+
+    <script>
+        function drawDiagramConnections(sectionId, svgId, containerId) {
+            const svg = document.getElementById(svgId);
+            const container = document.getElementById(containerId);
+            
+            if (!svg || !container) return;
+
+            svg.innerHTML = '';
+
+            function getElementCenter(elementId) {
+                const elem = document.getElementById(elementId);
+                if (!elem) return null;
+                
+                const rect = elem.getBoundingClientRect();
+                const containerRect = container.getBoundingClientRect();
+                
+                return {
+                    x: rect.left - containerRect.left + rect.width / 2,
+                    y: rect.top - containerRect.top + rect.height / 2
+                };
+            }
+
+            function drawRelationship(fromId, toId, label, fromCard, toCard, color) {
+                const from = getElementCenter(fromId);
+                const to = getElementCenter(toId);
+                
+                if (!from || !to) return;
+
+                const dx = to.x - from.x;
+                const dy = to.y - from.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                // Draw line
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                line.setAttribute('d', `M ${from.x} ${from.y} Q ${(from.x + to.x) / 2} ${(from.y + to.y) / 2 - 15} ${to.x} ${to.y}`);
+                line.setAttribute('stroke', color);
+                line.setAttribute('stroke-width', '1.5');
+                line.setAttribute('fill', 'none');
+                svg.appendChild(line);
+
+                const normX = dx / distance;
+                const normY = dy / distance;
+
+                // Draw cardinality at from end
+                drawCardinality(from.x + normX * 5, from.y + normY * 5, fromCard, Math.atan2(dy, dx), color, svg);
+                
+                // Draw cardinality at to end
+                drawCardinality(to.x - normX * 15, to.y - normY * 15, toCard, Math.atan2(dy, dx), color, svg);
+
+                // Add label if provided
+                if (label) {
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', (from.x + to.x) / 2);
+                    text.setAttribute('y', (from.y + to.y) / 2 - 22);
+                    text.setAttribute('text-anchor', 'middle');
+                    text.setAttribute('font-size', '10');
+                    text.setAttribute('font-weight', '600');
+                    text.setAttribute('fill', '#666');
+                    text.textContent = label;
+                    svg.appendChild(text);
+                }
+            }
+
+            function drawCardinality(x, y, cardinality, angle, color, svgElement) {
+                if (cardinality === 'one') {
+                    const perpX = Math.cos(angle + Math.PI / 2);
+                    const perpY = Math.sin(angle + Math.PI / 2);
+                    
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', x - perpX * 5);
+                    line.setAttribute('y1', y - perpY * 5);
+                    line.setAttribute('x2', x + perpX * 5);
+                    line.setAttribute('y2', y + perpY * 5);
+                    line.setAttribute('stroke', color);
+                    line.setAttribute('stroke-width', '1.5');
+                    svgElement.appendChild(line);
+                    
+                } else if (cardinality === 'many') {
+                    const perpX = Math.cos(angle + Math.PI / 2);
+                    const perpY = Math.sin(angle + Math.PI / 2);
+                    
+                    const stem = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    stem.setAttribute('x1', x);
+                    stem.setAttribute('y1', y - 6);
+                    stem.setAttribute('x2', x);
+                    stem.setAttribute('y2', y + 6);
+                    stem.setAttribute('stroke', color);
+                    stem.setAttribute('stroke-width', '1.5');
+                    svgElement.appendChild(stem);
+                    
+                    const top = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    top.setAttribute('x1', x);
+                    top.setAttribute('y1', y - 6);
+                    top.setAttribute('x2', x + perpX * 6);
+                    top.setAttribute('y2', y - 6 + perpY * 6);
+                    top.setAttribute('stroke', color);
+                    top.setAttribute('stroke-width', '1.5');
+                    svgElement.appendChild(top);
+                    
+                    const bot = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    bot.setAttribute('x1', x);
+                    bot.setAttribute('y1', y + 6);
+                    bot.setAttribute('x2', x + perpX * 6);
+                    bot.setAttribute('y2', y + 6 + perpY * 6);
+                    bot.setAttribute('stroke', color);
+                    bot.setAttribute('stroke-width', '1.5');
+                    svgElement.appendChild(bot);
+                }
+            }
+
+            // Draw section-specific relationships
+            if (sectionId === 1) {
+                drawRelationship('s1-users', 's1-posts', '1:N', 'one', 'many', '#1890ff');
+                drawRelationship('s1-posts', 's1-comments', '1:N', 'one', 'many', '#52c41a');
+                drawRelationship('s1-users', 's1-comments', '1:N', 'one', 'many', '#faad14');
+            } else if (sectionId === 2) {
+                drawRelationship('s2-users', 's2-events', '1:N', 'one', 'many', '#1890ff');
+                drawRelationship('s2-events', 's2-registrations', '1:N', 'one', 'many', '#722ed1');
+                drawRelationship('s2-users', 's2-registrations', '1:N', 'one', 'many', '#eb2f96');
+            } else if (sectionId === 3) {
+                drawRelationship('s3-conversations', 's3-messages', '1:N', 'one', 'many', '#1890ff');
+                drawRelationship('s3-messages', 's3-notifications', 'M:N', 'many', 'many', '#faad14');
+            }
+        }
+
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                drawDiagramConnections(1, 'connections-1', 'entities-1');
+                drawDiagramConnections(2, 'connections-2', 'entities-2');
+                drawDiagramConnections(3, 'connections-3', 'entities-3');
+            }, 100);
+        });
+
+        window.addEventListener('resize', () => {
+            drawDiagramConnections(1, 'connections-1', 'entities-1');
+            drawDiagramConnections(2, 'connections-2', 'entities-2');
+            drawDiagramConnections(3, 'connections-3', 'entities-3');
+        });
+    </script>
+</body>
+</html>

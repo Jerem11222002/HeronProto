@@ -148,8 +148,9 @@ router.get('/conversations/:conversationId/messages', authenticateToken, async (
         
         const result = await Message.aggregate([
           { $match: { conversationId: new mongoose.Types.ObjectId(conversationId) } },
-          { $sort: { createdAt: 1 } },
+          { $sort: { createdAt: -1 } },
           // CRITICAL: Paginate BEFORE lookups (only lookup paginated results)
+          // NOTE: Sorting by -1 (newest first) to ensure latest messages load when page 1 is requested
           { $skip: skip },
           { $limit: limit },
           {

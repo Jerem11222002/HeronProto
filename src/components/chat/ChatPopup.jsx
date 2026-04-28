@@ -74,7 +74,8 @@ const ChatPopupInternal = ({ friend, onClose, style, messages: externalMessages 
       .then(res => {
         if (!isMounted) return;
         setConversationId(res.data._id);
-        return axios.get(`${API_URL}/api/messages/conversations/${res.data._id}/messages`, {
+        // Request messages with high limit to load all recent messages (not oldest 30)
+        return axios.get(`${API_URL}/api/messages/conversations/${res.data._id}/messages?limit=100`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
       })
@@ -84,7 +85,9 @@ const ChatPopupInternal = ({ friend, onClose, style, messages: externalMessages 
         console.log('📨 Messages response:', res?.data);
         const messagesArray = res?.data?.messages || res?.data || [];
         console.log('📨 Messages array:', messagesArray, 'is Array?', Array.isArray(messagesArray));
-        setMessages(Array.isArray(messagesArray) ? messagesArray : []);
+        // Reverse to display in chronological order (oldest → newest) even though fetched newest-first
+        const sortedMessages = Array.isArray(messagesArray) ? messagesArray.reverse() : [];
+        setMessages(sortedMessages);
       })
       .catch(err => {
         if (isMounted) {

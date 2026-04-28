@@ -1,4 +1,4 @@
-# HeronProto - Project Architecture
+# heron fusion - Project Architecture
 
 ## 📋 Table of Contents
 1. [Overview](#overview)
@@ -16,7 +16,7 @@
 
 ## Overview
 
-**HeronProto** is a full-stack social networking and event management platform built with the MERN stack. It facilitates user connections through event participation, social feeds, recommendations, and direct messaging.
+**heron fusion** is a full-stack social networking and event management platform built with the MERN stack. It facilitates user connections through event participation, social feeds, recommendations, and direct messaging.
 
 ### Core Purpose
 - Enable users to discover and attend events
@@ -62,7 +62,7 @@
 ## Project Structure
 
 ```
-HeronProto/
+heron fusion/
 ├── backend/                          # Express.js API server
 │   ├── config/                       # Database & configuration
 │   │   └── db.js                     # MongoDB connection

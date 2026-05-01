@@ -32,18 +32,25 @@ const notificationSchema = new mongoose.Schema({
     type: String,
     required: true,
     enum: [
-      'like', 
-      'comment', 
-      'follow', 
+      'like',
+      'comment',
+      'follow',
       'follow_accept',
-      'mention', 
+      'mention',
       'reply',
       'message',
       'post_tag',
       'share',
       'group_invite',
       'event_invite',
-      'test'
+      'test',
+      // Admin notification types
+      'permission_update',
+      'organization_event',
+      'organization_registration',
+      'organization_update',
+      'superadmin_alert',
+      'admin_assigned'
     ]
   },
   message: {
@@ -123,6 +130,18 @@ const notificationSchema = new mongoose.Schema({
     }
   },
 
+  // Admin-specific fields
+  organization: {
+    type: String,
+    default: null,
+    index: true
+  },
+  isAdminNotification: {
+    type: Boolean,
+    default: false,
+    index: true
+  },
+
   // Metadata fields
   data: {
     type: mongoose.Schema.Types.Mixed,
@@ -133,9 +152,10 @@ const notificationSchema = new mongoose.Schema({
     default: null,
     validate: {
       validator: function(v) {
-        return !v || /^(http|https):\/\/[^ "]+$/.test(v);
+        // Allow absolute URLs (http/https) or relative paths (/path)
+        return !v || /^(http|https):\/\/[^ "]+$/.test(v) || /^\/[^ ]*$/.test(v);
       },
-      message: 'Invalid URL format'
+      message: 'Invalid URL format - must be absolute (http/https) or relative (/path)'
     }
   },
   priority: {
@@ -207,6 +227,9 @@ notificationSchema.index({ userId: 1, type: 1 });
 notificationSchema.index({ userId: 1, priority: 1 });
 notificationSchema.index({ userId: 1, category: 1 });
 notificationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+// Admin notification indexes
+notificationSchema.index({ isAdminNotification: 1, organization: 1, createdAt: -1 });
+notificationSchema.index({ userId: 1, isAdminNotification: 1, read: 1 });
 
 // Virtual fields
 notificationSchema.virtual('isExpired').get(function() {
@@ -441,7 +464,14 @@ notificationSchema.methods.generateDefaultMessage = function() {
     share: 'shared your post',
     group_invite: 'invited you to join a group',
     event_invite: 'invited you to an event',
-    test: 'This is a test notification'
+    test: 'This is a test notification',
+    // Admin notification messages
+    permission_update: 'Your admin permissions have been updated',
+    organization_event: 'New event created for your organization',
+    organization_registration: 'New registration for your organization event',
+    organization_update: 'Organization information updated',
+    superadmin_alert: 'System alert for superadmin',
+    admin_assigned: 'You have been assigned as an admin'
   };
   return messages[this.type] || 'sent you a notification';
 };

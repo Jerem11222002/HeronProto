@@ -57,11 +57,11 @@ const AdminSidebar = ({ isOpen, onClose }) => {
       icon: <MdManageAccounts />,
       show: isSuperAdmin // only visible to super admins
     },
-    { 
+    {
       path: '/admin/monitoring',
       label: 'User Monitoring',
       icon: <MdMonitor />,
-      show: isSuperAdmin
+      show: isSuperAdmin || canAccess('canAccessUserMonitoring')
     },
     { 
       path: '/admin/settings',

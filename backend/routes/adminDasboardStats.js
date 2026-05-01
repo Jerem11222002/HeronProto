@@ -28,44 +28,14 @@ router.get('/stats', adminAuthMiddleware, async (req, res) => {
     const upcomingEventIds = (upcomingEventsDocs || []).map(d => d._id);
     const upcomingEvents = upcomingEventIds.length;
 
-    // Count participants robustly:
-    // - Sum embedded arrays and engagementMetrics.registrations on Event documents
-    // - Count EventRegistration documents referencing those events
-    // Use the larger value to avoid undercounting (handles either storage strategy).
+    // Count participants from EventRegistration collection only
+    // This is the single source of truth for registration counts
     let totalParticipants = 0;
     if (upcomingEventIds.length > 0) {
-      // 1) sum embedded arrays + engagementMetrics
-      const embeddedAgg = await Event.aggregate([
-        { $match: { _id: { $in: upcomingEventIds } } },
-        {
-          $project: {
-            regArrayCount: { $size: { $ifNull: ['$registrations', []] } },
-            participantsArrayCount: { $size: { $ifNull: ['$participants', []] } },
-            engagementRegs: { $ifNull: ['$engagementMetrics.registrations', 0] },
-            interestedArrayCount: { $size: { $ifNull: ['$interested', []] } }
-          }
-        },
-        {
-          $group: {
-            _id: null,
-            totalFromEvents: {
-              $sum: { $add: ['$regArrayCount', '$participantsArrayCount', '$engagementRegs', '$interestedArrayCount'] }
-            }
-          }
-        }
-      ]);
-
-      const totalFromEvents = Array.isArray(embeddedAgg) && embeddedAgg[0] && typeof embeddedAgg[0].totalFromEvents === 'number'
-        ? embeddedAgg[0].totalFromEvents
-        : 0;
-
-      // 2) count EventRegistration documents for upcoming events
-      const registrationCount = await EventRegistration.countDocuments({ eventId: { $in: upcomingEventIds } });
-
-      // prefer the more complete source
-      totalParticipants = Math.max(totalFromEvents, registrationCount);
-    } else {
-      totalParticipants = 0;
+      // Count only EventRegistration documents for upcoming events
+      totalParticipants = await EventRegistration.countDocuments({ 
+        eventId: { $in: upcomingEventIds } 
+      });
     }
 
     // Online users: try req.app store, otherwise use socket.io if available

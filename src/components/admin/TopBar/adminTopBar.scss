@@ -127,72 +127,51 @@
     @include flex(row, flex-end, center);
     gap: clamp(12px, 2vw, 20px);
     margin-left: auto;
+    position: relative; // Added for dropdown positioning
 
-    .notifications {
-      position: relative;
-      cursor: pointer;
-      padding: 8px;
-      border-radius: 50%;
-      @include transition(all);
-      border: none;
-      background: none;
-
-      &:hover {
-        @include themify($themes) {
-          background-color: themed('bgHover');
-        }
-        transform: translateY(-1px);
-      }
-
-      &:active {
-        transform: translateY(0);
-      }
-
-      &:focus-visible {
-        @include themify($themes) {
-          outline: 2px solid themed('primary');
-          outline-offset: 2px;
-        }
-      }
-
-      .icon {
+    // AdminNotificationBell styles
+    .admin-notification-bell {
+      position: relative; // Ensure dropdown positions correctly
+      
+      .admin-notification-button {
+        padding: 8px;
+        border-radius: 50%;
+        @include transition(all);
         @include themify($themes) {
           color: themed('textColorSoft');
         }
-        font-size: 24px;
-        @include transition(color);
-      }
 
-      .badge {
-        position: absolute;
-        top: 0;
-        right: 0;
-        @include themify($themes) {
-          background-color: themed('error');
-          color: #fff;
+        &:hover {
+          @include themify($themes) {
+            background-color: themed('bgHover');
+            color: themed('textColor');
+          }
         }
-        font-size: 12px;
-        padding: 2px 5px;
-        border-radius: 12px;
-        min-width: 18px;
-        height: 18px;
-        @include flex(row, center, center);
-        font-weight: 600;
-        animation: badgePulse 2s infinite;
+      }
+      
+      // Fix dropdown positioning - prevent right edge overflow
+      .admin-notification-dropdown-wrapper {
+        position: absolute;
+        top: calc(100% + 12px);
+        right: 0;
+        z-index: 1300;
+        
+        // Ensure dropdown doesn't overflow viewport on right side
+        .admin-notification-dropdown {
+          position: relative;
+          right: 0;
+          
+          // If viewport is too narrow, align to right edge of screen
+          @media (max-width: 420px) {
+            position: fixed;
+            top: 70px;
+            right: 16px;
+            left: 16px;
+            width: auto;
+          }
+        }
       }
     }
-  }
-}
-
-@keyframes badgePulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
   }
 }
 
@@ -223,8 +202,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .adminTopBar {
-    .notifications .badge {
-      animation: none;
+    * {
+      animation: none !important;
+      transition: none !important;
     }
   }
 }

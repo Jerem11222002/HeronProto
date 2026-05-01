@@ -71,7 +71,7 @@ async function createSuperAdmin() {
   adminPermissions: {
     canManageUsers: false,
     canManageEvents: true,
-    canModerateContent: true,
+    canAccessUserMonitoring: true,
     canAccessAnalytics: true,
     canManageSettings: false
   },

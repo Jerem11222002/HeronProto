@@ -6,6 +6,16 @@ const EventRegistration = require("../models/eventRegistration");
 const Event = require("../models/event");
 const { adminAuthMiddleware } = require("../Middleware/adminAuthMiddleware");
 const User = require("../models/users");
+const multer = require('multer');
+const { createAdminNotification } = require('./adminNotifications');
+
+console.log('[EventRegistration] Route module loaded, createAdminNotification:', typeof createAdminNotification);
+
+// Multer configuration for parsing multipart/form-data (file uploads)
+const upload = multer({
+  storage: multer.memoryStorage(), // Store files in memory for processing
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit per file
+});
 
 // Get event details with registration count
 router.get("/events/:eventId", async (req, res) => {
@@ -57,7 +67,8 @@ router.get("/events/:eventId", async (req, res) => {
 });
 
 // User registration for an event (with authentication)
-router.post('/register', authenticate, async (req, res) => {
+// Uses multer.any() to parse multipart/form-data when files are present
+router.post('/register', upload.any(), authenticate, async (req, res) => {
   try {
     const { eventId } = req.body;
     if (!eventId) return res.status(400).json({ message: 'Event ID is required.' });
@@ -98,7 +109,7 @@ router.post('/register', authenticate, async (req, res) => {
     const allowedSchemaKeys = new Set(Object.keys(EventRegistration.schema.paths || {}));
     const registrationPayload = {
       eventId,
-      userId: req.user._id,
+      userId: req.user._id || req.user.id,
       organization: event.organization,
       uploadedFiles
     };
@@ -164,6 +175,82 @@ router.post('/register', authenticate, async (req, res) => {
     // Save registration
     const newRegistration = new EventRegistration(registrationPayload);
     await newRegistration.save();
+
+    // Create notifications for organization admins and superadmins
+    try {
+      console.log(`[EventRegistration] Starting notification creation for org: "${event.organization}"`);
+
+      // Find all admins for this organization
+      const organizationAdmins = await User.find({
+        isAdmin: true,
+        adminOrganization: event.organization
+      }).select('_id adminOrganization');
+
+      console.log(`[EventRegistration] Found ${organizationAdmins.length} org admins for "${event.organization}":`, organizationAdmins.map(a => ({ id: a._id.toString(), org: a.adminOrganization })));
+
+      // Find all superadmins
+      const superadmins = await User.find({
+        isAdmin: true,
+        adminRole: 'super'
+      }).select('_id adminRole');
+
+      console.log(`[EventRegistration] Found ${superadmins.length} superadmins:`, superadmins.map(a => a._id.toString()));
+
+      // Combine unique admin IDs
+      const adminIds = [...new Set([
+        ...organizationAdmins.map(a => a._id.toString()),
+        ...superadmins.map(a => a._id.toString())
+      ])];
+
+      console.log(`[EventRegistration] Total unique admin IDs to notify: ${adminIds.length}`, adminIds);
+
+      if (adminIds.length === 0) {
+        console.warn(`[EventRegistration] No admins found to notify for organization "${event.organization}"`);
+      } else {
+        // Get registrant info for the notification message
+        const registrantName = registrationPayload.name || fullUser?.name || 'A user';
+        const senderId = req.user._id || req.user.id;
+
+        console.log(`[EventRegistration] Creating notifications: senderId=${senderId}, registrantName=${registrantName}`);
+
+        // Create notifications for each admin
+        const notificationResults = await Promise.all(
+          adminIds.map(async (adminId) => {
+            try {
+              const notif = await createAdminNotification({
+                userId: adminId,
+                senderId: senderId,
+                type: 'organization_registration',
+                message: `${registrantName} registered for "${event.title}"`,
+                organization: event.organization,
+                data: {
+                  eventId: event._id.toString(),
+                  eventTitle: event.title,
+                  registrationId: newRegistration._id.toString(),
+                  registrantName,
+                  registrantId: senderId.toString()
+                },
+                priority: 'medium',
+                category: 'system',
+                actionUrl: `/admin/participants`
+              });
+              console.log(`[EventRegistration] ✓ Created notification for admin ${adminId}:`, notif._id.toString());
+              return notif;
+            } catch (err) {
+              console.error(`[EventRegistration] ✗ Failed to create notification for admin ${adminId}:`, err.message);
+              return null;
+            }
+          })
+        );
+
+        const successCount = notificationResults.filter(n => n !== null).length;
+        console.log(`[EventRegistration] Successfully created ${successCount}/${adminIds.length} notifications`);
+      }
+    } catch (notifError) {
+      // Log but don't fail the registration if notification fails
+      console.error('[EventRegistration] Error creating notifications:', notifError);
+    }
+
     res.status(201).json({ success: true, registrationId: newRegistration._id });
   } catch (err) {
     console.error('❌ Registration error:', err);
@@ -514,7 +601,5 @@ router.get('/verify', async (req, res) => {
   await registration.save();
   res.send('Email verified! Registration confirmed.');
 });
-
-console.log('Schema for uploadedFiles:', EventRegistration.schema.paths.uploadedFiles);
 
 module.exports = router;

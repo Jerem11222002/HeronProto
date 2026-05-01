@@ -29,6 +29,7 @@ const uploadRoutes = require('./backend/routes/upload');
 const adminAnalyticsRouter = require('./backend/routes/adminAnalytics');
 const adminMonitoringRouter = require('./backend/routes/adminMonitoring');
 const adminAccountsRouter = require('./backend/routes/adminAccounts');
+const { router: adminNotificationsRouter } = require('./backend/routes/adminNotifications');
 const recommendationEvaluationRouter = require('./backend/routes/recommendationEvaluation');
 const requestTiming = require('./backend/middleware/requestTiming');
 
@@ -268,6 +269,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/admin/analytics', adminAnalyticsRouter);
 app.use('/api/admin/monitoring', adminMonitoringRouter);
 app.use('/api/admin/accounts', adminAccountsRouter);
+app.use('/api/admin/notifications', adminNotificationsRouter);
 app.use('/api/recommendations', recommendationEvaluationRouter);
 app.use('/api/metrics', require('./backend/routes/metricsRoutes'));
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
@@ -348,6 +350,7 @@ try {
   routeInspect('adminAnalyticsRouter', adminAnalyticsRouter);
   routeInspect('adminMonitoringRouter', adminMonitoringRouter);
   routeInspect('adminAccountsRouter', adminAccountsRouter);
+  routeInspect('adminNotificationsRouter', adminNotificationsRouter);
 } catch (err) {
   console.error('Route inspect error:', err);
 }

@@ -67,6 +67,7 @@ const UserSchema = new mongoose.Schema({
       return !this.isAdmin && (!this.adminRole || !['admin', 'super'].includes(this.adminRole));
     },
     unique: true,
+    sparse: true,
     trim: true
   },
   email: { 
@@ -194,9 +195,41 @@ const UserSchema = new mongoose.Schema({
   adminPermissions: {
     canManageUsers: { type: Boolean, default: false },
     canManageEvents: { type: Boolean, default: false },
-    canModerateContent: { type: Boolean, default: false },
+    canAccessUserMonitoring: { type: Boolean, default: false },
     canAccessAnalytics: { type: Boolean, default: false },
     canManageSettings: { type: Boolean, default: false }
+  },
+  adminOrganization: {
+    type: String,
+    enum: [
+      'UTPC',
+      'CAST',
+      'CULTURA',
+      'UMAK Jammers',
+      'UMAK Chorale',
+      'UMAK Dance Extreme',
+      'UMAK Siglahi',
+      'UMAK Brass Band',
+      'admin@all',
+      null
+    ],
+    default: null,
+    validate: {
+      validator: function(v) {
+        return !v || [
+          'UTPC',
+          'CAST',
+          'CULTURA',
+          'UMAK Jammers',
+          'UMAK Chorale',
+          'UMAK Dance Extreme',
+          'UMAK Siglahi',
+          'UMAK Brass Band',
+          'admin@all'
+        ].includes(v);
+      },
+      message: 'Invalid admin organization'
+    }
   },
   adminActionLog: [{
     action: { type: String, required: true },
@@ -412,7 +445,7 @@ UserSchema.pre("save", function(next) {
       this.adminPermissions = {
         canManageUsers: false,
         canManageEvents: true,
-        canModerateContent: true,
+        canAccessUserMonitoring: true,
         canAccessAnalytics: true,
         canManageSettings: false
       };
@@ -447,28 +480,28 @@ UserSchema.methods.updateAdminRole = async function(newRole) {
     super: {
       canManageUsers: true,
       canManageEvents: true,
-      canModerateContent: true,
+      canAccessUserMonitoring: true,
       canAccessAnalytics: true,
       canManageSettings: true
     },
     admin: {
       canManageUsers: false,
       canManageEvents: true,
-      canModerateContent: true,
+      canAccessUserMonitoring: true,
       canAccessAnalytics: true,
       canManageSettings: false
     },
     moderator: {
       canManageUsers: false,
       canManageEvents: true,
-      canModerateContent: true,
+      canAccessUserMonitoring: true,
       canAccessAnalytics: true,
       canManageSettings: false
     },
     editor: {
       canManageUsers: false,
       canManageEvents: true,
-      canModerateContent: false,
+      canAccessUserMonitoring: false,
       canAccessAnalytics: false,
       canManageSettings: false
     }

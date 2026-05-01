@@ -135,6 +135,7 @@ const adminAuthMiddleware = async (req, res, next) => {
       name: user.name,
       isAdmin: true,
       adminRole: user.adminRole || 'basic',
+      adminOrganization: user.adminOrganization || null,
       permissions: user.adminPermissions || [],
       lastLogin: user.lastAdminLogin
     };

@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useEvents } from '../../../context/EventsContext';
+import { useAuth } from '../../../context/authContext';
 import { 
   IconButton, 
   Tooltip, 
@@ -208,6 +209,7 @@ const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 const AdminEvents = () => {
   const [isFormBuilderOpen, setIsFormBuilderOpen] = useState(false);
   const { events, loading, error, addEvent, updateEvent, deleteEvent } = useEvents();
+  const { currentUser } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
@@ -219,6 +221,16 @@ const AdminEvents = () => {
 
   // newest-first by default — UI toggle below lets admin switch order
   const [newestFirst, setNewestFirst] = useState(true);
+
+  // Filter events based on admin's organization access
+  const filteredEvents = useMemo(() => {
+    if (!currentUser?.adminOrganization || currentUser.adminOrganization === 'admin@all') {
+      // Superadmin sees all events
+      return events;
+    }
+    // Org-scoped admin sees only their organization's events
+    return events.filter(e => e.organization === currentUser.adminOrganization);
+  }, [events, currentUser?.adminOrganization]);
 
   // minimum allowed datetime (local) — 3 days from today, used to disable picking earlier dates
   const minDateTime = useMemo(() => {
@@ -545,9 +557,10 @@ const AdminEvents = () => {
   };
 
   // sortedEvents: newest-first by default (based on createdAt), toggle to invert order
+  // Filter by admin's organization access first, then sort
   const sortedEvents = useMemo(() => {
-    if (!Array.isArray(events)) return [];
-    return [...events].sort((a, b) => {
+    if (!Array.isArray(filteredEvents)) return [];
+    return [...filteredEvents].sort((a, b) => {
       // prefer createdAt (when sorting by creation time), fallback to event date
       const ta = new Date(a?.createdAt || a?.date || 0).getTime();
       const tb = new Date(b?.createdAt || b?.date || 0).getTime();
@@ -557,7 +570,7 @@ const AdminEvents = () => {
       // newestFirst => show latest created first (descending)
       return newestFirst ? (tb - ta) : (ta - tb);
     });
-  }, [events, newestFirst]);
+  }, [filteredEvents, newestFirst]);
 
   if (loading) {
     return (

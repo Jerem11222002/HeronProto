@@ -3,19 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { useAuth } from '../../../context/authContext';
 import { toast } from 'react-toastify';
-import { 
+import {
   Search as SearchIcon,
-  Notifications as NotificationsIcon,
   Close as CloseIcon,
   Menu as MenuIcon
 } from '@mui/icons-material';
+import AdminNotificationBell from '../AdminNotificationBell/AdminNotificationBell';
 import "./adminTopBar.scss";
 
 const AdminTopBar = memo(({ onToggleSidebar }) => {
   const navigate = useNavigate();
   const { currentUser, adminLogout } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  const [notificationCount, setNotificationCount] = useState(2);
 
   const handleSearch = useCallback((e) => {
     e.preventDefault();
@@ -61,15 +60,7 @@ const AdminTopBar = memo(({ onToggleSidebar }) => {
       </form>
 
       <div className="rightSection">
-        <button 
-          className="notifications"
-          aria-label={`${notificationCount} notifications`}
-        >
-          <NotificationsIcon className="icon" />
-          {notificationCount > 0 && (
-            <span className="badge" role="status">{notificationCount}</span>
-          )}
-        </button>
+        <AdminNotificationBell />
       </div>
     </nav>
   );

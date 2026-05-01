@@ -20,7 +20,7 @@ async function fixAdminUsers() {
         adminPermissions: {
           canManageUsers: true,
           canManageEvents: true,
-          canModerateContent: true,
+          canAccessUserMonitoring: true,
           canAccessAnalytics: true,
           canManageSettings: true
         },
@@ -61,7 +61,7 @@ async function fixAdminUsers() {
         adminPermissions: {
           canManageUsers: true,      // participants
           canManageEvents: true,     // events
-          canModerateContent: false, // cannot moderate content
+          canAccessUserMonitoring: false, // cannot access user monitoring
           canAccessAnalytics: false, // cannot access analytics
           canManageSettings: true    // can access settings
         },
@@ -102,7 +102,7 @@ async function fixAdminUsers() {
         adminPermissions: {
           canManageUsers: true,      // participants
           canManageEvents: true,     // events
-          canModerateContent: false, // cannot moderate content
+          canAccessUserMonitoring: false, // cannot access user monitoring
           canAccessAnalytics: false, // cannot access analytics
           canManageSettings: true    // can access settings
         },

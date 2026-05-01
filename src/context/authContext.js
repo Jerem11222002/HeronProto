@@ -210,6 +210,7 @@ export const AuthContextProvider = ({ children }) => {
     // Normalize admin fields so router guards can read role/permissions
     const normalizeAdmin = () => {
       const adminRole = userData.adminRole || userData.role || null;
+      const adminOrganization = userData.adminOrganization || null;
       let adminPermissions = userData.adminPermissions || userData.permissions || {};
       // if backend returned permissions as an array, convert to lookup object
       if (Array.isArray(adminPermissions)) {
@@ -218,11 +219,11 @@ export const AuthContextProvider = ({ children }) => {
           return acc;
         }, {});
       }
-      return { adminRole, adminPermissions };
+      return { adminRole, adminOrganization, adminPermissions };
     };
 
     if (userData.isAdmin) {
-      const { adminRole, adminPermissions } = normalizeAdmin();
+      const { adminRole, adminOrganization, adminPermissions } = normalizeAdmin();
       return {
         ...userData,
         id: userData._id || userData.id,
@@ -236,6 +237,7 @@ export const AuthContextProvider = ({ children }) => {
         studentId,
         phone,
         adminRole,
+        adminOrganization,
         adminPermissions
       };
     }

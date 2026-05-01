@@ -93,6 +93,48 @@ export const apiService = {
       });
     }),
 
+  // Admin Notifications
+  getAdminNotifications: (page = 1, limit = 20) =>
+    retryWithBackoff(async () => {
+      const token = localStorage.getItem('adminToken');
+      return api.get('/api/admin/notifications', {
+        params: { page, limit },
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    }),
+
+  getAdminNotificationStatus: () =>
+    retryWithBackoff(async () => {
+      const token = localStorage.getItem('adminToken');
+      return api.get('/api/admin/notifications/status', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    }),
+
+  markAdminNotificationAsRead: (notificationId) =>
+    retryWithBackoff(async () => {
+      const token = localStorage.getItem('adminToken');
+      return api.post(`/api/admin/notifications/${notificationId}/read`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    }),
+
+  markAllAdminNotificationsAsRead: () =>
+    retryWithBackoff(async () => {
+      const token = localStorage.getItem('adminToken');
+      return api.post('/api/admin/notifications/read-all', {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    }),
+
+  deleteAdminNotification: (notificationId) =>
+    retryWithBackoff(async () => {
+      const token = localStorage.getItem('adminToken');
+      return api.delete(`/api/admin/notifications/${notificationId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    }),
+
   // Messages
   getConversations: (page = 1, limit = 20) =>
     retryWithBackoff(async () => {

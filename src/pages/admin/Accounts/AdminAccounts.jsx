@@ -7,7 +7,7 @@ import './adminAccounts.scss';
 const DEFAULT_PERMISSIONS = {
   canManageUsers: false,
   canManageEvents: false,
-  canModerateContent: false,
+  canAccessUserMonitoring: false,
   canAccessAnalytics: false,
   canManageSettings: false
 };
@@ -42,6 +42,7 @@ const AdminAccounts = () => {
     password: '',
     isAdmin: true,
     adminRole: 'admin',
+    adminOrganization: null,
     adminPermissions: { ...DEFAULT_PERMISSIONS }
   });
   const [formError, setFormError] = useState(null);
@@ -137,6 +138,7 @@ const AdminAccounts = () => {
       password: '',
       isAdmin: true,
       adminRole: 'admin',
+      adminOrganization: null,
       adminPermissions: { ...DEFAULT_PERMISSIONS }
     });
     setShowModal(true);
@@ -152,6 +154,7 @@ const AdminAccounts = () => {
       password: '',
       isAdmin: !!user.isAdmin,
       adminRole: user.adminRole || 'admin',
+      adminOrganization: user.adminOrganization || null,
       adminPermissions: { ...DEFAULT_PERMISSIONS, ...(user.adminPermissions || {}) }
     });
     setShowModal(true);
@@ -184,6 +187,7 @@ const AdminAccounts = () => {
         email: form.email,
         name: form.name,
         adminRole: form.adminRole,
+        adminOrganization: form.adminOrganization,
         adminPermissions: form.adminPermissions
       };
 
@@ -231,6 +235,14 @@ const AdminAccounts = () => {
   };
 
   const handleDelete = async (id) => {
+    const userToDelete = list.find(u => u._id === id);
+    
+    // Prevent deletion of superadmin accounts
+    if (userToDelete?.adminRole === 'super') {
+      alert('Cannot delete superadmin account. This account is protected and cannot be removed.');
+      return;
+    }
+    
     if (!window.confirm('Delete this admin account? This will remove their admin privileges.')) return;
 
     try {
@@ -329,6 +341,7 @@ const AdminAccounts = () => {
                     <th>Name</th>
                     <th>Email</th>
                     <th>Role</th>
+                    <th>Organization</th>
                     <th>Permissions</th>
                     <th>Actions</th>
                   </tr>
@@ -340,6 +353,7 @@ const AdminAccounts = () => {
                       <td>{u.name || '-'}</td>
                       <td>{u.email}</td>
                       <td>{u.adminRole || '-'}</td>
+                      <td>{u.adminOrganization || 'All Organizations'}</td>
                       <td className="perms">
                         {Object.entries(u.adminPermissions || {}).filter(([k,v]) => v).map(([k]) => (
                           <span key={k} className="chip" title={k}>{k.replace(/([A-Z])/g, ' $1')}</span>
@@ -347,7 +361,18 @@ const AdminAccounts = () => {
                       </td>
                       <td className="actions">
                         <button title="Edit" onClick={() => openEdit(u)} aria-label={`Edit ${u.username}`}><MdEdit /></button>
-                        <button title="Delete" onClick={() => handleDelete(u._id)} aria-label={`Delete ${u.username}`} className="danger"><MdDelete /></button>
+                        {u.adminRole !== 'super' ? (
+                          <button title="Delete" onClick={() => handleDelete(u._id)} aria-label={`Delete ${u.username}`} className="danger"><MdDelete /></button>
+                        ) : (
+                          <button 
+                            title="Cannot delete superadmin account" 
+                            disabled 
+                            style={{ opacity: 0.3, cursor: 'not-allowed' }}
+                            aria-label="Superadmin account protected"
+                          >
+                            <MdDelete />
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -369,7 +394,17 @@ const AdminAccounts = () => {
                       <div style={{ textAlign: 'right' }}>{u.adminRole}</div>
                       <div style={{ marginTop: 8 }} className="actions">
                         <button onClick={() => openEdit(u)} title="Edit"><MdEdit /></button>
-                        <button onClick={() => handleDelete(u._id)} title="Delete" className="danger"><MdDelete /></button>
+                        {u.adminRole !== 'super' ? (
+                          <button onClick={() => handleDelete(u._id)} title="Delete" className="danger"><MdDelete /></button>
+                        ) : (
+                          <button 
+                            title="Cannot delete superadmin" 
+                            disabled 
+                            style={{ opacity: 0.3, cursor: 'not-allowed' }}
+                          >
+                            <MdDelete />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -431,6 +466,22 @@ const AdminAccounts = () => {
                   <option value="moderator">Moderator</option>
                   <option value="editor">Editor</option>
                   <option value="super">Super Admin</option>
+                </select>
+              </label>
+
+              <label className="formRow">
+                <span>Organization</span>
+                <select value={form.adminOrganization || ''} onChange={e => setForm({...form, adminOrganization: e.target.value || null})}>
+                  <option value="">All Organizations (Default)</option>
+                  <option value="UTPC">UTPC</option>
+                  <option value="CAST">CAST</option>
+                  <option value="CULTURA">CULTURA</option>
+                  <option value="UMAK Jammers">UMAK Jammers</option>
+                  <option value="UMAK Chorale">UMAK Chorale</option>
+                  <option value="UMAK Dance Extreme">UMAK Dance Extreme</option>
+                  <option value="UMAK Siglahi">UMAK Siglahi</option>
+                  <option value="UMAK Brass Band">UMAK Brass Band</option>
+                  <option value="admin@all">Super Admin (All Access)</option>
                 </select>
               </label>
 

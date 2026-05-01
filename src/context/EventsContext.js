@@ -11,10 +11,10 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache duration
 // Debug logger utility
 const debug = (type, data) => {
   if (process.env.NODE_ENV === 'development') {
-    console.log(`[Events Context] ${type}:`, {
+    console.log(`[Events Context] ${type}:`, JSON.stringify({
       timestamp: new Date().toISOString(),
       ...data
-    });
+    }, null, 2));
   }
 };
 

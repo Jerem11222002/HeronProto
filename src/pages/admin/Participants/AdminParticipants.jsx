@@ -40,7 +40,7 @@ import axios from 'axios';
 import './adminParticipants.scss';
 import { getAuthToken } from '../../../utils/tokenManager';
 import { useAuth } from '../../../context/authContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   ORGANIZATION_CATEGORIES,
   ORGANIZATION_COLORS,
@@ -92,8 +92,14 @@ class ParticipantsErrorBoundary extends React.Component {
 // Wrap the component export
 
 const AdminParticipants = () => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, currentUser } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Get admin organization from current user
+  const adminOrganization = currentUser?.adminOrganization || null;
+  const isSuperAdmin = currentUser?.adminRole === 'super' || !adminOrganization || adminOrganization === 'admin@all';
+  
   const [error, setError] = useState({
     type: null, // 'auth' | 'fetch' | 'grid' | null
     message: null,
@@ -106,11 +112,11 @@ const AdminParticipants = () => {
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedParticipant, setSelectedParticipant] = useState(null);
-  const [viewMode, setViewMode] = useState('organizations'); // 'organizations' | 'events' | 'all'
+  const [viewMode, setViewMode] = useState('myEvents'); // Default to streamlined events view for all admins
   const [expandedSections, setExpandedSections] = useState([]);
   const [groupStats, setGroupStats] = useState({});
   const [filters, setFilters] = useState({
-    organization: 'all',
+    organization: isSuperAdmin ? 'all' : adminOrganization,
     status: 'all',
     event: 'all'
   });
@@ -118,6 +124,7 @@ const AdminParticipants = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [showCustomFields, setShowCustomFields] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null); // For event-based view
 
   const handleError = (error, type = 'fetch') => {
     console.error(`❌ ${type.toUpperCase()} Error:`, {
@@ -166,6 +173,32 @@ const AdminParticipants = () => {
                 }
           
                 const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+                
+                // Fetch events for the admin's organization (for streamlined view)
+                try {
+                  const eventsUrl = `${baseURL}/api/events`;
+                  const eventsResponse = await axios.get(eventsUrl, {
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    timeout: 5000
+                  });
+                  
+                  if (eventsResponse.data && Array.isArray(eventsResponse.data)) {
+                    // Filter events by admin's organization if not superadmin
+                    const orgEvents = isSuperAdmin 
+                      ? eventsResponse.data 
+                      : eventsResponse.data.filter(e => e.organization === adminOrganization);
+                    setEvents(orgEvents.map(e => ({ 
+                      id: e._id || e.id, 
+                      name: e.title,
+                      organization: e.organization,
+                      date: e.date,
+                      participantCount: 0 // Will be calculated after participants load
+                    })));
+                  }
+                } catch (eventsError) {
+                  console.warn('⚠️ Could not fetch events:', eventsError.message);
+                }
+                
                 const apiUrl = `${baseURL}/api/admin/participants`;
                 
                 console.log('🌐 Fetching participants:', { url: apiUrl });
@@ -237,12 +270,34 @@ const AdminParticipants = () => {
                                 
                 setParticipants(transformedData);
           
-                // Extract unique organizations and events for filters
+                // Extract unique organizations for filters (superadmin view)
                 const uniqueOrgs = [...new Set(transformedData.map(p => p.organization))];
-                const uniqueEvents = [...new Set(transformedData.map(p => p.eventName))];
-                
                 setOrganizations(uniqueOrgs);
-                setEvents(uniqueEvents.map(name => ({ id: name, name })));
+                
+                // Calculate participant counts per event and update events state
+                setEvents(prevEvents => {
+                  // If we already have events from API, update with participant counts
+                  if (prevEvents.length > 0 && prevEvents[0]?.organization) {
+                    return prevEvents.map(event => {
+                      const eventParticipants = transformedData.filter(p => 
+                        p.eventId === event.id || p.eventName === event.name
+                      );
+                      return {
+                        ...event,
+                        participantCount: eventParticipants.length,
+                        pendingCount: eventParticipants.filter(p => p.status === 'pending').length,
+                        approvedCount: eventParticipants.filter(p => p.status === 'approved').length
+                      };
+                    });
+                  }
+                  // Fallback: create events from participant data
+                  const uniqueEventNames = [...new Set(transformedData.map(p => p.eventName))];
+                  return uniqueEventNames.map(name => ({
+                    id: name,
+                    name,
+                    participantCount: transformedData.filter(p => p.eventName === name).length
+                  }));
+                });
           
               } catch (error) {
                 console.error('❌ Fetch Error:', {
@@ -295,6 +350,26 @@ const AdminParticipants = () => {
     });
   
     return groups;
+  };
+
+  // --- STREAMLINED VIEW: Event-based participant management ---
+  const handleEventSelect = (event) => {
+    setSelectedEvent(event);
+    setViewMode('eventParticipants');
+  };
+
+  const handleBackToEvents = () => {
+    setSelectedEvent(null);
+    setViewMode('myEvents'); // Always return to streamlined events view
+  };
+
+  const getParticipantsForEvent = (eventId) => {
+    return participants.filter(p => p.eventId === eventId || p.eventName === eventId);
+  };
+
+  const getOrgEvents = () => {
+    if (isSuperAdmin) return events;
+    return events.filter(e => e.organization === adminOrganization);
   }; 
   
   useEffect(() => {
@@ -574,6 +649,46 @@ const AdminParticipants = () => {
     }
   };
 
+  // Handle query params for opening participant from notification
+  useEffect(() => {
+    const registrationId = searchParams.get('registration');
+    const eventId = searchParams.get('event');
+    
+    console.log('[AdminParticipants] Query params:', { registrationId, eventId, participantsCount: participants.length });
+    
+    if (registrationId && participants.length > 0) {
+      // Find the participant with matching registration ID
+      const participant = participants.find(p => {
+        const match = p.id === registrationId || p._id === registrationId || 
+          (p.raw && (p.raw._id === registrationId || p.raw.id === registrationId));
+        console.log('[AdminParticipants] Checking participant:', { id: p.id, _id: p._id, rawId: p.raw?._id, match });
+        return match;
+      });
+      
+      console.log('[AdminParticipants] Found participant:', participant ? 'YES' : 'NO');
+      
+      if (participant) {
+        // If eventId is provided, first select that event
+        if (eventId) {
+          const event = events.find(e => e.id === eventId);
+          console.log('[AdminParticipants] Found event:', event ? 'YES' : 'NO');
+          if (event) {
+            setSelectedEvent(event);
+            setViewMode('eventParticipants');
+          }
+        }
+        
+        // Open the participant details dialog
+        console.log('[AdminParticipants] Opening participant details...');
+        handleViewDetails(participant);
+        
+        // Clear the query params
+        setSearchParams({}, { replace: true });
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [participants, events, searchParams]);
+
   const columns = [
     { field: 'name', headerName: 'Name', width: 180 },
     { field: 'studentId', headerName: 'Student ID', width: 130 },
@@ -719,36 +834,43 @@ const AdminParticipants = () => {
               />
             </Grid>
             {/* View Mode Selector */}
-            <Grid item xs={12} sm={2}>
+            <Grid item xs={12} sm={isSuperAdmin ? 2 : 3}>
               <FormControl fullWidth>
                 <InputLabel>View Mode</InputLabel>
                 <Select
                   value={viewMode}
-                  onChange={(e) => setViewMode(e.target.value)}
+                  onChange={(e) => {
+                    setViewMode(e.target.value);
+                    setSelectedEvent(null);
+                  }}
                   size="small"
                 >
-                  <MenuItem value="organizations">By Organizations</MenuItem>
-                  <MenuItem value="events">By Events</MenuItem>
+                  {isSuperAdmin && (
+                    <MenuItem value="organizations">By Organizations</MenuItem>
+                  )}
+                  <MenuItem value="myEvents">My Organization's Events</MenuItem>
                   <MenuItem value="all">All Participants</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
-            {/* Organization Filter */}
-            <Grid item xs={12} sm={2}>
-              <FormControl fullWidth>
-                <InputLabel>Organization</InputLabel>
-                <Select
-                  value={filters.organization}
-                  onChange={(e) => handleFilterChange('organization', e.target.value)}
-                  size="small"
-                >
-                  <MenuItem value="all">All Organizations</MenuItem>
-                  {organizations.map((org) => (
-                    <MenuItem key={org} value={org}>{org}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
+            {/* Organization Filter - Only for superadmin */}
+            {isSuperAdmin && (
+              <Grid item xs={12} sm={2}>
+                <FormControl fullWidth>
+                  <InputLabel>Organization</InputLabel>
+                  <Select
+                    value={filters.organization}
+                    onChange={(e) => handleFilterChange('organization', e.target.value)}
+                    size="small"
+                  >
+                    <MenuItem value="all">All Organizations</MenuItem>
+                    {organizations.map((org) => (
+                      <MenuItem key={org} value={org}>{org}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+            )}
             {/* Status Filter */}
             <Grid item xs={12} sm={2}>
               <FormControl fullWidth>
@@ -796,17 +918,173 @@ const AdminParticipants = () => {
         </CardContent>
       </Card>
 
-      {/* Status summary chips */}
+      {/* Status summary chips - show org-scoped counts for streamlined view */}
       <Box sx={{ mb: 2, display: 'flex', gap: 2 }}>
-        <Chip label={`Total: ${participants.length}`} color="primary" />
-        <Chip label={`Pending: ${participants.filter(p => p.status === 'pending').length}`} color="warning" />
-        <Chip label={`Approved: ${participants.filter(p => p.status === 'approved').length}`} color="success" />
-        <Chip label={`Rejected: ${participants.filter(p => p.status === 'rejected').length}`} color="error" />
+        {viewMode === 'myEvents' || (!isSuperAdmin && viewMode !== 'all') ? (
+          // Org-scoped counts
+          <>
+            <Chip 
+              label={`Events: ${getOrgEvents().length}`} 
+              color="info" 
+            />
+            <Chip 
+              label={`Total Participants: ${participants.filter(p => 
+                getOrgEvents().some(e => e.id === p.eventId || e.name === p.eventName)
+              ).length}`} 
+              color="primary" 
+            />
+            <Chip 
+              label={`Pending: ${participants.filter(p => 
+                p.status === 'pending' && 
+                getOrgEvents().some(e => e.id === p.eventId || e.name === p.eventName)
+              ).length}`} 
+              color="warning" 
+            />
+          </>
+        ) : viewMode === 'eventParticipants' && selectedEvent ? (
+          // Event-specific counts
+          <>
+            <Chip 
+              label={`Event: ${selectedEvent.name}`} 
+              color="info" 
+            />
+            <Chip 
+              label={`Total: ${getParticipantsForEvent(selectedEvent.id).length}`} 
+              color="primary" 
+            />
+            <Chip 
+              label={`Pending: ${getParticipantsForEvent(selectedEvent.id).filter(p => p.status === 'pending').length}`} 
+              color="warning" 
+            />
+            <Chip 
+              label={`Approved: ${getParticipantsForEvent(selectedEvent.id).filter(p => p.status === 'approved').length}`} 
+              color="success" 
+            />
+          </>
+        ) : (
+          // All participants counts (superadmin view)
+          <>
+            <Chip label={`Total: ${participants.length}`} color="primary" />
+            <Chip label={`Pending: ${participants.filter(p => p.status === 'pending').length}`} color="warning" />
+            <Chip label={`Approved: ${participants.filter(p => p.status === 'approved').length}`} color="success" />
+            <Chip label={`Rejected: ${participants.filter(p => p.status === 'rejected').length}`} color="error" />
+          </>
+        )}
       </Box>
 
       <Divider sx={{ mb: 2 }} />
 
-      {viewMode === 'organizations' ? (
+      {/* --- STREAMLINED VIEW: My Organization's Events --- */}
+      {viewMode === 'myEvents' ? (
+        <>
+          <Typography variant="h5" sx={{ mb: 2 }}>
+            {isSuperAdmin ? 'All Events' : `${adminOrganization} Events`}
+          </Typography>
+          <Grid container spacing={3}>
+            {getOrgEvents().map((event) => (
+              <Grid item xs={12} sm={6} md={4} key={event.id}>
+                <Card 
+                  sx={{ 
+                    cursor: 'pointer',
+                    transition: 'transform 0.2s, box-shadow 0.2s',
+                    '&:hover': {
+                      transform: 'translateY(-2px)',
+                      boxShadow: 4
+                    }
+                  }}
+                  onClick={() => handleEventSelect(event)}
+                >
+                  <CardContent>
+                    <Typography variant="h6" noWrap title={event.name}>
+                      {event.name}
+                    </Typography>
+                    <Typography variant="caption" color="textSecondary" display="block" sx={{ mb: 1 }}>
+                      {event.date ? new Date(event.date).toLocaleDateString() : 'Date TBA'}
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                      <Chip 
+                        label={`${event.participantCount || 0} Total`}
+                        color="primary"
+                        size="small"
+                      />
+                      {(event.pendingCount || 0) > 0 && (
+                        <Chip 
+                          label={`${event.pendingCount} Pending`}
+                          color="warning"
+                          size="small"
+                        />
+                      )}
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+          {getOrgEvents().length === 0 && (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Typography variant="h6" color="textSecondary">
+                No events found for {adminOrganization}
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                Create events in the Events page to see participant registrations here.
+              </Typography>
+            </Box>
+          )}
+        </>
+      ) : viewMode === 'eventParticipants' && selectedEvent ? (
+        /* --- STREAMLINED VIEW: Participants for Selected Event --- */
+        <>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 2 }}>
+            <Button 
+              variant="outlined" 
+              onClick={handleBackToEvents}
+              size="small"
+            >
+              ← Back to Events
+            </Button>
+            <Typography variant="h5">
+              {selectedEvent.name} - Participants
+            </Typography>
+            <Chip 
+              label={`${getParticipantsForEvent(selectedEvent.id).length} Total`}
+              color="primary"
+            />
+          </Box>
+          <DataGrid
+            rows={getParticipantsForEvent(selectedEvent.id)}
+            columns={columns}
+            pageSize={10}
+            rowsPerPageOptions={[10, 25, 50]}
+            checkboxSelection={false}
+            disableSelectionOnClick
+            loading={loading}
+            autoHeight
+            className="dataGrid"
+            sortModel={[{ field: 'registeredDate', sort: 'desc' }]}
+            components={{
+              NoRowsOverlay: () => (
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  alignItems: 'center', 
+                  height: '100%',
+                  flexDirection: 'column',
+                  gap: 1,
+                  p: 2
+                }}>
+                  <Typography variant="h6">
+                    No registrations yet
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    This event has no participant registrations.
+                  </Typography>
+                </Box>
+              )
+            }}
+          />
+        </>
+      ) : viewMode === 'organizations' ? (
+        /* --- SUPERADMIN VIEW: By Organizations --- */
         Object.entries(groupParticipantsByOrg()).map(([orgName, orgParticipants]) => (
           <Accordion 
             key={orgName}
@@ -850,67 +1128,8 @@ const AdminParticipants = () => {
             </AccordionDetails>
           </Accordion>
         ))
-        ) : viewMode === 'events' ? (
-          Object.entries(groupParticipantsByEvent())
-    .sort(([, a], [, b]) => new Date(b.eventDate) - new Date(a.eventDate))
-    .map(([eventId, eventData]) => (
-      <Accordion
-        key={eventId}
-        expanded={expandedSections.includes(eventId)}
-        onChange={() => handleSectionToggle(eventId)}
-        sx={{ 
-          mb: 2,
-          borderLeft: 4,
-          borderColor: getOrganizationColor(eventData.organization)
-        }}
-      >
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-            <Box sx={{ flexGrow: 1 }}>
-              <Typography variant="h6">
-                {eventData.eventName}
-              </Typography>
-              <Typography variant="caption" color="textSecondary">
-                {eventData.organization} • {new Date(eventData.eventDate).toLocaleDateString()}
-              </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Chip 
-                label={`${eventData.stats.total} Total`}
-                color="primary"
-                size="small"
-              />
-              {eventData.stats.pending > 0 && (
-                <Chip 
-                  label={`${eventData.stats.pending} Pending`}
-                  color="warning"
-                  size="small"
-                />
-              )}
-            </Box>
-          </Box>
-        </AccordionSummary>
-        <AccordionDetails>
-          <DataGrid
-            rows={eventData.participants}
-            columns={columns}
-            pageSize={5}
-            rowsPerPageOptions={[5, 10, 25]}
-            autoHeight
-            disableSelectionOnClick
-            loading={loading}
-            sortModel={[
-              {
-                field: 'registeredDate',
-                sort: 'desc'
-              }
-            ]}
-          />
-        </AccordionDetails>
-      </Accordion>
-    ))
-        ) : (
-          // Original DataGrid for all participants view
+      ) : (
+        /* --- ALL PARTICIPANTS VIEW --- */
         <DataGrid
           rows={rows}
           columns={columns}

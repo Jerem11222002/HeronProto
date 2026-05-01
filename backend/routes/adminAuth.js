@@ -14,6 +14,7 @@ const generateAdminToken = (admin) => {
     id: admin._id,
     isAdmin: true,
     role: admin.adminRole || admin.role,
+    adminOrganization: admin.adminOrganization || null,
     permissions: admin.adminPermissions || admin.permissions
   };
   
@@ -62,7 +63,7 @@ router.post("/login", async (req, res) => {
           { role: { $in: ['admin', 'super_admin'] } },
           { adminRole: { $in: ['admin', 'super'] } }
         ]
-      }).select('+password +adminRole +adminPermissions +role +permissions');
+      }).select('+password +adminRole +adminOrganization +adminPermissions +role +permissions');
 
       console.log('🔍 Admin lookup result:', {
         found: !!admin,
@@ -145,6 +146,7 @@ router.post("/login", async (req, res) => {
              name: admin.name,
              isAdmin: true,
              adminRole: admin.adminRole || admin.role,
+             adminOrganization: admin.adminOrganization || null,
              adminPermissions: admin.adminPermissions || admin.permissions
            }
          });

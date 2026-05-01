@@ -57,7 +57,24 @@ router.get("/participants", async (req, res) => {
   try {
     console.log('📊 Fetching all registrations for admin');
 
-    const registrations = await EventRegistration.find({})
+    let registrationQuery = {};
+    
+    // If admin is organization-scoped (not superadmin), filter by organization
+    if (req.user?.adminOrganization && req.user.adminOrganization !== 'admin@all') {
+      const orgEventIds = await Event.find({ organization: req.user.adminOrganization })
+        .select('_id')
+        .lean()
+        .then(events => events.map(e => e._id));
+      
+      if (orgEventIds.length > 0) {
+        registrationQuery.eventId = { $in: orgEventIds };
+      } else {
+        // No events for this organization, return empty
+        return res.json({ success: true, count: 0, data: [] });
+      }
+    }
+
+    const registrations = await EventRegistration.find(registrationQuery)
       .populate({
         path: 'eventId',
         // include registrationForm schema and other useful event fields

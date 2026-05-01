@@ -99,9 +99,17 @@ export default function WatchOnlyRegister({ event, user }) {
 
   const submitHandler = async (values, isFormData) => {
     setIsSubmitting(true);
+    setError(null);
     try {
       const token = localStorage.getItem('token');
       const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+
+      // Debug log
+      console.log('[WatchOnlyRegister] Submitting registration:', {
+        eventId: event._id,
+        userId: user?.id || user?._id || resolvedUser?.id || resolvedUser?._id,
+        isFormData
+      });
 
       if (isFormData) {
         // values is a FormData instance created by DynamicRegistrationForm
@@ -112,6 +120,7 @@ export default function WatchOnlyRegister({ event, user }) {
         if (uid) fd.append('userId', uid);
         // do NOT set Content-Type so browser sets multipart boundary
         const res = await axios.post(`${baseURL}/api/event-registrations/register`, fd, { headers: { ...authHeaders } });
+        console.log('[WatchOnlyRegister] Registration success:', res.data);
         setRegistrationData({
           registrationId: res.data.registrationId || '',
           userName: fd.get('name') || '',
@@ -119,21 +128,31 @@ export default function WatchOnlyRegister({ event, user }) {
         });
       } else {
         const payload = { ...(values || {}) , eventId: event._id, userId: user?.id || user?._id || resolvedUser?.id || resolvedUser?._id };
+        console.log('[WatchOnlyRegister] Sending JSON payload:', payload);
         const res = await axios.post(`${baseURL}/api/event-registrations/register`, payload, { headers: { 'Content-Type': 'application/json', ...authHeaders } });
+        console.log('[WatchOnlyRegister] Registration success:', res.data);
         setRegistrationData({
           registrationId: res.data.registrationId || '',
           userName: values.name || '',
           eventName: event.title
         });
       }
-       setShowConfirmation(true);
-     } catch (err) {
-       const errorMessage = err.response?.data?.message || 'Failed to submit registration';
-       setError(errorMessage);
-       toast.error(errorMessage);
-     } finally {
-       setIsSubmitting(false);
-     }
+      setShowConfirmation(true);
+    } catch (err) {
+      console.error('[WatchOnlyRegister] Registration failed:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+        stack: err.stack
+      });
+      const serverMessage = err.response?.data?.message;
+      const serverError = err.response?.data?.error;
+      const errorMessage = serverMessage || serverError || err.message || 'Failed to submit registration';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (showConfirmation) {

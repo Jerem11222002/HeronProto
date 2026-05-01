@@ -23,6 +23,7 @@ const User = require("../models/users");
 const EventRegistration = require('../models/eventRegistration');
 const EventArchive = require('../models/eventArchive');
 const { ORGANIZATION_CATEGORIES, EVENT_STATUS } = require("../utils/constants");
+const { createAdminNotification } = require('./adminNotifications');
 
 logger.debug('[events.js] module load COMPLETE', { file: __filename });
 
@@ -193,6 +194,46 @@ router.post("/", adminAuthMiddleware, async (req, res) => {
     
     const savedEvent = await newEvent.save();
     console.log('Event created:', savedEvent);
+    
+    // Notify superadmins about the new event (only superadmins, not other orgs)
+    try {
+      const superadmins = await User.find({
+        isAdmin: true,
+        adminRole: 'super'
+      }).select('_id');
+
+      if (superadmins.length > 0) {
+        const creatorName = req.user?.email || req.user?.username || 'An admin';
+        
+        await Promise.all(
+          superadmins.map(admin => 
+            createAdminNotification({
+              userId: admin._id.toString(),
+              senderId: req.user.id || req.user._id,
+              type: 'organization_event',
+              message: `${creatorName} created event "${savedEvent.title}" for ${savedEvent.organization}`,
+              organization: savedEvent.organization,
+              data: {
+                eventId: savedEvent._id.toString(),
+                eventTitle: savedEvent.title,
+                eventOrganization: savedEvent.organization,
+                createdBy: creatorName
+              },
+              priority: 'medium',
+              category: 'system',
+              actionUrl: `/admin/events/${savedEvent._id}`
+            }).catch(err => {
+              console.error('[Events] Failed to create notification for superadmin:', admin._id, err.message);
+            })
+          )
+        );
+        
+        console.log(`[Events] Created ${superadmins.length} notifications for superadmins about new event`);
+      }
+    } catch (notifError) {
+      console.error('[Events] Error creating superadmin notifications:', notifError);
+    }
+    
     // Emit a server-side socket event so admin UIs update in realtime
     try {
       const io = req.app && req.app.get && req.app.get('io');

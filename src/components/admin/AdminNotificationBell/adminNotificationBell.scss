@@ -1,0 +1,61 @@
+.admin-notification-bell {
+  display: inline-flex;
+  align-items: center;
+
+  .admin-notification-button {
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    color: var(--textColor, #333);
+
+    &:hover {
+      background-color: var(--hoverBg, rgba(0, 0, 0, 0.05));
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+
+    &.error {
+      color: #dc2626;
+    }
+
+    &.loading {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    .admin-notification-icon {
+      font-size: 24px;
+    }
+  }
+
+  .admin-notification-badge {
+    .MuiBadge-badge {
+      font-size: 11px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      font-weight: 600;
+    }
+  }
+}
+
+// Dark mode support
+[data-theme='dark'] {
+  .admin-notification-bell {
+    .admin-notification-button {
+      color: var(--textColor, #e0e0e0);
+
+      &:hover {
+        background-color: var(--hoverBg, rgba(255, 255, 255, 0.1));
+      }
+    }
+  }
+}

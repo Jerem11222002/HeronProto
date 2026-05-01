@@ -191,10 +191,10 @@ function AppContent() {
             { path: "view/:eventId", element: <AdminEvents mode="view" /> }
           ]
         },
-        // Only superadmin can access monitoring
-        { 
-          path: "monitoring", 
-          element: isSuperAdmin ? <AdminMonitoring /> : <Navigate to="/admin/dashboard" replace /> 
+        // User monitoring accessible by superadmin or those with canAccessUserMonitoring permission
+        {
+          path: "monitoring",
+          element: (isSuperAdmin || canAccess('canAccessUserMonitoring')) ? <AdminMonitoring /> : <Navigate to="/admin/dashboard" replace />
         },
         { 
           path: "participants", 

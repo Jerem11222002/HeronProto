@@ -12,7 +12,8 @@ import {
   MdMonitor,
   MdSettings,
   MdSwapHoriz,
-  MdLogout
+  MdLogout,
+  MdReport
 } from 'react-icons/md';
 import { MdManageAccounts } from 'react-icons/md';
 
@@ -63,7 +64,13 @@ const AdminSidebar = ({ isOpen, onClose }) => {
       icon: <MdMonitor />,
       show: isSuperAdmin || canAccess('canAccessUserMonitoring')
     },
-    { 
+    {
+      path: '/admin/bug-reports',
+      label: 'Bug Reports',
+      icon: <MdReport />,
+      show: isSuperAdmin || canAccess('canAccessUserMonitoring')
+    },
+    {
       path: '/admin/settings',
       label: 'Settings',
       icon: <MdSettings />,

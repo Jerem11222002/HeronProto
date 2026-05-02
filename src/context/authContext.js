@@ -7,6 +7,7 @@ import {
   isTokenValid as checkTokenValidity 
 } from '../utils/tokenManager';
 import { DarkModeContext } from './darkModeContext';
+import monitoringService from '../services/monitoringService';
 
 export const AuthContext = createContext({
   currentUser: null,
@@ -178,6 +179,9 @@ export const AuthContextProvider = ({ children }) => {
   }, [BASE_URL]);
 
   const clearAuthState = useCallback(() => {
+    // End monitoring session before clearing auth
+    monitoringService.destroy();
+    
     setCurrentUser(null);
     setIsAdmin(false);
     setUserRelationships({ following: [], followers: [], mutualFriends: [] });

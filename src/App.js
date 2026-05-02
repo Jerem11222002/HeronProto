@@ -1,4 +1,5 @@
 import React, { useContext, useEffect } from 'react';
+import monitoringService from './services/monitoringService';
 import Login from "./pages/login/Login";
 import Register from "./pages/register/Register";
 import Settings from "./pages/settings/Settings";
@@ -34,7 +35,7 @@ import RecommendationTest from "./pages/RecommendationTest";
 // Admin imports - standard format
 import AdminLayout from "./components/admin/Layout/AdminLayout";
 import AdminDashboard from "./pages/admin/Dashboard/AdminDashboard";
-import AdminAnalytics from "./pages/admin/Analytics/AdminAnalytics";
+import AdminAnalytics from './pages/admin/Analytics/AdminAnalytics';
 import AdminEvents from "./pages/admin/Events/AdminEvents";
 import AdminMonitoring from "./pages/admin/Monitoring/AdminMonitoring";
 import AdminParticipants from "./pages/admin/Participants/AdminParticipants";
@@ -47,6 +48,7 @@ import Terms from "./pages/Pledge/Terms";
 import Privacy from "./pages/Pledge/Privacy";
 import ForgotPassword from "./pages/forgot-password/ForgotPassword";
 import ResetPassword from "./pages/reset-password/ResetPassword";
+const AdminBugReports = React.lazy(() => import('./pages/admin/BugReports/AdminBugReports'));
 // Landing import (disabled - will redirect to login instead)
 // import Landing from "./pages/Landing/Landing";
 const Layout = ({ darkMode }) => (
@@ -109,6 +111,24 @@ function AppContent() {
   const { currentUser, isAdmin, loading, refreshUser } = useContext(AuthContext);
   const { darkMode } = useContext(DarkModeContext);
   const { subscribeToProfileUpdates } = useSocket();
+
+  // Initialize monitoring service when user is logged in
+  useEffect(() => {
+    const initMonitoring = async () => {
+      if (currentUser && !loading) {
+        await monitoringService.init(currentUser._id);
+      }
+    };
+    
+    initMonitoring();
+    
+    return () => {
+      // Don't destroy on normal navigation, only on logout
+      if (!currentUser && !loading) {
+        monitoringService.destroy();
+      }
+    };
+  }, [currentUser?._id, loading]);
 
   useEffect(() => {
     if (!currentUser?._id || currentUser.isAdmin) return undefined;
@@ -200,9 +220,13 @@ function AppContent() {
           path: "participants", 
           element: canAccess('canManageUsers') ? <AdminParticipants /> : <Navigate to="/admin/dashboard" replace /> 
         },
-        { 
-          path: "settings", 
-          element: canAccess('canManageSettings') ? <AdminSettings /> : <Navigate to="/admin/dashboard" replace /> 
+        {
+          path: "bug-reports",
+          element: (isSuperAdmin || canAccess('canAccessUserMonitoring')) ? <AdminBugReports /> : <Navigate to="/admin/dashboard" replace />
+        },
+        {
+          path: "settings",
+          element: canAccess('canManageSettings') ? <AdminSettings /> : <Navigate to="/admin/dashboard" replace />
         },
         {
           path: "events/:id",

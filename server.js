@@ -31,6 +31,8 @@ const adminMonitoringRouter = require('./backend/routes/adminMonitoring');
 const adminAccountsRouter = require('./backend/routes/adminAccounts');
 const { router: adminNotificationsRouter } = require('./backend/routes/adminNotifications');
 const recommendationEvaluationRouter = require('./backend/routes/recommendationEvaluation');
+const monitoringCollectRouter = require('./backend/routes/monitoringCollect');
+const bugReportsRouter = require('./backend/routes/bugReports');
 const requestTiming = require('./backend/middleware/requestTiming');
 
 const path = require("path");
@@ -181,7 +183,6 @@ if (!fs.existsSync(uploadsDir)) {
 // Auth Middleware
 app.use((req, res, next) => {
   const publicPaths = [
-    '/',
     '/favicon.ico',
     '/default-cover.png',
     '/assets',
@@ -199,7 +200,8 @@ app.use((req, res, next) => {
     '/socket.io'
   ];
 
-  if (publicPaths.some(path => req.path.startsWith(path))) {
+  // Check exact match for '/' or startsWith for other paths
+  if (req.path === '/' || publicPaths.some(path => req.path.startsWith(path))) {
     // Only log API endpoints, not static assets to reduce noise in logs
     if (req.path.startsWith('/api/') || req.path === '/') {
       console.log('🔓 Skipping auth check for:', req.path);
@@ -207,9 +209,11 @@ app.use((req, res, next) => {
     return next();
   }
 
-  const token = req.headers.authorization?.split(' ')[1];
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.split(' ')[1];
+  
   if (!token) {
-    console.log('❌ No token provided for:', req.path);
+    console.log('❌ No token provided for:', req.path, 'authHeader:', authHeader);
     return res.status(401).json({ 
       success: false,
       message: 'No token provided',
@@ -225,7 +229,8 @@ app.use((req, res, next) => {
   } catch (err) {
     console.error('🚫 Authentication error:', {
       path: req.path,
-      error: err.message
+      error: err.message,
+      tokenPreview: token.substring(0, 20)
     });
     res.status(401).json({ 
       success: false,
@@ -268,6 +273,8 @@ app.use("/api/messages", messageRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/admin/analytics', adminAnalyticsRouter);
 app.use('/api/admin/monitoring', adminMonitoringRouter);
+app.use('/api/monitoring/collect', monitoringCollectRouter);
+app.use('/api/bug-reports', bugReportsRouter);
 app.use('/api/admin/accounts', adminAccountsRouter);
 app.use('/api/admin/notifications', adminNotificationsRouter);
 app.use('/api/recommendations', recommendationEvaluationRouter);

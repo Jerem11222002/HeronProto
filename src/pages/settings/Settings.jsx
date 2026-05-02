@@ -18,6 +18,10 @@ const getAuthHeaders = () => {
   return headers;
 };
 
+// Bug report constants
+const CATEGORIES = { bug: 'Bug', ui: 'UI/UX', performance: 'Performance', security: 'Security', feature: 'Feature Request', other: 'Other' };
+const SEVERITIES = { low: 'Low', medium: 'Medium', high: 'High', critical: 'Critical' };
+
 // Validation helper functions
 const validateEmail = (email) => {
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -61,6 +65,21 @@ const Settings = () => {
   const [privacy, setPrivacy] = useState('public');
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
+  // Bug reporting state
+  const [bugReports, setBugReports] = useState([]);
+  const [bugReportDialog, setBugReportDialog] = useState(false);
+  const [bugTitle, setBugTitle] = useState('');
+  const [bugDescription, setBugDescription] = useState('');
+  const [bugCategory, setBugCategory] = useState('bug');
+  const [bugSeverity, setBugSeverity] = useState('medium');
+  const [bugSubmitLoading, setBugSubmitLoading] = useState(false);
+  const [bugSubmitSuccess, setBugSubmitSuccess] = useState('');
+  const [bugAttachments, setBugAttachments] = useState([]);
+  const [bugFilterStatus, setBugFilterStatus] = useState('all');
+  const [bugSortBy, setBugSortBy] = useState('newest');
+  const [toast, setToast] = useState(null);
+  const [expandedReportId, setExpandedReportId] = useState(null);
+
   // Validation errors
   const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -76,6 +95,7 @@ const Settings = () => {
     preferences: true,
     notifications: false,
     privacy: false,
+    bugReports: false,
   });
 
   // Dark mode context - read actual theme value from DOM/localStorage instead of relying on context
@@ -113,6 +133,15 @@ const Settings = () => {
         });
         if (res.ok) {
           const user = await res.json();
+          // Fetch user's bug reports
+          const bugRes = await fetch(`${API_BASE}/api/bug-reports/my-reports`, {
+            credentials: 'include',
+            headers: getAuthHeaders()
+          });
+          if (bugRes.ok) {
+            const bugData = await bugRes.json();
+            if (bugData.success) setBugReports(bugData.reports || []);
+          }
           setUserId(user._id || user.id || null);
           setUsername(user.username || '');
           setEmail(user.email || '');
@@ -401,6 +430,96 @@ const Settings = () => {
   };
 
   // Handle account deletion
+  const submitBugReport = async () => {
+    if (!bugTitle.trim() || !bugDescription.trim() || !bugCategory) {
+      setErrorMsg('Title, category, and description are required for bug reports');
+      return;
+    }
+    setBugSubmitLoading(true);
+    setBugSubmitSuccess('');
+    setErrorMsg('');
+    try {
+      const formData = new FormData();
+      formData.append('title', bugTitle.trim());
+      formData.append('description', bugDescription.trim());
+      formData.append('category', bugCategory);
+      formData.append('severity', bugSeverity);
+      formData.append('pageUrl', window.location.href);
+      bugAttachments.forEach(file => formData.append('attachments', file));
+
+      const res = await fetch(`${API_BASE}/api/bug-reports`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: getAuthHeaders(),
+        body: formData
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast('Bug report submitted successfully!', 'success');
+        setBugTitle('');
+        setBugDescription('');
+        setBugCategory('bug');
+        setBugSeverity('medium');
+        setBugAttachments([]);
+        // Refresh bug reports list
+        const bugRes = await fetch(`${API_BASE}/api/bug-reports/my-reports`, {
+          credentials: 'include',
+          headers: getAuthHeaders()
+        });
+        if (bugRes.ok) {
+          const bugData = await bugRes.json();
+          if (bugData.success) setBugReports(bugData.reports || []);
+        }
+      } else {
+        setErrorMsg(data.message || 'Failed to submit bug report');
+        showToast(data.message || 'Failed to submit bug report', 'error');
+      }
+    } catch (err) {
+      setErrorMsg('Network error: ' + err.message);
+      showToast('Network error: ' + err.message, 'error');
+    } finally {
+      setBugSubmitLoading(false);
+    }
+  };
+
+  const getStatusLabel = (status) => ({ pending: 'Pending', 'in-progress': 'In Progress', resolved: 'Resolved', closed: 'Closed' }[status] || status);
+  const getStatusClass = (status) => ({ pending: 'status-pending', 'in-progress': 'status-progress', resolved: 'status-resolved', closed: 'status-closed' }[status] || '');
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  const handleAttachmentChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length + bugAttachments.length > 3) {
+      setErrorMsg('Maximum 3 attachments allowed');
+      setTimeout(() => setErrorMsg(''), 3000);
+      return;
+    }
+    setBugAttachments(prev => [...prev, ...files].slice(0, 3));
+  };
+
+  const removeAttachment = (index) => {
+    setBugAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const filteredSortedReports = React.useMemo(() => {
+    let reports = [...bugReports];
+    if (bugFilterStatus !== 'all') {
+      reports = reports.filter(r => r.status === bugFilterStatus);
+    }
+    if (bugSortBy === 'newest') {
+      reports.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    } else if (bugSortBy === 'oldest') {
+      reports.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    } else if (bugSortBy === 'severity') {
+      const severityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+      reports.sort((a, b) => (severityOrder[a.severity] ?? 4) - (severityOrder[b.severity] ?? 4));
+    }
+    return reports;
+  }, [bugReports, bugFilterStatus, bugSortBy]);
+
   const handleDeleteAccount = async () => {
     setLoading(true);
     setSuccessMsg('');
@@ -484,6 +603,27 @@ const Settings = () => {
 
   return (
     <div className="settings">
+      {/* Toast Notification */}
+      {toast && (
+        <div
+          className={`toast-notification toast-${toast.type}`}
+          role="alert"
+          aria-live="assertive"
+          onAnimationEnd={() => { }}
+        >
+          <span className="toast-icon" aria-hidden="true">
+            {toast.type === 'success' ? '✅' : '❌'}
+          </span>
+          <span className="toast-message">{toast.message}</span>
+          <button
+            className="toast-close"
+            onClick={() => setToast(null)}
+            aria-label="Close notification"
+          >
+            ✕
+          </button>
+        </div>
+      )}
       <h1>
         <span className="settings-icon" role="img" aria-label="settings">⚙️</span>
         {t('account-settings')}
@@ -662,6 +802,355 @@ const Settings = () => {
             </label>
           </div>,
           'Control who can see your profile'
+        )}
+
+        {renderSection(
+          'bugReports',
+          'Bug Reports & Feedback',
+          '🐛',
+          <div className="bug-report-enhanced">
+            {/* Report Form Card */}
+            <div className="bug-form-card">
+              <div className="card-header">
+                <h3>Submit New Report</h3>
+                <div className="form-progress">
+                  <div className={`progress-step ${bugTitle.trim() ? 'completed' : ''}`}>
+                    <span className="step-number">1</span>
+                    <span className="step-label">Title</span>
+                  </div>
+                  <div className={`progress-step ${bugCategory ? 'completed' : ''}`}>
+                    <span className="step-number">2</span>
+                    <span className="step-label">Category</span>
+                  </div>
+                  <div className={`progress-step ${bugDescription.trim() ? 'completed' : ''}`}>
+                    <span className="step-number">3</span>
+                    <span className="step-label">Description</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="card-content">
+                {/* Title Input */}
+                <div className="form-group">
+                  <label className="form-label">
+                    Issue Title *
+                    <span className="field-hint">Brief summary of the issue</span>
+                  </label>
+                  <div className="input-wrapper">
+                    <input
+                      type="text"
+                      value={bugTitle}
+                      onChange={e => setBugTitle(e.target.value)}
+                      placeholder="e.g., Login button not working on mobile"
+                      className="form-input"
+                      maxLength={200}
+                      aria-label="Bug report title"
+                    />
+                    <span className="char-count">{bugTitle.length}/200</span>
+                  </div>
+                </div>
+
+                {/* Category and Severity Row */}
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">
+                      Category *
+                      <span className="field-hint">What type of issue?</span>
+                    </label>
+                    <div className="select-wrapper">
+                      <select 
+                        value={bugCategory} 
+                        onChange={e => setBugCategory(e.target.value)}
+                        className="form-select"
+                        aria-label="Bug category"
+                      >
+                        <option value="">Select category...</option>
+                        <option value="bug">🐛 Bug</option>
+                        <option value="ui">🎨 UI/UX Issue</option>
+                        <option value="performance">⚡ Performance</option>
+                        <option value="security">🔒 Security</option>
+                        <option value="feature">✨ Feature Request</option>
+                        <option value="other">📋 Other</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">
+                      Severity *
+                      <span className="field-hint">How critical is this?</span>
+                    </label>
+                    <div className="severity-selector">
+                      {[
+                        { value: 'low', icon: '🟢', label: 'Low' },
+                        { value: 'medium', icon: '🟡', label: 'Medium' },
+                        { value: 'high', icon: '🟠', label: 'High' },
+                        { value: 'critical', icon: '🔴', label: 'Critical' }
+                      ].map(sev => (
+                        <button
+                          key={sev.value}
+                          type="button"
+                          className={`severity-btn ${bugSeverity === sev.value ? 'active' : ''}`}
+                          onClick={() => setBugSeverity(sev.value)}
+                          aria-label={`Set severity to ${sev.label}`}
+                        >
+                          <span className="severity-icon">{sev.icon}</span>
+                          <span className="severity-label">{sev.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="form-group">
+                  <label className="form-label">
+                    Detailed Description *
+                    <span className="field-hint">Please provide as much detail as possible</span>
+                  </label>
+                  <div className="textarea-wrapper">
+                    <textarea
+                      value={bugDescription}
+                      onChange={e => setBugDescription(e.target.value)}
+                      placeholder="Describe the issue in detail. Include steps to reproduce, expected behavior, and any error messages..."
+                      className="form-textarea"
+                      rows={5}
+                      maxLength={5000}
+                      aria-label="Bug report description"
+                    />
+                    <span className="char-count">{bugDescription.length}/5000</span>
+                  </div>
+                </div>
+
+                {/* Attachments */}
+                <div className="form-group">
+                  <label className="form-label">
+                    Attachments
+                    <span className="field-hint">Screenshots or logs (max 3 files)</span>
+                  </label>
+                  <div className="attachment-area">
+                    <label className="attachment-btn" tabIndex={0} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') e.currentTarget.click(); }}>
+                      <span role="img" aria-label="attach">📎</span> Add Files
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*,.txt,.log,.json"
+                        onChange={handleAttachmentChange}
+                        style={{ display: 'none' }}
+                        aria-label="Upload bug report attachments"
+                      />
+                    </label>
+                    {bugAttachments.length > 0 && (
+                      <div className="attachment-list">
+                        {bugAttachments.map((file, idx) => (
+                          <div className="attachment-chip" key={idx}>
+                            <span className="attachment-name">{file.name}</span>
+                            <button
+                              type="button"
+                              className="attachment-remove"
+                              onClick={() => removeAttachment(idx)}
+                              aria-label={`Remove attachment ${file.name}`}
+                              title="Remove file"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Submit Button */}
+                <div className="form-actions">
+                  <button
+                    type="button"
+                    className={`submit-btn ${!bugTitle.trim() || !bugDescription.trim() || !bugCategory ? 'disabled' : ''}`}
+                    onClick={submitBugReport}
+                    disabled={bugSubmitLoading || !bugTitle.trim() || !bugDescription.trim() || !bugCategory}
+                    aria-label={bugSubmitLoading ? 'Submitting bug report' : 'Submit bug report'}
+                  >
+                    {bugSubmitLoading ? (
+                      <>
+                        <span className="spinner"></span>
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <span className="btn-icon" aria-hidden="true">📤</span>
+                        Submit Report
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {bugSubmitSuccess && (
+                  <div className="success-message" role="status" aria-live="polite">
+                    <span className="success-icon" aria-hidden="true">✅</span>
+                    <span>{bugSubmitSuccess}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Report History */}
+            {bugReports.length > 0 && (
+              <div className="bug-history-card">
+                <div className="card-header">
+                  <h3>Your Report History</h3>
+                  <div className="history-stats">
+                    <span className="stat-item">
+                      <span className="stat-number">{bugReports.length}</span>
+                      <span className="stat-label">Total</span>
+                    </span>
+                    <span className="stat-item">
+                      <span className="stat-number">{bugReports.filter(r => r.status === 'resolved').length}</span>
+                      <span className="stat-label">Resolved</span>
+                    </span>
+                  </div>
+                </div>
+
+                <div className="card-content">
+                  <div className="filter-controls">
+                    <div className="filter-group">
+                      <label className="filter-label" htmlFor="filter-status">Filter by status:</label>
+                      <select
+                        id="filter-status"
+                        className="filter-select"
+                        aria-label="Filter reports by status"
+                        value={bugFilterStatus}
+                        onChange={e => setBugFilterStatus(e.target.value)}
+                      >
+                        <option value="all">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="in-progress">In Progress</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="closed">Closed</option>
+                      </select>
+                    </div>
+                    <div className="filter-group">
+                      <label className="filter-label" htmlFor="sort-reports">Sort by:</label>
+                      <select
+                        id="sort-reports"
+                        className="filter-select"
+                        aria-label="Sort reports"
+                        value={bugSortBy}
+                        onChange={e => setBugSortBy(e.target.value)}
+                      >
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="severity">Severity</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="reports-timeline" role="list" aria-label="Bug report history">
+                    {filteredSortedReports.map(report => (
+                      <div key={report._id} className={`timeline-item ${getStatusClass(report.status)}`} role="listitem">
+                        <div className="timeline-marker" aria-hidden="true">
+                          <span className="marker-dot"></span>
+                        </div>
+                        <div className="timeline-content">
+                          <div className="report-card">
+                            <div className="report-header">
+                              <div className="report-title-section">
+                                <h4 className="report-title">{report.title}</h4>
+                                <div className="report-meta">
+                                  <span className={`category-badge category-${report.category}`}>
+                                    {CATEGORIES[report.category] || report.category}
+                                  </span>
+                                  <span className={`severity-badge severity-${report.severity}`}>
+                                    {SEVERITIES[report.severity] || report.severity}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="report-status-section">
+                                <span className={`status-badge ${getStatusClass(report.status)}`}>
+                                  {getStatusLabel(report.status)}
+                                </span>
+                                <span className="report-date">
+                                  {new Date(report.createdAt).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="report-description">
+                              <p>
+                                {expandedReportId === report._id
+                                  ? report.description
+                                  : (report.description || '').substring(0, 150) + ((report.description || '').length > 150 ? '...' : '')
+                                }
+                              </p>
+                              {(report.description || '').length > 150 && (
+                                <button
+                                  type="button"
+                                  className="expand-desc-btn"
+                                  onClick={() => setExpandedReportId(expandedReportId === report._id ? null : report._id)}
+                                  aria-expanded={expandedReportId === report._id}
+                                  aria-controls={`report-desc-${report._id}`}
+                                >
+                                  {expandedReportId === report._id ? 'Show less' : 'Read more'}
+                                </button>
+                              )}
+                            </div>
+
+                            {report.attachments && report.attachments.length > 0 && (
+                              <div className="report-attachments">
+                                <span className="attachments-label">Attachments:</span>
+                                <div className="attachments-list">
+                                  {report.attachments.map((att, idx) => (
+                                    <a
+                                      key={idx}
+                                      href={att.url || att}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="attachment-link"
+                                    >
+                                      📎 {att.name || `File ${idx + 1}`}
+                                    </a>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {report.adminResponse && (
+                              <div className="admin-response">
+                                <span className="response-label">Team Response:</span>
+                                <p className="response-text">{report.adminResponse}</p>
+                                {report.respondedAt && (
+                                  <span className="response-date">
+                                    {new Date(report.respondedAt).toLocaleDateString()}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+
+                            <div className="report-actions">
+                              <button
+                                type="button"
+                                className="action-btn secondary"
+                                onClick={() => setExpandedReportId(expandedReportId === report._id ? null : report._id)}
+                                aria-expanded={expandedReportId === report._id}
+                              >
+                                <span aria-hidden="true">{expandedReportId === report._id ? '📖' : '👁️'}</span>
+                                {expandedReportId === report._id ? 'Collapse' : 'View Details'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {filteredSortedReports.length === 0 && (
+                      <div className="no-reports" role="status">
+                        <p>No reports match the selected filter.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>,
+          'Report bugs and track their resolution status'
         )}
 
         <div className="settings-actions">

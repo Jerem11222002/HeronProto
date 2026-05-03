@@ -191,6 +191,8 @@ app.use((req, res, next) => {
     '/build',
     '/api/auth/login',
     '/api/auth/register',
+    '/api/auth/check-username',
+    '/api/auth/check-email',
     '/api/auth/forgot-password',
     '/api/auth/reset-password',
     '/api/auth/verify-reset-token',

@@ -706,6 +706,98 @@ router.post('/verify-reset-token', async (req, res) => {
 });
 
 /**
+ * POST /api/auth/check-username
+ * Check if username is available (public endpoint, no auth required)
+ * Rate limiting should be applied at the middleware level
+ */
+router.post('/check-username', async (req, res) => {
+  try {
+    const { username } = req.body;
+
+    if (!username || typeof username !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Username is required'
+      });
+    }
+
+    // Validate username format (3-20 chars, alphanumeric + underscore)
+    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+    if (!usernameRegex.test(username)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid username format'
+      });
+    }
+
+    // Check if username exists (case-insensitive)
+    const existingUser = await User.findOne({
+      username: username.toLowerCase()
+    }).select('_id').lean();
+
+    res.status(200).json({
+      success: true,
+      available: !existingUser,
+      message: existingUser ? 'Username is already taken' : 'Username is available'
+    });
+
+  } catch (error) {
+    console.error('Error checking username availability:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to check username availability',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+/**
+ * POST /api/auth/check-email
+ * Check if email is available (public endpoint, no auth required)
+ * Rate limiting should be applied at the middleware level
+ */
+router.post('/check-email', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required'
+      });
+    }
+
+    // Validate email format (UMak email pattern)
+    const emailRegex = /^[a-z]+\.(k11|a12)\d{6}@umak\.edu\.ph$/i;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid email format'
+      });
+    }
+
+    // Check if email exists (case-insensitive)
+    const existingUser = await User.findOne({
+      email: email.toLowerCase()
+    }).select('_id').lean();
+
+    res.status(200).json({
+      success: true,
+      available: !existingUser,
+      message: existingUser ? 'Email is already registered' : 'Email is available'
+    });
+
+  } catch (error) {
+    console.error('Error checking email availability:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to check email availability',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+/**
  * Export router
  */
 module.exports = router;

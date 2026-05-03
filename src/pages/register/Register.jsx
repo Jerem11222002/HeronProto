@@ -404,9 +404,9 @@ const Register = () => {
             <h3>Why Join?</h3>
             <ul className="benefits-list">
               <li>✨ Connect with talented peers</li>
-              <li>🎨 Showcase your creative projects</li>
+              <li>🎨 Showcase your Artistic Talent</li>
               <li>🎯 Join exclusive events</li>
-              <li>🌟 Build your professional network</li>
+              <li>🌟 Show your support with other artists</li>
             </ul>
           </div>
         </div>

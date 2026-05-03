@@ -1,9 +1,9 @@
 @use '../../style.scss' as *;
 
 .register {
-  min-height: 100vh;
-  height: auto;
-  overflow-y: auto;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
   /* prevent horizontal shifting/movement */
   overflow-x: hidden;
   background: linear-gradient(to bottom, #6A9CE9, #8353CA, #A753CE, #EB98B6, #999999);
@@ -33,10 +33,8 @@
     grid-template-columns: 1fr 1fr;
     background-color: white;
     border-radius: 16px;
-    min-height: 600px;
-    /* ensure the card has a definite height so grid children can constrain and scroll */
-    height: calc(100vh - 80px);
     /* bound the card to the viewport so internal panels can scroll independently */
+    height: calc(100vh - 80px);
     max-height: calc(100vh - 80px);
     overflow: hidden; /* prevent the card itself from scrolling */
     margin: 0 auto;

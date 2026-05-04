@@ -2,9 +2,11 @@ const express = require('express');
 const router = express.Router();
 const BugReport = require('../models/bugReport');
 const UserSession = require('../models/userSession');
+const User = require('../models/users');
 const authenticateToken = require('../Middleware/authenticateToken');
 const { adminAuthMiddleware } = require('../Middleware/adminAuthMiddleware');
 const { getClientIP } = require('../utils/geoipService');
+const { createAdminNotification } = require('./adminNotifications');
 
 // Submit a new bug report (user)
 router.post('/', authenticateToken, async (req, res) => {
@@ -42,9 +44,54 @@ router.post('/', authenticateToken, async (req, res) => {
 
     await bugReport.populate('userId', 'username email name profilePic');
 
+    // Create admin notifications for superadmins
+    try {
+      // Find all superadmins
+      const superadmins = await User.find({
+        isAdmin: true,
+        adminRole: 'super'
+      }).select('_id');
+
+      console.log(`[BugReports] Found ${superadmins.length} superadmins`);
+
+      if (superadmins.length > 0) {
+        // Create notification for each superadmin
+        await Promise.all(
+          superadmins.map(admin =>
+            createAdminNotification({
+              userId: admin._id.toString(),
+              senderId: req.user._id.toString(),
+              type: 'bug_report',
+              message: `New ${bugReport.severity} bug report: ${bugReport.title}`,
+              organization: null, // Bug reports are system-wide
+              data: {
+                bugReportId: bugReport._id,
+                category: bugReport.category,
+                severity: bugReport.severity,
+                title: bugReport.title
+              },
+              priority: bugReport.severity === 'critical' ? 'high' : 'medium',
+              category: 'bug_report',
+              actionUrl: `/admin/bug-reports`
+            })
+          )
+        );
+        console.log(`[BugReports] Created ${superadmins.length} notifications for superadmins`);
+      } else {
+        console.log('[BugReports] No superadmins found to notify');
+      }
+    } catch (notifError) {
+      console.error('[BugReports] Error creating superadmin notifications:', notifError);
+      console.error('[BugReports] Error stack:', notifError.stack);
+      // Don't fail the bug report submission if notification creation fails
+    }
+
     // Emit real-time update to admin monitoring
-    const { io } = require('../../server');
+    const io = req.app.get('io');
     if (io) {
+      console.log('[BugReports] Emitting socket events for new bug report');
+      
+      // Emit to admin monitoring room
       io.to('admin:monitoring').emit('bugreport:new', {
         report: {
           _id: bugReport._id,
@@ -56,6 +103,21 @@ router.post('/', authenticateToken, async (req, res) => {
           createdAt: bugReport.createdAt
         }
       });
+      console.log('[BugReports] Emitted bugreport:new to admin:monitoring room');
+      
+      // Emit admin notification event for real-time badge update and toast
+      io.emit('admin:notification:new', {
+        type: 'bug_report',
+        severity: bugReport.severity,
+        title: bugReport.title
+      });
+      console.log('[BugReports] Emitted admin:notification:new event:', {
+        type: 'bug_report',
+        severity: bugReport.severity,
+        title: bugReport.title
+      });
+    } else {
+      console.warn('[BugReports] Socket.io instance not available');
     }
 
     res.status(201).json({ success: true, report: bugReport });
@@ -184,7 +246,7 @@ router.patch('/:id/status', authenticateToken, adminAuthMiddleware, async (req, 
     }
 
     // Emit status update
-    const { io } = require('../../server');
+    const io = req.app.get('io');
     if (io) {
       io.to('admin:monitoring').emit('bugreport:updated', {
         reportId: report._id,
@@ -218,7 +280,7 @@ router.patch('/:id/assign', authenticateToken, adminAuthMiddleware, async (req, 
     }
 
     // Emit assignment update
-    const { io } = require('../../server');
+    const io = req.app.get('io');
     if (io) {
       io.to('admin:monitoring').emit('bugreport:assigned', {
         reportId: report._id,

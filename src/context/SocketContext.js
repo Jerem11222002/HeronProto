@@ -50,19 +50,34 @@ const SocketProvider = ({ children }) => {
   }, [isCleaningUp]);
 
   const initSocket = useCallback(() => {
-    if (socketRef.current?.connected || isCleaningUp) return;
+    console.log('[initSocket] Called');
+    console.log('[initSocket] socketRef.current?.connected:', socketRef.current?.connected);
+    console.log('[initSocket] isCleaningUp:', isCleaningUp);
+    
+    if (socketRef.current?.connected || isCleaningUp) {
+      console.log('[initSocket] Early return: already connected or cleaning up');
+      return;
+    }
   
     const token = localStorage.getItem('token') || localStorage.getItem('adminToken');
+    console.log('[initSocket] Token check:', {
+      hasToken: !!token,
+      hasAdminToken: !!localStorage.getItem('adminToken'),
+      hasRegularToken: !!localStorage.getItem('token')
+    });
+    
     if (!token) {
       console.warn('⚠️ No authentication token found');
       return;
     }
 
-    // Check if we already tried and failed - don't keep creating new sockets
-    if (socketRef.current?.id) {
-      console.warn('⚠️ Previous socket attempt failed, not retrying');
+    // Only check for existing socket if it's connected - allow retry if disconnected
+    if (socketRef.current?.connected) {
+      console.warn('⚠️ Socket already connected, not creating new one');
       return;
     }
+
+    console.log('[initSocket] Creating new socket connection...');
 
     const newSocket = io(SOCKET_URL, {
       path: '/socket.io/',
@@ -217,10 +232,22 @@ const SocketProvider = ({ children }) => {
   }, [isCleaningUp, cleanupSocket]);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('token') || localStorage.getItem('adminToken');
+    console.log('[SocketContext] useEffect triggered');
+    console.log('[SocketContext] token found:', !!token);
+    console.log('[SocketContext] token type:', token ? (token.startsWith('eyJ') ? 'JWT' : 'other') : 'none');
+    console.log('[SocketContext] adminToken:', !!localStorage.getItem('adminToken'));
+    console.log('[SocketContext] regularToken:', !!localStorage.getItem('token'));
+    
     if (token) {
+      console.log('[SocketContext] Calling initSocket...');
       const cleanup = initSocket();
-      return () => cleanup && cleanup();
+      return () => {
+        console.log('[SocketContext] Cleanup called');
+        cleanup && cleanup();
+      };
+    } else {
+      console.warn('[SocketContext] No token found, socket will not initialize');
     }
   }, [initSocket]);
 

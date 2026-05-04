@@ -8,19 +8,34 @@ import BusinessIcon from '@mui/icons-material/Business';
 import SecurityIcon from '@mui/icons-material/Security';
 import EventIcon from '@mui/icons-material/Event';
 import NotificationsIcon from '@mui/icons-material/Notifications';
+import BugReportIcon from '@mui/icons-material/BugReport';
 import { DarkModeContext } from '../../../context/darkModeContext';
 import apiService from '../../../services/apiService';
 import './adminNotificationDropdown.scss';
 
-const AdminNotificationDropdown = ({ onClose, onError, adminRole, organization }) => {
+const AdminNotificationDropdown = ({ isOpen, onClose, onError, adminRole, organization }) => {
   const navigate = useNavigate();
   const { darkMode } = useContext(DarkModeContext);
   const [notifications, setNotifications] = useState([]);
+  const [bugReports, setBugReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const dropdownRef = useRef(null);
+
+  const fetchBugReports = useCallback(async () => {
+    if (adminRole !== 'super') return;
+
+    try {
+      const response = await apiService.getAdminBugReports(50);
+      if (response.data?.success && Array.isArray(response.data.reports)) {
+        setBugReports(response.data.reports);
+      }
+    } catch (err) {
+      console.error('[AdminNotificationDropdown] Error fetching bug reports:', err);
+    }
+  }, [adminRole]);
 
   const fetchNotifications = useCallback(async (pageNum = 1, forceRefresh = false) => {
     try {
@@ -41,6 +56,11 @@ const AdminNotificationDropdown = ({ onClose, onError, adminRole, organization }
       );
       setHasMore(pagination?.hasMore ?? false);
       setPage(pageNum);
+      
+      // Fetch bug reports for superadmin on initial load
+      if (pageNum === 1) {
+        fetchBugReports();
+      }
     } catch (err) {
       console.error('[AdminNotificationDropdown] Error fetching notifications:', err);
       const errorMsg = err.response?.data?.message || err.message || 'Failed to load notifications';
@@ -54,7 +74,7 @@ const AdminNotificationDropdown = ({ onClose, onError, adminRole, organization }
       setLoading(false);
     }
   // Removed notifications from dependencies to prevent infinite loop
-  }, [navigate, onError]);
+  }, [navigate, onError, fetchBugReports]);
 
   const markAsRead = useCallback(async (notificationId) => {
     try {
@@ -92,8 +112,11 @@ const AdminNotificationDropdown = ({ onClose, onError, adminRole, organization }
 
   const handleRefresh = useCallback(() => {
     fetchNotifications(1, true);
+    if (adminRole === 'super') {
+      fetchBugReports();
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [adminRole]);
 
   const loadMore = useCallback(() => {
     if (!loading && hasMore) {
@@ -103,7 +126,7 @@ const AdminNotificationDropdown = ({ onClose, onError, adminRole, organization }
   }, [loading, hasMore, page]);
 
   const handleNotificationClick = useCallback((notification) => {
-    if (!notification.read) {
+    if (!notification.read && notification._id) {
       markAsRead(notification._id);
     }
 
@@ -148,6 +171,9 @@ const AdminNotificationDropdown = ({ onClose, onError, adminRole, organization }
         case 'superadmin_alert':
           navigate('/admin/accounts');
           break;
+        case 'bug_report':
+          navigate('/admin/bug-reports');
+          break;
         default:
           break;
       }
@@ -168,6 +194,8 @@ const AdminNotificationDropdown = ({ onClose, onError, adminRole, organization }
         return <SecurityIcon className="type-icon alert" />;
       case 'admin_assigned':
         return <AdminPanelSettingsIcon className="type-icon assigned" />;
+      case 'bug_report':
+        return <BugReportIcon className="type-icon bug" />;
       default:
         return <NotificationsIcon className="type-icon default" />;
     }
@@ -187,6 +215,8 @@ const AdminNotificationDropdown = ({ onClose, onError, adminRole, organization }
         return 'Superadmin Alert';
       case 'admin_assigned':
         return 'Admin Assigned';
+      case 'bug_report':
+        return 'Bug Report';
       default:
         return 'Notification';
     }
@@ -284,6 +314,46 @@ const AdminNotificationDropdown = ({ onClose, onError, adminRole, organization }
           </div>
         ) : (
           <>
+            {adminRole === 'super' && bugReports.length > 0 && (
+              <>
+                <div className="section-divider">
+                  <span>Bug Reports</span>
+                </div>
+                {bugReports.map(report => (
+                  <div
+                    key={`bug-${report._id}`}
+                    className={`notification-item bug-report-item`}
+                    onClick={() => handleNotificationClick({ 
+                      type: 'bug_report',
+                      _id: `bug-${report._id}`,
+                      read: true
+                    })}
+                  >
+                    <div className="notification-icon-wrapper">
+                      {getNotificationIcon('bug_report')}
+                    </div>
+
+                    <div className="notification-content">
+                      <div className="notification-meta">
+                        <span className="type-label">
+                          {getNotificationTypeLabel('bug_report')}
+                        </span>
+                        <span className="severity-badge" data-severity={report.severity}>
+                          {report.severity}
+                        </span>
+                        <span className="time-ago">
+                          {formatTimeAgo(report.createdAt)}
+                        </span>
+                      </div>
+                      <p className="notification-message">{report.title}</p>
+                      {report.category && (
+                        <span className="org-tag">{report.category}</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </>
+            )}
             {notifications.map(notification => (
               <div
                 key={notification._id}

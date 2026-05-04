@@ -1,6 +1,8 @@
 import React, { Suspense, memo, useState } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { useAuth } from '../../../context/authContext';
 import AdminSidebar from '../Sidebar/AdminSidebar';
 import AdminTopBar from '../TopBar/AdminTopBar';
@@ -27,6 +29,19 @@ const AdminLayout = memo(() => {
 
   return (
     <div className="adminContainer" role="application">
+      <ToastContainer
+        position="top-right"
+        autoClose={4000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
+      
       <ErrorBoundary fallback={<div>Error loading sidebar</div>}>
         <AdminSidebar isOpen={sidebarOpen} onClose={closeSidebar} />
       </ErrorBoundary>

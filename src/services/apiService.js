@@ -168,6 +168,16 @@ export const apiService = {
       return api.post(`/api/messages/conversations/${conversationId}/messages`, messageData, {
         headers: { Authorization: `Bearer ${token}` }
       });
+    }),
+
+  // Bug Reports (Admin Only)
+  getAdminBugReports: (limit = 50) =>
+    retryWithBackoff(async () => {
+      const token = localStorage.getItem('adminToken');
+      return api.get('/api/bug-reports/all', {
+        params: { limit },
+        headers: { Authorization: `Bearer ${token}` }
+      });
     })
 };
 

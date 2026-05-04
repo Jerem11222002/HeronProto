@@ -50,7 +50,8 @@ const notificationSchema = new mongoose.Schema({
       'organization_registration',
       'organization_update',
       'superadmin_alert',
-      'admin_assigned'
+      'admin_assigned',
+      'bug_report'
     ]
   },
   message: {
@@ -165,7 +166,7 @@ const notificationSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['social', 'system', 'security', 'promotional'],
+    enum: ['social', 'system', 'security', 'promotional', 'bug_report'],
     default: 'social'
   },
 
@@ -471,7 +472,8 @@ notificationSchema.methods.generateDefaultMessage = function() {
     organization_registration: 'New registration for your organization event',
     organization_update: 'Organization information updated',
     superadmin_alert: 'System alert for superadmin',
-    admin_assigned: 'You have been assigned as an admin'
+    admin_assigned: 'You have been assigned as an admin',
+    bug_report: 'New bug report submitted'
   };
   return messages[this.type] || 'sent you a notification';
 };

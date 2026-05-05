@@ -360,7 +360,18 @@ const AdminAccounts = () => {
                         ))}
                       </td>
                       <td className="actions">
-                        <button title="Edit" onClick={() => openEdit(u)} aria-label={`Edit ${u.username}`}><MdEdit /></button>
+                        {u.adminRole !== 'super' ? (
+                          <button title="Edit" onClick={() => openEdit(u)} aria-label={`Edit ${u.username}`}><MdEdit /></button>
+                        ) : (
+                          <button 
+                            title="Cannot edit superadmin account" 
+                            disabled 
+                            style={{ opacity: 0.3, cursor: 'not-allowed' }}
+                            aria-label="Superadmin account protected"
+                          >
+                            <MdEdit />
+                          </button>
+                        )}
                         {u.adminRole !== 'super' ? (
                           <button title="Delete" onClick={() => handleDelete(u._id)} aria-label={`Delete ${u.username}`} className="danger"><MdDelete /></button>
                         ) : (
@@ -393,7 +404,17 @@ const AdminAccounts = () => {
                     <div>
                       <div style={{ textAlign: 'right' }}>{u.adminRole}</div>
                       <div style={{ marginTop: 8 }} className="actions">
-                        <button onClick={() => openEdit(u)} title="Edit"><MdEdit /></button>
+                        {u.adminRole !== 'super' ? (
+                          <button onClick={() => openEdit(u)} title="Edit"><MdEdit /></button>
+                        ) : (
+                          <button 
+                            title="Cannot edit superadmin" 
+                            disabled 
+                            style={{ opacity: 0.3, cursor: 'not-allowed' }}
+                          >
+                            <MdEdit />
+                          </button>
+                        )}
                         {u.adminRole !== 'super' ? (
                           <button onClick={() => handleDelete(u._id)} title="Delete" className="danger"><MdDelete /></button>
                         ) : (

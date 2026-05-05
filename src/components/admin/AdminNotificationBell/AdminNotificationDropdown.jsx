@@ -306,7 +306,7 @@ const AdminNotificationDropdown = ({ isOpen, onClose, onError, adminRole, organi
       </div>
 
       <div className="notification-list">
-        {notifications.length === 0 && !loading ? (
+        {notifications.length === 0 && bugReports.length === 0 && !loading ? (
           <div className="empty-state">
             <NotificationsIcon sx={{ fontSize: 48, opacity: 0.3 }} />
             <p>No notifications</p>
@@ -314,81 +314,76 @@ const AdminNotificationDropdown = ({ isOpen, onClose, onError, adminRole, organi
           </div>
         ) : (
           <>
-            {adminRole === 'super' && bugReports.length > 0 && (
-              <>
-                <div className="section-divider">
-                  <span>Bug Reports</span>
-                </div>
-                {bugReports.map(report => (
+            {/* Merge bug reports and notifications, then sort by date */}
+            {(() => {
+              // Convert bug reports to notification format
+              const bugReportNotifications = bugReports.map(report => ({
+                _id: `bug-${report._id}`,
+                type: 'bug_report',
+                message: report.title,
+                createdAt: report.createdAt,
+                read: true, // Bug reports are always shown as read in the list
+                data: {
+                  severity: report.severity,
+                  category: report.category,
+                  bugReportId: report._id
+                }
+              }));
+
+              // Merge and sort all notifications by date (newest first)
+              const allNotifications = [...notifications, ...bugReportNotifications]
+                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+              return allNotifications.map(notification => {
+                const isBugReport = notification.type === 'bug_report';
+                
+                return (
                   <div
-                    key={`bug-${report._id}`}
-                    className={`notification-item bug-report-item`}
-                    onClick={() => handleNotificationClick({ 
-                      type: 'bug_report',
-                      _id: `bug-${report._id}`,
-                      read: true
-                    })}
+                    key={notification._id}
+                    className={`notification-item ${!notification.read ? 'unread' : ''} ${isBugReport ? 'bug-report-item' : ''}`}
+                    onClick={() => handleNotificationClick(notification)}
                   >
                     <div className="notification-icon-wrapper">
-                      {getNotificationIcon('bug_report')}
+                      {getNotificationIcon(notification.type)}
+                      {!notification.read && <span className="unread-dot" />}
                     </div>
 
                     <div className="notification-content">
                       <div className="notification-meta">
                         <span className="type-label">
-                          {getNotificationTypeLabel('bug_report')}
+                          {getNotificationTypeLabel(notification.type)}
                         </span>
-                        <span className="severity-badge" data-severity={report.severity}>
-                          {report.severity}
-                        </span>
+                        {isBugReport && notification.data?.severity && (
+                          <span className="severity-badge" data-severity={notification.data.severity}>
+                            {notification.data.severity}
+                          </span>
+                        )}
                         <span className="time-ago">
-                          {formatTimeAgo(report.createdAt)}
+                          {formatTimeAgo(notification.createdAt)}
                         </span>
                       </div>
-                      <p className="notification-message">{report.title}</p>
-                      {report.category && (
-                        <span className="org-tag">{report.category}</span>
+                      <p className="notification-message">{notification.message}</p>
+                      {isBugReport && notification.data?.category && (
+                        <span className="org-tag">{notification.data.category}</span>
+                      )}
+                      {!isBugReport && notification.organization && notification.organization !== organization && (
+                        <span className="org-tag">{notification.organization}</span>
                       )}
                     </div>
-                  </div>
-                ))}
-              </>
-            )}
-            {notifications.map(notification => (
-              <div
-                key={notification._id}
-                className={`notification-item ${!notification.read ? 'unread' : ''}`}
-                onClick={() => handleNotificationClick(notification)}
-              >
-                <div className="notification-icon-wrapper">
-                  {getNotificationIcon(notification.type)}
-                  {!notification.read && <span className="unread-dot" />}
-                </div>
 
-                <div className="notification-content">
-                  <div className="notification-meta">
-                    <span className="type-label">
-                      {getNotificationTypeLabel(notification.type)}
-                    </span>
-                    <span className="time-ago">
-                      {formatTimeAgo(notification.createdAt)}
-                    </span>
+                    {!isBugReport && (
+                      <button
+                        className="delete-btn"
+                        onClick={(e) => deleteNotification(notification._id, e)}
+                        title="Delete notification"
+                      >
+                        <DeleteOutlineIcon sx={{ fontSize: 16 }} />
+                      </button>
+                    )}
                   </div>
-                  <p className="notification-message">{notification.message}</p>
-                  {notification.organization && notification.organization !== organization && (
-                    <span className="org-tag">{notification.organization}</span>
-                  )}
-                </div>
-
-                <button
-                  className="delete-btn"
-                  onClick={(e) => deleteNotification(notification._id, e)}
-                  title="Delete notification"
-                >
-                  <DeleteOutlineIcon sx={{ fontSize: 16 }} />
-                </button>
-              </div>
-            ))}
+                );
+              });
+            })()}
 
             {loading && (
               <div className="loading-more">

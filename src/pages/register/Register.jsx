@@ -34,7 +34,7 @@ const evaluatePasswordStrength = (password) => {
   if (password.length >= 12) score++;
   if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
   if (/\d/.test(password)) score++;
-  if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) score++;
+  if (/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) score++;
   
   const levels = [
     { score: 0, label: 'None', color: '#e1e5e9' },

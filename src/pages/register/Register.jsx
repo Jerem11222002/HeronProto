@@ -2,6 +2,7 @@ import { useState, useContext, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/authContext";
 import { DarkModeContext } from "../../context/darkModeContext";
+import { toast } from "react-toastify";
 import "./register.scss";
 import umakLogo from "../../assets/umak-logo-black-r.png"; // <-- new import
 
@@ -372,6 +373,12 @@ const Register = () => {
         localStorage.setItem("darkMode", "false");
         if (setDarkMode) setDarkMode(false);
         setCurrentUser(user);
+  
+        // Show success toast
+        toast.success("Successfully registered! Welcome to Heron Fusion!", {
+          position: "top-right",
+          autoClose: 2000,
+        });
   
         // Redirect after success animation
         setTimeout(() => {

@@ -1,6 +1,7 @@
 import React, { useState, useContext, useEffect } from "react";
 import { AuthContext } from "../../context/authContext";
 import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "react-toastify";
 import "./interests.scss";
 
 const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
@@ -68,6 +69,12 @@ const handleSkip = async (currentUser, setCurrentUser, navigate) => {
 
     localStorage.setItem("currentUser", JSON.stringify(updatedUser));
     setCurrentUser(updatedUser);
+    
+    // Show success toast
+    toast.success("Interests saved successfully!", {
+      position: "top-right",
+      autoClose: 2000,
+    });
     
     navigate("/setup-profile");
     
@@ -282,6 +289,12 @@ const Interests = () => {
   
       localStorage.setItem("currentUser", JSON.stringify(updatedUser));
       setCurrentUser(updatedUser);
+      
+      // Show success toast
+      toast.success("Interests saved successfully!", {
+        position: "top-right",
+        autoClose: 2000,
+      });
       
       navigate("/setup-profile");
   

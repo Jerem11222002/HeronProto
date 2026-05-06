@@ -31,6 +31,8 @@ import FullScreenPostPage from "./components/post/FullScreenPostPage"; // <-- ad
 import EventDetailPage from "./pages/admin/Dashboard/EventDetailPage";
 import Landing from "./pages/Landing/Landing";
 import RecommendationTest from "./pages/RecommendationTest";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Admin imports - standard format
 import AdminLayout from "./components/admin/Layout/AdminLayout";
@@ -349,6 +351,18 @@ function App() {
       <SocketProvider>
         <EventsProvider>
           <AppContent />
+          <ToastContainer
+            position="top-right"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="light"
+          />
         </EventsProvider>
       </SocketProvider>
     </ErrorBoundary>

@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect } from "react";
 import { AuthContext } from "../../context/authContext";
 import { DarkModeContext } from "../../context/darkModeContext";
 import { useNavigate, useLocation } from "react-router-dom";
+import { toast } from "react-toastify";
 import "./SetupProfile.scss";
 
 const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
@@ -133,6 +134,12 @@ useEffect(() => {
       setCurrentUser(updatedUser);
       localStorage.setItem("currentUser", JSON.stringify(updatedUser));
       
+      // Show success toast
+      toast.success("Profile setup completed successfully!", {
+        position: "top-right",
+        autoClose: 2000,
+      });
+      
       navigate("/", { 
         state: { message: "Profile setup completed successfully!" } 
       });
@@ -172,6 +179,12 @@ useEffect(() => {
       };
       setCurrentUser(updatedUser);
       localStorage.setItem("currentUser", JSON.stringify(updatedUser));
+  
+      // Show success toast
+      toast.success("User settings saved successfully!", {
+        position: "top-right",
+        autoClose: 2000,
+      });
   
       navigate("/", { 
         state: { message: "You can always update your profile later from settings." } 

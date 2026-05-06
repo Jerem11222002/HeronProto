@@ -33,7 +33,7 @@ const { router: adminNotificationsRouter } = require('./backend/routes/adminNoti
 const recommendationEvaluationRouter = require('./backend/routes/recommendationEvaluation');
 const monitoringCollectRouter = require('./backend/routes/monitoringCollect');
 const bugReportsRouter = require('./backend/routes/bugReports');
-const requestTiming = require('./backend/middleware/requestTiming');
+const requestTiming = require('./backend/Middleware/requestTiming');
 
 const path = require("path");
 const fs = require("fs");
